@@ -1,0 +1,25 @@
+{
+    "name": "FHIR Snapshot",
+    "description": "Fetch and store FHIR payloads",
+    "namespace": "Vanderbilt\\FhirSnapshot",
+    "framework-version": 16,
+    "authors": [
+        {
+            "name": "Francesco Delacqua",
+            "email": "francesco.delacqua@vumc.org",
+            "institution": "Vanderbilt University Medical Center"
+        }
+    ],
+    "links": {
+        "control-center": [
+        {
+            "name": "FHIR Snapshot",
+            "icon": "report",
+            "url": "pages/index.php"
+        }
+        ]
+    },
+    "enable-every-page-hooks-on-system-pages": true,
+    "enable-every-page-hooks-on-login-form": true
+
+}

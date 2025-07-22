@@ -1,0 +1,9 @@
+.DS_Store
+/vendor
+composer.lock
+app/config.php
+log.txt
+composer.phar
+/uploads/*
+!/uploads/.gitkeep
+.vscode
