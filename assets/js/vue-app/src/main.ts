@@ -1,3 +1,5 @@
+import init from './lib'
+
 function addScript(url: string) {
     var header = document.querySelector('head')
     if(!header) return
@@ -17,14 +19,13 @@ function addStyle(url: string) {
     header.appendChild(link)
 }
 
-import { createApp } from 'vue'
 
 const start = async () => {
-    const App = await import('./App.vue')
-    createApp(App.default).mount('#app')
+
+    init('#app')
 }
 
-if (import.meta.env.NODE_ENV === 'development') {
+if (import.meta.env.MODE === 'development') {
     // add redcap styles in dev
     addStyle('/redcap/redcap_v999.0.0/Resources/webpack/css/bundle.css')
     addStyle('/redcap_v999.0.0/Resources/webpack/css/bootstrap.min.css')
