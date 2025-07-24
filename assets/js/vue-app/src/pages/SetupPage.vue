@@ -1,21 +1,49 @@
 <template>
-    <div>
+    <div class="d-flex flex-column gap-4">
         <FhirSystemDropdown />
         <div class="card">
             <div class="card-body px-0 py-2">
                 <div class="p-2">
-                    <ResourcesToolbar />
+                    <ResourcesToolbar @add="handleAdd"/>
                 </div>
                 <ResourcesTable />
+
+                <Teleport to="body">
+                    <b-modal ref="resourceModal" >
+                        <template #title>Resource</template>
+                        <ResourceForm v-model="form"/>
+                    </b-modal>
+                </Teleport>
             </div>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
+import { reactive, useTemplateRef } from 'vue';
 import FhirSystemDropdown from '@/components/setup/FhirSystemDropdown.vue';
 import ResourcesToolbar from '@/components/setup/ResourcesToolbar.vue';
 import ResourcesTable from '@/components/setup/ResourcesTable.vue';
+import ResourceForm from '@/components/setup/ResourceForm.vue';
+import { Modal } from 'bootstrap-vue';
+import { type ResourceFormType, RESOURCE_TYPE } from '@/components/setup/ResourceForm.vue';
+
+const resourceModal = useTemplateRef<typeof Modal>('resourceModal')
+
+const newForm: ResourceFormType = {
+    customResource: '',
+    predefinedResource: '',
+    resourceType: RESOURCE_TYPE.PREDEFINED
+}
+
+const form = reactive<ResourceFormType>(newForm)
+
+async function handleAdd() {
+    if(!resourceModal.value) return
+    const confirmed = await resourceModal.value.show()
+    console.log(confirmed)
+}
+
 </script>
 
 <style scoped>

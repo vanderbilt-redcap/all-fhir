@@ -561,9 +561,9 @@ birpc@^2.3.0:
   integrity sha512-VSWO/W6nNQdyP520F1mhf+Lc2f8pjGQOtoHHm7Ze8Go1kX7akpVIrtTa0fn+HB0QJEDVacl6aO08YE0PgXfdnQ==
 
 "bootstrap-vue@npm:my-bootstrap-vue":
-  version "1.7.4"
-  resolved "https://registry.yarnpkg.com/my-bootstrap-vue/-/my-bootstrap-vue-1.7.4.tgz#f8e78d57752eb99274c3bd3a36b748fe9d147971"
-  integrity sha512-WY6XbiV0WaAS+MreyNeRAxD2K2N61Hv9yCn6OCXixBAkKtFD2if8eT8sunwmKkGH89J++mTQ7Kov9I9a9ko4eA==
+  version "1.7.6"
+  resolved "https://registry.yarnpkg.com/my-bootstrap-vue/-/my-bootstrap-vue-1.7.6.tgz#711b251b8ebd12ef937a79033eed5c2d5ceb903c"
+  integrity sha512-BHJSXoVappnJFecGOtGDwnR6otentIH/hiM8Qq80xhpWRptRkWYKEVPcLodL7Ym6yShaHz1o/k4cXvjLn7l6Ow==
   dependencies:
     "@popperjs/core" "^2.11.8"
     bootstrap "^5.3.3"

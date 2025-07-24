@@ -6,65 +6,62 @@ const fhirSnapshotApi = {
 
   // Setup page: FHIR systems and resource types
   getAvailableFhirSystems() {
-    const params = { route: 'FhirSnapshotController:getAvailableFhirSystems' };
+    const params = { route: 'get-available-fhir-systems' };
     return apiClient.get('', { params });
   },
 
-  getAvailableResourceTypes(projectId: number) {
+  getAvailableResourceTypes() {
     const params = {
-      route: 'FhirSnapshotController:getAvailableResourceTypes',
-      project_id: projectId,
+      route: 'get-available-resource-types',
     };
     return apiClient.get('', { params });
   },
 
   // Monitor page: manage MRNs
-  listMrns(projectId: number) {
+  listMrns() {
     const params = {
-      route: 'FhirSnapshotController:listMrns',
-      project_id: projectId,
+      route: 'list-mrns',
     };
     return apiClient.get('', { params });
   },
 
-  addMrn(projectId: number, mrn: string) {
-    const params = { route: 'FhirSnapshotController:addMrn' };
-    return apiClient.post('', { project_id: projectId, mrn }, { params });
+  addMrn(mrn: string) {
+    const params = { route: 'add-mrn' };
+    return apiClient.post('', { mrn }, { params });
   },
 
-  removeMrn(projectId: number, mrn: string) {
-    const params = { route: 'FhirSnapshotController:removeMrn' };
-    return apiClient.post('', { project_id: projectId, mrn }, { params });
+  removeMrn(mrn: string) {
+    const params = { route: 'remove-mrn' };
+    return apiClient.post('', { mrn }, { params });
   },
 
   // Trigger FHIR resource fetch
-  triggerFetch(projectId: number, mrns: string[], resources: string[]) {
-    const params = { route: 'FhirSnapshotController:triggerFetch' };
+  triggerFetch(mrns: string[], resources: string[]) {
+    const params = { route: 'trigger-fetch' };
     return apiClient.post(
       '',
-      { project_id: projectId, mrns, resources },
+      { mrns, resources },
       { params }
     );
   },
 
   // Fetch status and error tracking
-  getFetchStatus(projectId: number) {
+  getFetchStatus() {
     const params = {
-      route: 'FhirSnapshotController:getFetchStatus',
-      project_id: projectId,
+      route: 'get-fetch-status',
     };
     return apiClient.get('', { params });
   },
 
   // Package downloaded payloads
-  createZipArchive(projectId: number, mrns: string[]) {
-    const params = { route: 'FhirSnapshotController:createZipArchive' };
-    return apiClient.post('', { project_id: projectId, mrns }, { params });
+  createZipArchive(mrns: string[]) {
+    const params = { route: 'create-zip-archive' };
+    return apiClient.post('', { mrns }, { params });
   },
 
   downloadZip(zipId: string) {
     const params = {
-      route: 'FhirSnapshotController:downloadZip',
+      route: 'download-zip',
       zip_id: zipId,
     };
     return apiClient.get('', { params, responseType: 'blob' });

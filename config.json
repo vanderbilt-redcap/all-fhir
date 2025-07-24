@@ -19,6 +19,54 @@
         }
         ]
     },
+    "no-csrf-pages": [
+         "api"
+    ],
+    "api-actions": {
+        "list-items": {
+            "description": "A method that lists all available items.",
+            "access": [ "auth", "no-auth" ]
+        },
+        "add-items": {
+            "description": "Adds an item to the list.",
+            "access": [ "auth", "no-auth" ]
+        },
+        "get-available-fhir-systems": {
+            "description": "no description",
+            "access": [ "auth", "no-auth" ]
+        },
+        "get-available-resource-types": {
+            "description": "no description",
+            "access": [ "auth", "no-auth" ]
+        },
+        "list-mrns": {
+            "description": "no description",
+            "access": [ "auth", "no-auth" ]
+        },
+        "add-mrn": {
+            "description": "no description",
+            "access": [ "auth", "no-auth" ]
+        },
+        "remove-mrn": {
+            "description": "no description",
+            "access": [ "auth", "no-auth" ]
+        },
+        "trigger-fetch": {
+            "description": "no description",
+            "access": [ "auth", "no-auth" ]
+        },
+        "get-fetch-status": {
+            "description": "no description",
+            "access": [ "auth", "no-auth" ]
+        },
+        "create-zip-archive": {
+            "description": "no description"
+        },
+        "download-zip": {
+            "description": "no description",
+            "access": [ "auth", "no-auth" ]
+        }
+    },
     "enable-every-page-hooks-on-system-pages": true,
     "enable-every-page-hooks-on-login-form": true
 
