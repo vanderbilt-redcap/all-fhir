@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-
+import { api } from '@/API' // adjust import path
+import { useError } from '@/composables/useError'
+import { useErrorsStore } from './errorsStore'
 export interface FhirSystem {
   id: string
   name: string
@@ -15,34 +17,57 @@ export interface SelectedResource {
   parameters?: string    // E.g. "?category=social-history"
 }
 
+
 export const useSettingsStore = defineStore('settings', () => {
+
+  const errorsStore = useErrorsStore()
+  
   // FHIR Systems
+  const loading = ref(false)
   const availableSystems = ref<FhirSystem[]>([])
   const selectedSystem = ref<FhirSystem | null>(null)
 
   // Selected FHIR Resources (shown in the table)
   const selectedResources = ref<SelectedResource[]>([])
 
-  // Predefined resource types for dropdown
+  // Predefined resource types
   const predefinedTypes = ref<string[]>([])
 
   const fetchAvailableSystems = async () => {
-    const res = await fetch('/api/fhir-systems') // adjust to backend
-    availableSystems.value = await res.json()
+    try {
+      loading.value = true;
+      const res = await api.getAvailableFhirSystems()
+      availableSystems.value = res.data ?? []
+    } catch (err) {
+      errorsStore.addError(err, 'settingsStore')
+      console.log('Failed to load FHIR systems:', err)
+      availableSystems.value = []
+    }finally {
+      loading.value = false
+    }
   }
 
   const fetchPredefinedResourceTypes = async () => {
     if (!selectedSystem.value) return
-    const res = await fetch(`/api/fhir-resources?system=${selectedSystem.value.id}`)
-    predefinedTypes.value = await res.json()
+    try {
+      loading.value = true;
+      const res = await api.getAvailableResourceTypes()
+      predefinedTypes.value = res.data ?? []
+    } catch (err) {
+      console.error('Failed to load resource types:', err)
+      predefinedTypes.value = []
+    }finally {
+      loading.value = false
+    }
   }
 
   const setSelectedSystem = (system: FhirSystem) => {
     selectedSystem.value = system
-    selectedResources.value = [] // reset on system change
+    selectedResources.value = [] // reset
     fetchPredefinedResourceTypes()
   }
 
+  // ➕ Resource management
   const addPredefinedResource = (name: string) => {
     selectedResources.value.push({
       name,
@@ -59,6 +84,12 @@ export const useSettingsStore = defineStore('settings', () => {
     })
   }
 
+  const updateResource = (index: number, updated: SelectedResource) => {
+    if (index >= 0 && index < selectedResources.value.length) {
+      selectedResources.value[index] = { ...updated }
+    }
+  }
+
   const removeResource = (index: number) => {
     selectedResources.value.splice(index, 1)
   }
@@ -72,18 +103,21 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   return {
+    loading,
     availableSystems,
     selectedSystem,
-    setSelectedSystem,
+    predefinedTypes,
+    selectedResources,
+
     fetchAvailableSystems,
     fetchPredefinedResourceTypes,
-    predefinedTypes,
+    setSelectedSystem,
 
-    selectedResources,
     addPredefinedResource,
     addCustomResource,
+    updateResource,
     removeResource,
     importResources,
-    exportResources,
+    exportResources
   }
 })

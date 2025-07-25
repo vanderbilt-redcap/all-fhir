@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import api from '@/API/index'
 import { onMounted } from 'vue';
+import { useSettingsStore } from './store/useSettingsStore';
+import ErrorsVisualizer from './components/ErrorsVisualizer.vue';
+
+const settingsStore = useSettingsStore()
+
+
 
 onMounted(() => {
-  api.getAvailableFhirSystems()
+  settingsStore.fetchAvailableSystems()
 })
 </script>
 
@@ -14,6 +19,7 @@ onMounted(() => {
   </div>
 </div>
 <router-view></router-view>
+<ErrorsVisualizer />
 </template>
 
 <style scoped>

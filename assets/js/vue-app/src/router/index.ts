@@ -7,6 +7,7 @@ import MonitorPage from '@/pages/MonitorPage.vue'
 
 // other
 import NotFoundPage from '@/pages/NotFoundPage.vue'
+import ErrorPage from '@/pages/ErrorPage.vue'
 
 /**
  * supported routes.
@@ -19,6 +20,7 @@ const routes = [
             { path: '', name: 'home', component: HomePage, },
             { path: 'setup', name: 'setup', component: SetupPage, },
             { path: 'monitor', name: 'monitor', component: MonitorPage, },
+            { path: 'error', name: 'error', component: ErrorPage, },
             { path: '/:pathMatch(.*)*', component: NotFoundPage },
         ],
     },

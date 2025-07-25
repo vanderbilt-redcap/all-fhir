@@ -16,6 +16,16 @@
                 </Teleport>
             </div>
         </div>
+        <div class="d-flex gap-2 justify-content-end">
+            <button type="button" class="btn btn-secondary btn-sm">
+                <i class="fas fa-xmark fa-fw"></i>
+                <span>Cancel</span>
+            </button>
+            <button type="button" class="btn btn-primary btn-sm">
+                <i class="fas fa-save fa-fw"></i>
+                <span>Save</span>
+            </button>
+        </div>
     </div>
 </template>
 

@@ -1,9 +1,12 @@
 <?php
 
+use Slim\App;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use Slim\App;
-
+use Vanderbilt\FhirSnapshot\Controllers\ArchiveController;
+use Vanderbilt\FhirSnapshot\Controllers\FetchController;
+use Vanderbilt\FhirSnapshot\Controllers\MrnController;
+use Vanderbilt\FhirSnapshot\Controllers\SystemController;
 
 return function (App $app) {
     // Home route
@@ -12,56 +15,38 @@ return function (App $app) {
         return $response;
     });
 
-    $app->get('/get-available-fhir-systems', function(Request $request, Response $response) {
-        $response->getBody()->write('/get-available');
-        return $response;
-    });
-    $app->get('/get-available-resource-types', function(Request $request, Response $response) {
-        $response->getBody()->write('/get-available');
-        return $response;
-    });
-    $app->get('/list-mrns', function(Request $request, Response $response) {
-        $response->getBody()->write('/list-mrns');
-        return $response;
-    });
-    $app->post('/add-mrn', function(Request $request, Response $response) {
-        $params = (array) $request->getParsedBody();
-        $response->getBody()->write('/add-mrn');
-        return $response;
-    });
-    $app->delete('/remove-mrn', function(Request $request, Response $response) {
-        $response->getBody()->write('/remove-mrn');
-        return $response;
-    });
-    $app->post('/trigger-fetch', function(Request $request, Response $response) {
-        $params = (array) $request->getParsedBody();
-        $response->getBody()->write('/trigger-fetch');
-        return $response;
-    });
-    $app->get('/get-fetch-status', function(Request $request, Response $response) {
-        $response->getBody()->write('/get-fetch');
-        return $response;
-    });
-    $app->post('/create-zip-archive', function(Request $request, Response $response) {
-        $params = (array) $request->getParsedBody();
-        $response->getBody()->write('/create-zip');
-        return $response;
-    });
-    $app->get('/download-zip', function(Request $request, Response $response) {
-        $response->getBody()->write('/download-zip');
-        return $response;
-    });
+    // $app->get('/get-available-fhir-systems', function(Request $request, Response $response) {
+    //     $response->getBody()->write('/get-available');
+    //     return $response;
+    // });
 
-    // Dynamic route
-    $app->get('/user/{id}', function (Request $request, Response $response, array $args) {
-        $response->getBody()->write("User ID: " . $args['id']);
-        return $response;
-    });
+    // SystemController routes
+    $app->get('/get-available-fhir-systems', [SystemController::class, 'getAvailableFhirSystems']);
+    $app->get('/get-available-resource-types', [SystemController::class, 'getAvailableResourceTypes']);
 
-    // POST route
-    $app->post('/submit', function (Request $request, Response $response) {
-        $params = (array) $request->getParsedBody();
-        $response->getBody()->write("Received: " . json_encode($params));
-        return $response;
-    });
+    // MrnController routes
+    $app->get('/list-mrns', [MrnController::class, 'listMrns']);
+    $app->post('/add-mrn', [MrnController::class, 'addMrn']);
+    $app->delete('/remove-mrn/{mrn}', [MrnController::class, 'removeMrn']);
+
+    // FetchController routes
+    $app->post('/trigger-fetch', [FetchController::class, 'triggerFetch']);
+    $app->get('/get-fetch-status', [FetchController::class, 'getFetchStatus']);
+
+    // ArchiveController routes
+    $app->post('/create-zip-archive', [ArchiveController::class, 'createZipArchive']);
+    $app->get('/download-zip', [ArchiveController::class, 'downloadZip']);
+
+    // // Dynamic route
+    // $app->get('/user/{id}', function (Request $request, Response $response, array $args) {
+    //     $response->getBody()->write("User ID: " . $args['id']);
+    //     return $response;
+    // });
+
+    // // POST route
+    // $app->post('/submit', function (Request $request, Response $response) {
+    //     $params = (array) $request->getParsedBody();
+    //     $response->getBody()->write("Received: " . json_encode($params));
+    //     return $response;
+    // });
 };
