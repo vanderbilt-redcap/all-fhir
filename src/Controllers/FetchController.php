@@ -5,7 +5,7 @@ namespace Vanderbilt\FhirSnapshot\Controllers;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
-class FetchController
+class FetchController extends AbstractController
 {
     public function triggerFetch(Request $request, Response $response): Response
     {

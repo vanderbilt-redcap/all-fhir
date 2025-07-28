@@ -16,7 +16,7 @@
 
 <script setup lang="ts">
 import { ref, watchEffect } from 'vue'
-import { useErrorsStore } from '@/store/errorsStore'
+import { useErrorsStore } from '@/store/ErrorsStore'
 import { storeToRefs } from 'pinia'
 
 const modalRef = ref()

@@ -5,7 +5,7 @@ namespace Vanderbilt\FhirSnapshot\Controllers;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
-class ArchiveController
+class ArchiveController extends AbstractController
 {
     public function createZipArchive(Request $request, Response $response): Response
     {

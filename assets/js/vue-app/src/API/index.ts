@@ -1,31 +1,36 @@
 // /api/settings.ts
+import type { AxiosResponse } from 'axios'
 import useApiClient from './useApiClient'
+import type { FhirSystem, MappingResource } from '@/models/ProjectSettings'
 
 export const apiClient = useApiClient()
 
 export const api = {
-  getAvailableFhirSystems() {
-    const params = { route: `get-available-fhir-systems` }
+  getProjectSettings(): Promise<AxiosResponse<any, any>>
+ {
+    const params = { route: `project-settings` }
     return apiClient.get('', { params })
+  },
+  updateProjectSettings(fhirSystem: FhirSystem, selectedMappingResources: MappingResource[])
+ {
+    const params = { route: `project-settings` }
+    const payload = { fhirSystem, selectedMappingResources };
+    return apiClient.put('', payload, { params })
   },
 
-  getAvailableResourceTypes() {
-    const params = { route: `get-available-resource-types` }
-    return apiClient.get('', { params })
-  },
 
   listMrns() {
-    const params = { route: `list-mrns` }
+    const params = { route: `mrns` }
     return apiClient.get('', { params })
   },
 
   addMrn(mrn: string) {
-    const params = { route: `add-mrn` }
+    const params = { route: `mrns` }
     return apiClient.post('', { mrn }, { params })
   },
 
   removeMrn(mrn: string) {
-    const params = { route: `remove-mrn/${mrn}` }
+    const params = { route: `mrns/${mrn}` }
     return apiClient.delete('', { params, data: mrn })
   },
 
@@ -35,7 +40,7 @@ export const api = {
   },
 
   getFetchStatus() {
-    const params = { route: `get-fetch-status` }
+    const params = { route: `fetch-status` }
     return apiClient.get('', { params })
   },
 

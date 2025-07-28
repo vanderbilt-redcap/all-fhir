@@ -13,6 +13,7 @@ const getRedCapQueryParams = () => {
   let params = new URLSearchParams(location.search);
   // get PID from current location
   let pid = params.get("pid");
+  console.log('pid', pid)
   let query_params = {
     pid,
     page,
@@ -27,7 +28,7 @@ const getRedCapQueryParams = () => {
 export default () => {
   const apiClient: AxiosInstance = axios.create({
     baseURL: "/api",
-    timeout: 5000,
+    timeout: 0,
     headers: {
       "Content-Type": "application/json",
       "Accept": "application/json",

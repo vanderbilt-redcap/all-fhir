@@ -5,7 +5,7 @@ namespace Vanderbilt\FhirSnapshot\Controllers;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
-class MrnController
+class MrnController extends AbstractController
 {
     public function listMrns(Request $request, Response $response): Response
     {

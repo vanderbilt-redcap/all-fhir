@@ -6,6 +6,17 @@ use ExternalModules\AbstractExternalModule;
 
 class FhirSnapshot extends AbstractExternalModule {
 
+    private static FhirSnapshot $instance;
+
+    public static function getInstance() {
+        if(!isset(self::$instance)) {
+            global $module;
+            if($module) self::$instance = $module;
+            else self::$instance = new self();
+        }
+        return self::$instance;
+    }
+
     function redcap_module_api($action, $payload, $project_id, $user_id, $format, $returnFormat, $csvDelim) {
         if ($returnFormat != "json") {
             return $this->framework->apiErrorResponse("This API only supports JSON as return format!", 400);

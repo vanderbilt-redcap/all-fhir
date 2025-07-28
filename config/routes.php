@@ -6,7 +6,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Vanderbilt\FhirSnapshot\Controllers\ArchiveController;
 use Vanderbilt\FhirSnapshot\Controllers\FetchController;
 use Vanderbilt\FhirSnapshot\Controllers\MrnController;
-use Vanderbilt\FhirSnapshot\Controllers\SystemController;
+use Vanderbilt\FhirSnapshot\Controllers\ProjectSettingsController;
 
 return function (App $app) {
     // Home route
@@ -20,18 +20,18 @@ return function (App $app) {
     //     return $response;
     // });
 
-    // SystemController routes
-    $app->get('/get-available-fhir-systems', [SystemController::class, 'getAvailableFhirSystems']);
-    $app->get('/get-available-resource-types', [SystemController::class, 'getAvailableResourceTypes']);
+    // ProjectSettingsController routes
+    $app->get('/project-settings', [ProjectSettingsController::class, 'getSettings']);
+    $app->put('/project-settings', [ProjectSettingsController::class, 'updateSettings']);
 
     // MrnController routes
-    $app->get('/list-mrns', [MrnController::class, 'listMrns']);
-    $app->post('/add-mrn', [MrnController::class, 'addMrn']);
-    $app->delete('/remove-mrn/{mrn}', [MrnController::class, 'removeMrn']);
+    $app->get('/mrns', [MrnController::class, 'listMrns']);
+    $app->post('/mrn', [MrnController::class, 'addMrn']);
+    $app->delete('/mrn/{mrn}', [MrnController::class, 'removeMrn']);
 
     // FetchController routes
     $app->post('/trigger-fetch', [FetchController::class, 'triggerFetch']);
-    $app->get('/get-fetch-status', [FetchController::class, 'getFetchStatus']);
+    $app->get('/fetch-status', [FetchController::class, 'getFetchStatus']);
 
     // ArchiveController routes
     $app->post('/create-zip-archive', [ArchiveController::class, 'createZipArchive']);

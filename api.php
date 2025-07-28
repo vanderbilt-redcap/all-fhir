@@ -1,32 +1,25 @@
 <?php
 require __DIR__ . '/vendor/autoload.php';
 
+use DI\ContainerBuilder;
 use Slim\Factory\AppFactory;
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Server\RequestHandlerInterface as RequestHandler;
 use Slim\Handlers\Strategies\RequestResponseArgs;
+use Vanderbilt\FhirSnapshot\Middleware\ExtractRouteMiddleware;
 
-$extractRouteMiddleware = function (ServerRequestInterface $request, RequestHandler $handler): ResponseInterface {
-    $queryParams = $request->getQueryParams();
+// Instantiate PHP-DI ContainerBuilder
+$containerBuilder = new ContainerBuilder();
 
-    // Check if the 'route' parameter is present in the query string
-    if (isset($queryParams['route'])) {
-        // Extract the route
-        $route = $queryParams['route'];
+// Set up settings
+$dependencies = require __DIR__ . '/config/dependencies.php';
+$dependencies($containerBuilder);
 
-        // Rewrite the URI with the extracted route
-        $uri = $request->getUri()->withPath($route);
+// Build PHP-DI Container instance
+$container = $containerBuilder->build();
 
-        // Replace the URI in the request
-        $request = $request->withUri($uri);
-    }
-
-    // Process the request with the next middleware or route
-    return $handler->handle($request);
-};
 
 // Create App
+// Set container to create App with on AppFactory
+AppFactory::setContainer($container);
 $app = AppFactory::create();
 
 // Add Routing Middleware
@@ -40,7 +33,8 @@ $routeCollector = $app->getRouteCollector();
 $routeCollector->setDefaultInvocationStrategy(new RequestResponseArgs());
 
 // Add the middleware to your Slim app
-$app->add($extractRouteMiddleware);
+// this manages route navigation in external modules
+$app->add(ExtractRouteMiddleware::class);
 // Add error middleware
 $app->addErrorMiddleware(true, true, true);
 
@@ -51,7 +45,6 @@ $app->addBodyParsingMiddleware();
 // load routes
 $useRoutes = require_once __DIR__.'/config/routes.php';
 $useRoutes($app);
-
 
 // Run app
 $app->run();

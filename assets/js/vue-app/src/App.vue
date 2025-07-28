@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
-import { useSettingsStore } from './store/useSettingsStore';
+import { useSettingsStore } from './store/SettingsStore';
 import ErrorsVisualizer from './components/ErrorsVisualizer.vue';
 
 const settingsStore = useSettingsStore()
@@ -8,6 +8,7 @@ const settingsStore = useSettingsStore()
 
 
 onMounted(() => {
+  settingsStore.fetchProjectSettings()
   settingsStore.fetchAvailableSystems()
 })
 </script>

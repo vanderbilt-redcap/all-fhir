@@ -10,13 +10,35 @@
             "institution": "Vanderbilt University Medical Center"
         }
     ],
-    "links": {
-        "control-center": [
+    "project-settings": [
         {
-            "name": "FHIR Snapshot",
-            "icon": "report",
-            "url": "pages/index.php"
+            "key": "fhir-system",
+            "name": "FHIR System",
+            "required": true,
+            "type": "text"
+        },
+        {
+            "key": "mapping-resources",
+            "name": "Mapping Resource",
+            "required": true,
+            "type": "text",
+            "repeatable":true
         }
+    ],
+    "links": {
+        "project": [
+            {
+                "name": "FHIR Snapshot",
+                "icon": "fas fa-camera",
+                "url": "pages/project/index.php"
+            }
+        ],
+        "control-center": [
+            {
+                "name": "FHIR Snapshot",
+                "icon": "fas fa-camera",
+                "url": "pages/control-center/index.php"
+            }
         ]
     },
     "no-csrf-pages": [
