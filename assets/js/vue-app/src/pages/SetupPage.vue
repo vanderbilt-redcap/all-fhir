@@ -21,7 +21,7 @@
                 <i class="fas fa-xmark fa-fw"></i>
                 <span>Cancel</span>
             </button>
-            <button type="button" class="btn btn-primary btn-sm">
+            <button type="button" class="btn btn-primary btn-sm" @click="handleSave" :disabled="settingsStore.loading">
                 <i class="fas fa-save fa-fw"></i>
                 <span>Save</span>
             </button>
@@ -58,6 +58,14 @@ async function handleAdd() {
     if(!resourceModal.value) return
     const confirmed = await resourceModal.value.show()
     console.log(confirmed)
+}
+
+async function handleSave() {
+    try {
+        await settingsStore.saveProjectSettings()
+    } catch (err) {
+        console.error('Failed to save settings:', err)
+    }
 }
 
 </script>

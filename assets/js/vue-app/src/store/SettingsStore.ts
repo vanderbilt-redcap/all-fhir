@@ -77,6 +77,25 @@ export const useSettingsStore = defineStore('settings', () => {
     return selectedResources.value
   }
 
+  const updateSelectedFhirSystem = (systemId: number) => {
+    settings.fhir_system = systemId || null
+  }
+
+  const saveProjectSettings = async () => {
+    try {
+      loading.value = true
+      const selectedFhirSystem = settings.fhir_systems.find(sys => sys.ehr_id === settings.fhir_system) || null
+      if(!selectedFhirSystem) return
+      await api.updateProjectSettings(selectedFhirSystem, selectedResources.value)
+    } catch (err) {
+      errorsStore.addError(err, 'settingsStore')
+      console.log('Failed to save project settings:', err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   return {
     loading,
     predefinedTypes,
@@ -89,6 +108,8 @@ export const useSettingsStore = defineStore('settings', () => {
     updateResource,
     removeResource,
     importResources,
-    exportResources
+    exportResources,
+    updateSelectedFhirSystem,
+    saveProjectSettings
   }
 })

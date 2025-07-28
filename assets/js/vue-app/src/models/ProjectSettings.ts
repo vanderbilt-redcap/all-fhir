@@ -1,5 +1,5 @@
 export interface FhirSystem {
-  ehr_id: string
+  ehr_id: number
   ehr_name: string
   fhir_base_url: string
 }
