@@ -17,4 +17,5 @@ export interface ProjectSettings {
   fhir_systems: Array<FhirSystem>
   mapping_resources: Array<MappingResource>
   selected_mapping_resources: Array<MappingResource>
+  selected_custom_mapping_resources: Array<MappingResource>
 }

@@ -2,14 +2,12 @@
 import { onMounted } from 'vue';
 import { useSettingsStore } from './store/SettingsStore';
 import ErrorsVisualizer from './components/ErrorsVisualizer.vue';
+import {storeToRefs} from 'pinia'
 
 const settingsStore = useSettingsStore()
 
-
-
 onMounted(() => {
   settingsStore.fetchProjectSettings()
-  settingsStore.fetchAvailableSystems()
 })
 </script>
 

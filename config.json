@@ -23,6 +23,13 @@
             "required": true,
             "type": "text",
             "repeatable":true
+        },
+        {
+            "key": "custom-mapping-resources",
+            "name": "Custom Mapping Resource",
+            "required": true,
+            "type": "text",
+            "repeatable":true
         }
     ],
     "links": {

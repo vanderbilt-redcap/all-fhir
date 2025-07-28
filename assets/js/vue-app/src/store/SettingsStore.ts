@@ -8,11 +8,12 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const errorsStore = useErrorsStore()
 
-  const emptySettings = () => ({
+  const emptySettings = ():ProjectSettings => ({
     fhir_system: null,
     fhir_systems: [],
     mapping_resources: [],
-    selected_mapping_resources: []
+    selected_mapping_resources: [],
+    selected_custom_mapping_resources: []
   })
   
   // FHIR Systems

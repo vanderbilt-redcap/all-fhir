@@ -30,13 +30,19 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, useTemplateRef } from 'vue';
+import { provide, reactive, useTemplateRef } from 'vue';
 import FhirSystemDropdown from '@/components/setup/FhirSystemDropdown.vue';
 import ResourcesToolbar from '@/components/setup/ResourcesToolbar.vue';
 import ResourcesTable from '@/components/setup/ResourcesTable.vue';
 import ResourceForm from '@/components/setup/ResourceForm.vue';
 import { Modal } from 'bootstrap-vue';
+import { storeToRefs } from 'pinia'
+import {useSettingsStore} from '@/store/SettingsStore'
 import { type ResourceFormType, RESOURCE_TYPE } from '@/components/setup/ResourceForm.vue';
+
+const settingsStore = useSettingsStore()
+const { settings } = storeToRefs(settingsStore)
+provide('settings', settings)
 
 const resourceModal = useTemplateRef<typeof Modal>('resourceModal')
 
