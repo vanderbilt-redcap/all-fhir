@@ -29,7 +29,8 @@ const settingsStore = useSettingsStore()
 
 const handleSystemChange = (event: Event) => {
   const target = event.target as HTMLSelectElement
-  settingsStore.updateSelectedFhirSystem(target.value)
+  const fhirSystemId = parseInt(target.value)
+  settingsStore.updateSelectedFhirSystem(fhirSystemId)
 }
 </script>
 

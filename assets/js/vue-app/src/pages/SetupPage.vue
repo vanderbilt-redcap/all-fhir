@@ -30,12 +30,11 @@
 </template>
 
 <script setup lang="ts">
-import { provide, reactive, useTemplateRef } from 'vue';
+import { provide, ref, useTemplateRef } from 'vue';
 import FhirSystemDropdown from '@/components/setup/FhirSystemDropdown.vue';
 import ResourcesToolbar from '@/components/setup/ResourcesToolbar.vue';
 import ResourcesTable from '@/components/setup/ResourcesTable.vue';
 import ResourceForm from '@/components/setup/ResourceForm.vue';
-import { Modal } from 'bootstrap-vue';
 import { storeToRefs } from 'pinia'
 import {useSettingsStore} from '@/store/SettingsStore'
 import { type ResourceFormType, RESOURCE_TYPE } from '@/components/setup/ResourceForm.vue';
@@ -44,20 +43,27 @@ const settingsStore = useSettingsStore()
 const { settings } = storeToRefs(settingsStore)
 provide('settings', settings)
 
-const resourceModal = useTemplateRef<typeof Modal>('resourceModal')
+const resourceModal = useTemplateRef<any>('resourceModal')
 
-const newForm: ResourceFormType = {
+const getNewForm = (): ResourceFormType => ({
     customResource: '',
     predefinedResource: '',
     resourceType: RESOURCE_TYPE.PREDEFINED
-}
+})
 
-const form = reactive<ResourceFormType>(newForm)
+const form = ref<ResourceFormType>(getNewForm())
 
 async function handleAdd() {
     if(!resourceModal.value) return
+    form.value = getNewForm() // Reset form before showing
     const confirmed = await resourceModal.value.show()
-    console.log(confirmed)
+    if (confirmed) {
+        if (form.value.resourceType === RESOURCE_TYPE.PREDEFINED) {
+            settingsStore.addPredefinedResource(form.value.predefinedResource)
+        } else {
+            settingsStore.addCustomResource(form.value.customResource)
+        }
+    }
 }
 
 async function handleSave() {

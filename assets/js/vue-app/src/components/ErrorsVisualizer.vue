@@ -28,7 +28,7 @@ const useError = (err: unknown) => {
 }
 
 watchEffect(async () => {
-    const totalErrors = errors.value?.length ?? 0
+    // const totalErrors = errors.value?.length ?? 0
     if (errors.value?.length === 0) return
     const modal = modalRef.value
     if (!modal) return
