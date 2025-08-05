@@ -6,7 +6,11 @@
                 <label class="form-label ms-2" for="resource-type-predefined">Predefined Resource</label>
                 <select v-model="form.predefinedResource" class="form-select form-select-sm" id="predefined-resource" :disabled="form.resourceType!==RESOURCE_TYPE.PREDEFINED">
                     <option disabled value="">Please Select...</option>
-                    <option value="Demographics">Demographics</option>
+                    <template v-for="resource in mapping_resources" :key="resource">
+                        <option :value="resource">
+                            {{ resource }}
+                        </option>
+                    </template>
                 </select>
             </div>
             <div class="d-flex justify-start-center my-2">
@@ -36,6 +40,14 @@ export const RESOURCE_TYPE = Object.freeze({
 })
 </script>
 <script setup lang="ts">
+import { useSettingsStore } from '@/store/SettingsStore'
+import { storeToRefs } from 'pinia'
+import { computed } from 'vue'
+
+
+const settingsStore = useSettingsStore()
+const { settings } = storeToRefs(settingsStore)
+const mapping_resources = computed(() => settings.value.mapping_resources )
 
 const form = defineModel<ResourceFormType>({default: () => ({})})
 

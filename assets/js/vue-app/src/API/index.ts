@@ -11,10 +11,9 @@ export const api = {
     const params = { route: `project-settings` }
     return apiClient.get('', { params })
   },
-  updateProjectSettings(fhirSystem: FhirSystem, selectedMappingResources: MappingResource[])
+  updateProjectSettings(payload: any)
  {
     const params = { route: `project-settings` }
-    const payload = { fhirSystem, selectedMappingResources };
     return apiClient.put('', payload, { params })
   },
 

@@ -21,7 +21,7 @@
                 <i class="fas fa-xmark fa-fw"></i>
                 <span>Cancel</span>
             </button>
-            <button type="button" class="btn btn-primary btn-sm" @click="handleSave" :disabled="settingsStore.loading">
+            <button type="button" class="btn btn-primary btn-sm" @click="handleSave" :disabled="anyLoading">
                 <i class="fas fa-save fa-fw"></i>
                 <span>Save</span>
             </button>
@@ -30,7 +30,7 @@
 </template>
 
 <script setup lang="ts">
-import { provide, ref, useTemplateRef } from 'vue';
+import { computed, provide, ref, useTemplateRef } from 'vue';
 import FhirSystemDropdown from '@/components/setup/FhirSystemDropdown.vue';
 import ResourcesToolbar from '@/components/setup/ResourcesToolbar.vue';
 import ResourcesTable from '@/components/setup/ResourcesTable.vue';
@@ -40,8 +40,11 @@ import {useSettingsStore} from '@/store/SettingsStore'
 import { type ResourceFormType, RESOURCE_TYPE } from '@/components/setup/ResourceForm.vue';
 
 const settingsStore = useSettingsStore()
-const { settings } = storeToRefs(settingsStore)
+const { settings, loading, selectedMappingResources, selectedCustomMappingResources, selectedFhirSystem } = storeToRefs(settingsStore)
 provide('settings', settings)
+provide('draftResources', { selectedMappingResources, selectedCustomMappingResources, selectedFhirSystem })
+
+const anyLoading = computed(() => loading.value.fetch || loading.value.save)
 
 const resourceModal = useTemplateRef<any>('resourceModal')
 

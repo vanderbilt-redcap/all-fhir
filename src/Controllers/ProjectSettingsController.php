@@ -49,11 +49,13 @@ class ProjectSettingsController extends AbstractController
     public function updateSettings(Request $request, Response $response): Response
     {
         $params = (array)$request->getParsedBody();
-        $fhirSystem = $params['fhirSystem'] ?? null;
-        $selectedMappingResources = $params['selectedMappingResources'] ?? [];
+        $fhirSystem = $params['fhir_system'] ?? null;
+        $selectedMappingResources = $params['selected_mapping_resources'] ?? [];
+        $selectedCustomMappingResources = $params['selected_custom_mapping_resources'] ?? [];
 
         $this->module->setProjectSetting('fhir-system', $fhirSystem);
         $this->module->setProjectSetting('mapping-resources', $selectedMappingResources);
+        $this->module->setProjectSetting('custom-mapping-resources', $selectedCustomMappingResources);
 
         $response->getBody()->write(json_encode([
             'status' => 'success',

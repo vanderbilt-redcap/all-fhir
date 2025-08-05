@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useErrorsStore } from './ErrorsStore'
 import type { Mrn } from '@/models/Mrn'
-import { fetchMrns as fetchMrnsApi, addMrn as addMrnApi, fetchMrn as fetchMrnApi } from '@/API/mock'
+import { api } from '@/API'
 
 export const useMonitorStore = defineStore('monitor', () => {
   const errorsStore = useErrorsStore()
@@ -14,7 +14,8 @@ export const useMonitorStore = defineStore('monitor', () => {
   const fetchMrns = async () => {
     try {
       loading.value = true
-      mrns.value = await fetchMrnsApi()
+      const response = await api.listMrns()
+      mrns.value = response.data
       selectedMrns.value = [] // Reset selection on new fetch
     } catch (err) {
       errorsStore.addError(err as Error, 'monitorStore')
@@ -27,8 +28,8 @@ export const useMonitorStore = defineStore('monitor', () => {
 
   const addMrn = async (mrn: string) => {
     try {
-      const newMrn = await addMrnApi(mrn)
-      mrns.value.push(newMrn)
+      const response = await api.addMrn(mrn)
+      mrns.value.push(response.data)
     } catch (err) {
       errorsStore.addError(err as Error, 'monitorStore')
       console.error('Failed to add MRN:', err)
@@ -37,11 +38,12 @@ export const useMonitorStore = defineStore('monitor', () => {
 
   const fetchMrn = async (id: number) => {
     try {
-      const updatedMrn = await fetchMrnApi(id)
-      const index = mrns.value.findIndex(m => m.id === id)
-      if (index !== -1) {
-        mrns.value[index] = updatedMrn
-      }
+      // This should be updated to use a real API endpoint
+      // const updatedMrn = await fetchMrnApi(id)
+      // const index = mrns.value.findIndex(m => m.id === id)
+      // if (index !== -1) {
+      //   mrns.value[index] = updatedMrn
+      // }
     } catch (err) {
       errorsStore.addError(err as Error, 'monitorStore')
       console.error(`Failed to fetch MRN ${id}:`, err)

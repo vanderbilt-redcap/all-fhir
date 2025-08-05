@@ -6,8 +6,11 @@
         <button class="btn btn-sm btn-secondary me-2" @click="monitorStore.fetchSelected" :disabled="downloadDisabled">
             <i class="fas fa-sync fa-fw"></i> Fetch Selected
         </button>
-        <button class="btn btn-sm btn-success" @click="monitorStore.downloadSelected" :disabled="downloadDisabled">
+        <button class="btn btn-sm btn-success me-2" @click="monitorStore.downloadSelected" :disabled="downloadDisabled">
             <i class="fas fa-download fa-fw"></i> Download Selected
+        </button>
+        <button class="btn btn-sm btn-light" @click="monitorStore.fetchMrns" title="Refresh list">
+            <i class="fas fa-sync-alt fa-fw"></i>
         </button>
     </div>
 </template>

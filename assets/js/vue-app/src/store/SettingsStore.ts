@@ -1,115 +1,113 @@
 import { defineStore } from 'pinia'
 import { reactive, ref } from 'vue'
-import { api } from '@/API' // adjust import path
+import { api } from '@/API'
 import { useErrorsStore } from './ErrorsStore'
 import type { MappingResource, ProjectSettings } from '@/models/ProjectSettings'
 
 export const useSettingsStore = defineStore('settings', () => {
-
   const errorsStore = useErrorsStore()
 
-  const emptySettings = ():ProjectSettings => ({
+  // Holds the last saved state from the server
+  const settings = reactive<ProjectSettings>({
     fhir_system: null,
     fhir_systems: [],
     mapping_resources: [],
     selected_mapping_resources: [],
-    selected_custom_mapping_resources: []
+    selected_custom_mapping_resources: [],
   })
-  
-  // FHIR Systems
-  const loading = ref(false)
-  const settings = reactive<ProjectSettings>(emptySettings())
 
-  // Selected FHIR Resources (shown in the table)
-  const selectedResources = ref<MappingResource[]>([])
+  // "Draft" state for user edits
+  const selectedFhirSystem = ref<number | null>(null)
+  const selectedMappingResources = ref<MappingResource[]>([])
+  const selectedCustomMappingResources = ref<MappingResource[]>([])
 
-  // Predefined resource types
-  const predefinedTypes = ref<string[]>([])
+  const loading = reactive({
+    fetch: false,
+    save: false,
+  })
 
   const fetchProjectSettings = async () => {
     try {
-      loading.value = true;
+      loading.fetch = true
       const res = await api.getProjectSettings()
-      Object.assign(settings, res.data ?? {})
+      const fetchedSettings = res.data ?? {}
+      
+      // Update the "saved" state
+      Object.assign(settings, fetchedSettings)
+
+      // Initialize the "draft" state with copies
+      selectedFhirSystem.value = settings.fhir_system
+      selectedMappingResources.value = [...settings.selected_mapping_resources]
+      selectedCustomMappingResources.value = [...settings.selected_custom_mapping_resources]
 
     } catch (err) {
-      errorsStore.addError(err, 'settingsStore')
-      console.log('Failed to load project settings:', err)
-      Object.assign(settings, emptySettings())
-    }finally {
-      loading.value = false
+      errorsStore.addError(err as Error, 'settingsStore')
+      console.error('Failed to load project settings:', err)
+    } finally {
+      loading.fetch = false
     }
   }
 
-
-  // ➕ Resource management
   const addPredefinedResource = (name: string) => {
-    selectedResources.value.push({
-      name,
-      type: 'predefined'
-    })
+    const resource: MappingResource = { name, type: 'predefined' }
+    selectedMappingResources.value.push(resource)
   }
 
   const addCustomResource = (expression: string) => {
     const [name, query] = expression.split('?')
-    selectedResources.value.push({
+    const resource: MappingResource = {
       name,
       type: 'custom',
-      parameters: query ? `?${query}` : ''
-    })
+      parameters: query ? `?${query}` : '',
+    }
+    selectedCustomMappingResources.value.push(resource)
   }
 
-  const updateResource = (index: number, updated: MappingResource) => {
-    if (index >= 0 && index < selectedResources.value.length) {
-      selectedResources.value[index] = { ...updated }
+  const removeResource = (resource: MappingResource, type: 'predefined' | 'custom') => {
+    if (type === 'predefined') {
+      const index = selectedMappingResources.value.findIndex(r => r.name === resource.name)
+      if (index > -1) selectedMappingResources.value.splice(index, 1)
+    } else {
+      const index = selectedCustomMappingResources.value.findIndex(r => r.name === resource.name)
+      if (index > -1) selectedCustomMappingResources.value.splice(index, 1)
     }
   }
 
-  const removeResource = (index: number) => {
-    selectedResources.value.splice(index, 1)
-  }
-
-  const importResources = (imported: MappingResource[]) => {
-    selectedResources.value = [...imported]
-  }
-
-  const exportResources = (): MappingResource[] => {
-    return selectedResources.value
-  }
-
-  const updateSelectedFhirSystem = (systemId: number) => {
-    settings.fhir_system = systemId || null
+  const updateSelectedFhirSystem = (fhirSystemId: number) => {
+    selectedFhirSystem.value = fhirSystemId
   }
 
   const saveProjectSettings = async () => {
     try {
-      loading.value = true
-      const selectedFhirSystem = settings.fhir_systems.find(sys => sys.ehr_id === settings.fhir_system) || null
-      if(!selectedFhirSystem) return
-      await api.updateProjectSettings(selectedFhirSystem, selectedResources.value)
+      loading.save = true
+      const payload = {
+        fhir_system: selectedFhirSystem.value,
+        selected_mapping_resources: selectedMappingResources.value,
+        selected_custom_mapping_resources: selectedCustomMappingResources.value,
+      }
+      await api.updateProjectSettings(payload)
+      // Re-fetch to sync saved and draft states
+      await fetchProjectSettings() 
     } catch (err) {
-      errorsStore.addError(err, 'settingsStore')
-      console.log('Failed to save project settings:', err)
-      throw err
+      errorsStore.addError(err as Error, 'settingsStore')
+      console.error('Failed to save project settings:', err)
+      throw err // Re-throw to be caught in the component
     } finally {
-      loading.value = false
+      loading.save = false
     }
   }
 
   return {
     loading,
-    predefinedTypes,
-    selectedResources,
     settings,
-
+    selectedFhirSystem,
+    selectedMappingResources,
+    selectedCustomMappingResources,
     fetchProjectSettings,
     addPredefinedResource,
     addCustomResource,
-    updateResource,
     removeResource,
-    importResources,
-    exportResources,
     updateSelectedFhirSystem,
-    saveProjectSettings
+    saveProjectSettings,
   }
 })

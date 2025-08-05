@@ -4,7 +4,7 @@
     <select 
       class="form-select form-select-sm" 
       id="ehr-dropdown"
-      :value="settings.fhir_system"
+      :value="draftResources?.selectedFhirSystem.value || ''"
       @change="handleSystemChange"
     >
       <option value="">Select a FHIR System</option>
@@ -20,11 +20,16 @@
 </template>
 
 <script setup lang="ts">
-import { inject } from 'vue'
+import { inject, type Ref } from 'vue'
 import { useSettingsStore } from '@/store/SettingsStore'
-import type { ProjectSettings } from '@/models/ProjectSettings'
+import type { ProjectSettings, MappingResource } from '@/models/ProjectSettings'
 
 const settings = inject<ProjectSettings>('settings')!
+const draftResources = inject<{
+  selectedFhirSystem: Ref<number | null>
+  selectedMappingResources: Ref<MappingResource[]>
+  selectedCustomMappingResources: Ref<MappingResource[]>
+}>('draftResources')
 const settingsStore = useSettingsStore()
 
 const handleSystemChange = (event: Event) => {
