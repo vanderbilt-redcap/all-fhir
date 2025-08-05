@@ -27,14 +27,15 @@ return function (App $app) {
     // MrnController routes
     $app->get('/mrns', [MrnController::class, 'listMrns']);
     $app->post('/mrn', [MrnController::class, 'addMrn']);
-    $app->delete('/mrn/{mrn}', [MrnController::class, 'removeMrn']);
+    $app->delete('/mrn/{id}', [MrnController::class, 'removeMrn']);
 
     // FetchController routes
-    $app->post('/trigger-fetch', [FetchController::class, 'triggerFetch']);
+    $app->post('/fetch-mrn', [FetchController::class, 'fetchMrn']);
+    $app->post('/fetch-selected', [FetchController::class, 'fetchSelected']);
     $app->get('/fetch-status', [FetchController::class, 'getFetchStatus']);
 
     // ArchiveController routes
-    $app->post('/create-zip-archive', [ArchiveController::class, 'createZipArchive']);
+    $app->post('/download-selected', [ArchiveController::class, 'downloadSelected']);
     $app->get('/download-zip', [ArchiveController::class, 'downloadZip']);
 
     // // Dynamic route
