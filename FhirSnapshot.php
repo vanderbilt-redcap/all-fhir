@@ -40,5 +40,25 @@ class FhirSnapshot extends AbstractExternalModule {
         file_put_contents($file, "[$timestamp] $message" . PHP_EOL, FILE_APPEND);
     }
 
+    function processQueue() {}
+
+     /**
+     * use this if enabled at project level?
+     * no, I'm setting the project context every time a job is processed
+     *
+     * @param array $cronInfo  [cron_name, cron_description, method, cron_processQueue, cron_frequency, cron_max_run_time]
+     * @return string
+     */
+    function cron_processQueue($cronInfo)
+    {
+        $cron_name = $cronInfo['cron_name'] ?? 'FHIR Snapshot';
+        try {
+            $this->processQueue();
+            return sprintf("%s - all jobs have been processed", $cron_name);
+        } catch (\Exception $e) {
+            return sprintf("%s - error processing the jobs: %s", $cron_name, $e->getMessage());
+        }
+    }
+
 
 }

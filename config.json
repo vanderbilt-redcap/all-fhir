@@ -30,6 +30,13 @@
             "required": true,
             "type": "text",
             "repeatable":true
+        },
+        {
+            "key": "tasks",
+            "name": "Task",
+            "required": false,
+            "type": "descriptive",
+            "repeatable":true
         }
     ],
     "links": {
@@ -97,6 +104,15 @@
         }
     },
     "enable-every-page-hooks-on-system-pages": true,
-    "enable-every-page-hooks-on-login-form": true
+    "enable-every-page-hooks-on-login-form": true,
+    "crons": [
+        {
+           "cron_name": "process_queue",
+           "cron_description": "Process jobs registered in the queue",
+           "method": "cron_processQueue",
+           "cron_frequency": "60",
+           "cron_max_run_time": "3600"
+        }
+    ]
 
 }
