@@ -98,6 +98,10 @@ export const useMonitorStore = defineStore('monitor', () => {
     return mrns.value.length > 0 && selectedMrns.value.length === mrns.value.length
   })
 
+  const indeterminate = computed(() => {
+    return selectedMrns.value.length > 0 && selectedMrns.value.length < mrns.value.length
+  })
+
   const toggleSelectAll = () => {
     if (allSelected.value) {
       selectedMrns.value = []
@@ -133,6 +137,7 @@ export const useMonitorStore = defineStore('monitor', () => {
     selectedMrns,
     pagination,
     allSelected,
+    indeterminate,
     fetchMrns,
     addMrn,
     fetchMrn,

@@ -10,9 +10,11 @@
                 <tr>
                     <th scope="col">
                         <input
+                            ref="selectAllCheckbox"
                             class="form-check-input"
                             type="checkbox"
                             :checked="allSelected"
+                            :indeterminate="indeterminate"
                             @change="$emit('toggle-select-all')"
                         />
                     </th>
@@ -43,17 +45,28 @@
 </template>
 
 <script setup lang="ts">
+import { ref, watch } from 'vue'
 import type { Mrn } from '@/models/Mrn'
 import MonitorTableRow from './MonitorTableRow.vue'
 
-defineProps<{
+const props = defineProps<{
     items: Mrn[]
     loading: boolean
     selectedMrns: number[]
     allSelected: boolean
+    indeterminate: boolean
 }>()
 
 defineEmits(['toggle-selection', 'toggle-select-all'])
+
+const selectAllCheckbox = ref<HTMLInputElement | null>(null)
+
+// Watch for indeterminate changes and update DOM property
+watch(() => props.indeterminate, (newVal) => {
+    if (selectAllCheckbox.value) {
+        selectAllCheckbox.value.indeterminate = newVal
+    }
+}, { immediate: true })
 </script>
 
 <style scoped>

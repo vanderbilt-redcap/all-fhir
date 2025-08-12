@@ -6,6 +6,7 @@
             :loading="monitorStore.loading"
             :selected-mrns="monitorStore.selectedMrns"
             :all-selected="monitorStore.allSelected"
+            :indeterminate="monitorStore.indeterminate"
             @toggle-selection="monitorStore.toggleSelection"
             @toggle-select-all="monitorStore.toggleSelectAll"
         />
