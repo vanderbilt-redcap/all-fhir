@@ -8,3 +8,4 @@ composer.phar
 !/uploads/.gitkeep
 .vscode
 CLAUDE.md
+.phpunit.*

@@ -40,7 +40,38 @@ class FhirSnapshot extends AbstractExternalModule {
         file_put_contents($file, "[$timestamp] $message" . PHP_EOL, FILE_APPEND);
     }
 
-    function processQueue() {}
+    function processQueue() {
+        try {
+            // Import required classes
+            require_once '/Users/delacqf/code/redcap/html/redcap_v999.0.0/Classes/SystemMonitors/ResourceMonitor.php';
+            
+            // Initialize ResourceMonitor with appropriate limits for cron jobs
+            $resourceMonitor = \Vanderbilt\REDCap\Classes\SystemMonitors\ResourceMonitor::create([
+                'memory' => 0.8,      // 80% memory threshold
+                'time' => '50 seconds' // Allow 50 seconds for processing (cron runs every minute)
+            ]);
+            
+            // Initialize queue components
+            $queueManager = new \Vanderbilt\FhirSnapshot\Queue\QueueManager($this);
+            $queueProcessor = new \Vanderbilt\FhirSnapshot\Queue\QueueProcessor(
+                $this, 
+                $queueManager, 
+                $resourceMonitor
+            );
+            
+            // Process the queue
+            $result = $queueProcessor->process();
+            
+            // Log processing summary
+            $this->logToFile("Queue processing completed: " . json_encode($result->toArray()));
+            
+            return $result;
+            
+        } catch (\Exception $e) {
+            $this->logToFile("Error in processQueue: " . $e->getMessage());
+            throw $e;
+        }
+    }
 
      /**
      * use this if enabled at project level?
