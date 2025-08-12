@@ -103,6 +103,14 @@ class MappingResource implements JsonSerializable
         return uniqid('resource_', true);
     }
 
+    /**
+     * Generate a deterministic ID based on name and type
+     */
+    private static function generateDeterministicId(string $name, string $type): string
+    {
+        return 'resource_' . md5($name . '_' . $type);
+    }
+
     private function validateId(string $id): void
     {
         if (empty(trim($id))) {

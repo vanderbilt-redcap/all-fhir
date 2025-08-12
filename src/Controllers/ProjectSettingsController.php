@@ -136,7 +136,9 @@ class ProjectSettingsController extends AbstractController
             try {
                 // Handle both old format (string) and new format (array with id)
                 if (is_string($item)) {
-                    $resources[] = MappingResource::create($item, $type);
+                    // For legacy string data, create with deterministic ID to ensure consistency
+                    $deterministicId = 'resource_' . md5($item . '_' . $type);
+                    $resources[] = new MappingResource($deterministicId, $item, $type);
                 } elseif (is_array($item)) {
                     $resources[] = MappingResource::fromArray($item);
                 }
@@ -167,8 +169,9 @@ class ProjectSettingsController extends AbstractController
                     }
                     $resources[] = MappingResource::fromArray($item);
                 } elseif (is_string($item)) {
-                    // Handle legacy format where only name was provided
-                    $resources[] = MappingResource::create($item, $defaultType);
+                    // Handle legacy format where only name was provided - use deterministic ID
+                    $deterministicId = 'resource_' . md5($item . '_' . $defaultType);
+                    $resources[] = new MappingResource($deterministicId, $item, $defaultType);
                 }
             } catch (\InvalidArgumentException $e) {
                 // Skip invalid entries but log the error

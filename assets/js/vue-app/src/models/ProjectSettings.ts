@@ -7,6 +7,7 @@ export interface FhirSystem {
 export type ResourceType = 'predefined' | 'custom'
 
 export interface MappingResource {
+  id?: string
   name: string           // E.g. "Observation"
   type: ResourceType     // "predefined" or "custom"
   parameters?: string    // E.g. "?category=social-history"
