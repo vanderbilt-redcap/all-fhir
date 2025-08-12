@@ -19,7 +19,7 @@ export const useMonitorStore = defineStore('monitor', () => {
     totalPages: 0,
     hasNext: false,
     hasPrevious: false,
-    perPageOptions: [25, 50, 100, 250],
+    perPageOptions: [10, 25, 50, 100, 250],
   })
 
   const fetchMrns = async () => {

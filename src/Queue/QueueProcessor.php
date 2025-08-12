@@ -146,12 +146,12 @@ class QueueProcessor
 
     private function logInfo(string $message): void
     {
-        $this->module->logToFile("[QUEUE_PROCESSOR][INFO] $message");
+        $this->module->log("[QUEUE_PROCESSOR][INFO] $message", []);
     }
 
     private function logError(string $message): void
     {
-        $this->module->logToFile("[QUEUE_PROCESSOR][ERROR] $message");
+        $this->module->log("[QUEUE_PROCESSOR][ERROR] $message", []);
     }
 
     public function getQueueManager(): QueueManager

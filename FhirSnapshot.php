@@ -3,6 +3,9 @@ namespace Vanderbilt\FhirSnapshot;
 
 
 use ExternalModules\AbstractExternalModule;
+use Vanderbilt\FhirSnapshot\Queue\QueueManager;
+use Vanderbilt\FhirSnapshot\Queue\QueueProcessor;
+use Vanderbilt\REDCap\Classes\SystemMonitors\ResourceMonitor;
 
 class FhirSnapshot extends AbstractExternalModule {
 
@@ -42,31 +45,30 @@ class FhirSnapshot extends AbstractExternalModule {
 
     function processQueue() {
         try {
-            // Import required classes
-            require_once '/Users/delacqf/code/redcap/html/redcap_v999.0.0/Classes/SystemMonitors/ResourceMonitor.php';
-            
             // Initialize ResourceMonitor with appropriate limits for cron jobs
-            $resourceMonitor = \Vanderbilt\REDCap\Classes\SystemMonitors\ResourceMonitor::create([
+            $resourceMonitor = ResourceMonitor::create([
                 'memory' => 0.8,      // 80% memory threshold
-                'time' => '50 seconds' // Allow 50 seconds for processing (cron runs every minute)
+                'time' => '30 minutes' // Allow 50 seconds for processing (cron runs every minute)
             ]);
+            $results = [];
             
-            // Initialize queue components
-            $queueManager = new \Vanderbilt\FhirSnapshot\Queue\QueueManager($this);
-            $queueProcessor = new \Vanderbilt\FhirSnapshot\Queue\QueueProcessor(
-                $this, 
-                $queueManager, 
-                $resourceMonitor
-            );
-            
-            // Process the queue
-            $result = $queueProcessor->process();
-            
-            // Log processing summary
-            $this->logToFile("Queue processing completed: " . json_encode($result->toArray()));
-            
-            return $result;
-            
+            foreach($this->getProjectsWithModuleEnabled() as $localProjectId){
+                $this->setProjectId($localProjectId);
+
+                // Initialize queue components
+                $queueManager = new QueueManager($this);
+                $queueProcessor = new QueueProcessor(
+                    $this, 
+                    $queueManager, 
+                    $resourceMonitor
+                );
+                // Process the queue
+                $result = $queueProcessor->process();
+                // Log processing summary
+                $this->logToFile("Queue processing completed: " . json_encode($result->toArray()));
+                $results[] = $result;
+            }
+            return $results;
         } catch (\Exception $e) {
             $this->logToFile("Error in processQueue: " . $e->getMessage());
             throw $e;
@@ -82,6 +84,7 @@ class FhirSnapshot extends AbstractExternalModule {
      */
     function cron_processQueue($cronInfo)
     {
+        require_once __DIR__ . '/vendor/autoload.php';
         $cron_name = $cronInfo['cron_name'] ?? 'FHIR Snapshot';
         try {
             $this->processQueue();
