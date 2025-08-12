@@ -10,12 +10,40 @@ export const useMonitorStore = defineStore('monitor', () => {
   const loading = ref(false)
   const mrns = ref<Mrn[]>([])
   const selectedMrns = ref<number[]>([])
+  
+  // Pagination state
+  const pagination = ref({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrevious: false,
+    perPageOptions: [
+      { value: 10, text: '10 per page' },
+      { value: 25, text: '25 per page' },
+      { value: 50, text: '50 per page' },
+      { value: 100, text: '100 per page' }
+    ]
+  })
 
   const fetchMrns = async () => {
     try {
       loading.value = true
-      const response = await api.listMrns()
-      mrns.value = response.data
+      const response = await api.listMrns(pagination.value.page, pagination.value.limit)
+      
+      // Handle paginated response structure
+      if (response.data.data && response.data.pagination) {
+        mrns.value = response.data.data
+        pagination.value.total = response.data.pagination.total
+        pagination.value.totalPages = response.data.pagination.total_pages
+        pagination.value.hasNext = response.data.pagination.has_next
+        pagination.value.hasPrevious = response.data.pagination.has_previous
+      } else {
+        // Fallback for non-paginated response
+        mrns.value = response.data
+      }
+      
       selectedMrns.value = [] // Reset selection on new fetch
     } catch (err) {
       errorsStore.addError(err as Error, 'monitorStore')
@@ -29,7 +57,8 @@ export const useMonitorStore = defineStore('monitor', () => {
   const addMrn = async (mrn: string) => {
     try {
       const response = await api.addMrn(mrn)
-      mrns.value.push(response.data)
+      // After adding, refresh the current page to show updated data
+      await fetchMrns()
     } catch (err) {
       errorsStore.addError(err as Error, 'monitorStore')
       console.error('Failed to add MRN:', err)
@@ -91,10 +120,23 @@ export const useMonitorStore = defineStore('monitor', () => {
     }
   }
 
+  // Pagination methods
+  const setPage = (newPage: number) => {
+    pagination.value.page = newPage
+    fetchMrns()
+  }
+
+  const setLimit = (newLimit: number) => {
+    pagination.value.limit = newLimit
+    pagination.value.page = 1 // Reset to first page when changing limit
+    fetchMrns()
+  }
+
   return {
     loading,
     mrns,
     selectedMrns,
+    pagination,
     allSelected,
     fetchMrns,
     addMrn,
@@ -103,5 +145,7 @@ export const useMonitorStore = defineStore('monitor', () => {
     downloadSelected,
     toggleSelectAll,
     toggleSelection,
+    setPage,
+    setLimit,
   }
 })

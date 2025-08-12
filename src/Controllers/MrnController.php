@@ -11,6 +11,10 @@ class MrnController extends AbstractController
 {
     public function listMrns(Request $request, Response $response): Response
     {
+        $queryParams = $request->getQueryParams();
+        $page = max(1, intval($queryParams['_page'] ?? 1));
+        $perPage = max(1, min(100, intval($queryParams['_per_page'] ?? 10)));
+        
         $projectId = $this->module->getProjectId();
         $projectSettings = $this->module->getProjectSettings();
         $resources = array_map(fn($resource) => $resource['name'], $projectSettings['selected_mapping_resources'] ?? []);
@@ -62,7 +66,26 @@ class MrnController extends AbstractController
             $formattedData[] = $mrnData;
         }
 
-        $response->getBody()->write(json_encode($formattedData));
+        // Calculate pagination
+        $total = count($formattedData);
+        $totalPages = ceil($total / $perPage);
+        $offset = ($page - 1) * $perPage;
+        $paginatedData = array_slice($formattedData, $offset, $perPage);
+
+        // Build response with pagination metadata
+        $responseData = [
+            'data' => $paginatedData,
+            'pagination' => [
+                'page' => $page,
+                'per_page' => $perPage,
+                'total' => $total,
+                'total_pages' => $totalPages,
+                'has_next' => $page < $totalPages,
+                'has_previous' => $page > 1
+            ]
+        ];
+
+        $response->getBody()->write(json_encode($responseData));
         return $response->withHeader('Content-Type', 'application/json');
     }
 

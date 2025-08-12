@@ -18,8 +18,10 @@ export const api = {
   },
 
 
-  listMrns() {
-    const params = { route: `mrns` }
+  listMrns(page?: number, perPage?: number) {
+    const params: any = { route: `mrns` }
+    if (page) params._page = page
+    if (perPage) params._per_page = perPage
     return apiClient.get('', { params })
   },
 
