@@ -2,7 +2,7 @@
 
 namespace Vanderbilt\FhirSnapshot\Queue\Processors;
 
-use Vanderbilt\FhirSnapshot\Queue\Task;
+use Vanderbilt\FhirSnapshot\ValueObjects\Task;
 
 class ArchiveProcessor extends AbstractTaskProcessor
 {

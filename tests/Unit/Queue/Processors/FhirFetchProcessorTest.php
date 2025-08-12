@@ -5,7 +5,7 @@ namespace Tests\Unit\Queue\Processors;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
 use Vanderbilt\FhirSnapshot\Queue\Processors\FhirFetchProcessor;
-use Vanderbilt\FhirSnapshot\Queue\Task;
+use Vanderbilt\FhirSnapshot\ValueObjects\Task;
 use Vanderbilt\FhirSnapshot\FhirSnapshot;
 
 class FhirFetchProcessorTest extends TestCase

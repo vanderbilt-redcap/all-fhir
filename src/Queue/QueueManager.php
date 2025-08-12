@@ -3,6 +3,7 @@
 namespace Vanderbilt\FhirSnapshot\Queue;
 
 use Vanderbilt\FhirSnapshot\FhirSnapshot;
+use Vanderbilt\FhirSnapshot\ValueObjects\Task;
 use InvalidArgumentException;
 
 class QueueManager

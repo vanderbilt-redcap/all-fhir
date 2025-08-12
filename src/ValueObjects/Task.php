@@ -1,6 +1,6 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Queue;
+namespace Vanderbilt\FhirSnapshot\ValueObjects;
 
 use InvalidArgumentException;
 use JsonSerializable;

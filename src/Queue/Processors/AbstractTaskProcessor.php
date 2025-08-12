@@ -3,7 +3,7 @@
 namespace Vanderbilt\FhirSnapshot\Queue\Processors;
 
 use Vanderbilt\FhirSnapshot\FhirSnapshot;
-use Vanderbilt\FhirSnapshot\Queue\Task;
+use Vanderbilt\FhirSnapshot\ValueObjects\Task;
 use Exception;
 
 abstract class AbstractTaskProcessor implements TaskProcessorInterface
