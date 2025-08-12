@@ -9,3 +9,4 @@ composer.phar
 .vscode
 CLAUDE.md
 .phpunit.*
+/todo/*.md
