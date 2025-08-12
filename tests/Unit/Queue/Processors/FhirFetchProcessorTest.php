@@ -50,8 +50,8 @@ class FhirFetchProcessorTest extends TestCase
         $result = $this->processor->process($task);
 
         $this->assertTrue($result->isSuccess());
-        $this->assertStringContains('Fetched', $result->getMessage());
-        $this->assertStringContains('12345', $result->getMessage());
+        $this->assertStringContainsStringString('Fetched', $result->getMessage());
+        $this->assertStringContainsStringString('12345', $result->getMessage());
 
         $data = $result->getData();
         $this->assertEquals('12345', $data['mrn']);
@@ -71,7 +71,7 @@ class FhirFetchProcessorTest extends TestCase
         $result = $this->processor->process($task);
 
         $this->assertTrue($result->isFailure());
-        $this->assertStringContains('Missing required parameters: mrn', $result->getMessage());
+        $this->assertStringContainsString('Missing required parameters: mrn', $result->getMessage());
     }
 
     public function testProcessWithMissingResourcesParam(): void
@@ -83,7 +83,7 @@ class FhirFetchProcessorTest extends TestCase
         $result = $this->processor->process($task);
 
         $this->assertTrue($result->isFailure());
-        $this->assertStringContains('Missing required parameters: resources', $result->getMessage());
+        $this->assertStringContainsString('Missing required parameters: resources', $result->getMessage());
     }
 
     public function testProcessWithBothMissingParams(): void
@@ -93,7 +93,7 @@ class FhirFetchProcessorTest extends TestCase
         $result = $this->processor->process($task);
 
         $this->assertTrue($result->isFailure());
-        $this->assertStringContains('Missing required parameters: mrn, resources', $result->getMessage());
+        $this->assertStringContainsString('Missing required parameters: mrn, resources', $result->getMessage());
     }
 
     public function testProcessWithEmptyParams(): void
@@ -106,7 +106,7 @@ class FhirFetchProcessorTest extends TestCase
         $result = $this->processor->process($task);
 
         $this->assertTrue($result->isFailure());
-        $this->assertStringContains('Missing required parameters', $result->getMessage());
+        $this->assertStringContainsString('Missing required parameters', $result->getMessage());
     }
 
     public function testProcessLogMessages(): void

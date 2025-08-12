@@ -58,6 +58,7 @@ class TaskTest extends TestCase
     public function testWithStatus(): void
     {
         $originalTask = Task::create('test_key');
+        sleep(1);
         $updatedTask = $originalTask->withStatus(Task::STATUS_COMPLETED);
 
         // Original task should remain unchanged

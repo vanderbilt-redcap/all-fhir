@@ -64,9 +64,17 @@ class Task implements JsonSerializable
 
     public static function fromArray(array $data): self
     {
+        if (!isset($data['id'])) {
+            throw new InvalidArgumentException('Missing required field: id');
+        }
+        
+        if (!isset($data['key'])) {
+            throw new InvalidArgumentException('Missing required field: key');
+        }
+        
         return new self(
-            $data['id'] ?? throw new InvalidArgumentException('Missing required field: id'),
-            $data['key'] ?? throw new InvalidArgumentException('Missing required field: key'),
+            $data['id'],
+            $data['key'],
             $data['params'] ?? [],
             $data['status'] ?? self::STATUS_PENDING,
             $data['created_at'] ?? null,
