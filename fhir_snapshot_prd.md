@@ -46,9 +46,9 @@ While REDCap’s CDIS tools allow for real-time FHIR integration by storing data
 *Notes:* Implemented via cron-based queue processor that manages FHIR fetching tasks for each MRN and resource combination. Resources include Patient, Observation (vital-signs), etc.
 
 **FR5**  
-*Requirement:* Store payloads as JSON files using naming convention  
+*Requirement:* Store payloads using REDCap repeated forms with JSON file storage  
 *Priority:* High  
-*Notes:* `{project_id}-{mrn}/{resource-type}-{optional-pagination-number}.json`
+*Notes:* Use repeated forms with `__all_fhir_` prefixed fields for metadata and file upload fields for JSON payload storage. Files maintain naming convention: `{project_id}-{mrn}/{resource-type}-{optional-pagination-number}.json`
 
 **FR6**  
 *Requirement:* Allow packaging of completed payloads into ZIP files for download  
@@ -161,14 +161,28 @@ When users trigger FHIR fetching from the Monitor page:
 
 ---
 
-## 6. Data & Privacy Considerations
+## 6. Data Storage Architecture
 
-- No FHIR data is written to REDCap fields or forms
-- All FHIR JSON payloads stored in server-side folders
+### REDCap Repeated Forms Structure
+The module uses REDCap repeated forms to store FHIR resource metadata with the following field naming convention:
+
+**Repeated Form Fields (prefixed with `__all_fhir_`):**
+- `__all_fhir_resource_type`: The FHIR resource type (Patient, Observation, etc.)
+- `__all_fhir_resource_status`: Processing status (Pending, Fetching, Completed, Failed)
+- `__all_fhir_file_upload`: REDCap file field storing the JSON payload
+- `__all_fhir_fetch_date`: Timestamp when resource was successfully fetched
+- `__all_fhir_error_message`: Error details for failed fetch operations
+- `__all_fhir_pagination_info`: JSON metadata for paginated resource collections
+
+### Data & Privacy Considerations
+
+- FHIR resource metadata stored in REDCap repeated forms using `__all_fhir_` field prefix
+- JSON payloads stored using REDCap's native file upload system in edocs
 - Queue processing tasks stored in REDCap project settings (no PHI in task metadata)
 - Access to ZIP downloads and monitor UI is permission-restricted  
 - Error logs avoid storing PHI when possible
 - Background processing respects REDCap user permissions and project access controls
+- Repeated form structure provides audit trail and better data organization
 
 ---
 
