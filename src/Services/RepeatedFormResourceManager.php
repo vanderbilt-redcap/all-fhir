@@ -2,6 +2,7 @@
 
 namespace Vanderbilt\FhirSnapshot\Services;
 
+use Vanderbilt\FhirSnapshot\FhirSnapshot;
 use Vanderbilt\FhirSnapshot\ValueObjects\MappingResource;
 use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
 use Vanderbilt\FhirSnapshot\Queue\QueueManager;
@@ -56,21 +57,15 @@ use Vanderbilt\FhirSnapshot\Queue\QueueManager;
  */
 class RepeatedFormResourceManager
 {
-    private RepeatedFormDataAccessor $dataAccessor;
-    private ResourceSynchronizationService $syncService;
-    private QueueManager $queueManager;
     private string $projectId;
 
     public function __construct(
-        RepeatedFormDataAccessor $dataAccessor,
-        ResourceSynchronizationService $syncService,
-        QueueManager $queueManager,
-        string $projectId
+        private FhirSnapshot $module,
+        private RepeatedFormDataAccessor $dataAccessor,
+        private ResourceSynchronizationService $syncService,
+        private QueueManager $queueManager,
     ) {
-        $this->dataAccessor = $dataAccessor;
-        $this->syncService = $syncService;
-        $this->queueManager = $queueManager;
-        $this->projectId = $projectId;
+        $this->projectId = $module->getProjectId();
     }
 
     public function addMappingResource(MappingResource $resource): array
