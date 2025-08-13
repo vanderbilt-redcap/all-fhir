@@ -167,12 +167,12 @@ When users trigger FHIR fetching from the Monitor page:
 The module uses REDCap repeated forms to store FHIR resource metadata with the following field naming convention:
 
 **Repeated Form Fields (prefixed with `__all_fhir_`):**
-- `__all_fhir_resource_type`: The FHIR resource type (Patient, Observation, etc.)
-- `__all_fhir_resource_status`: Processing status (Pending, Fetching, Completed, Failed)
-- `__all_fhir_file_upload`: REDCap file field storing the JSON payload
-- `__all_fhir_fetch_date`: Timestamp when resource was successfully fetched
-- `__all_fhir_error_message`: Error details for failed fetch operations
-- `__all_fhir_pagination_info`: JSON metadata for paginated resource collections
+- `all_fhir_resource_type`: The FHIR resource type (Patient, Observation, etc.)
+- `all_fhir_resource_status`: Processing status (Pending, Fetching, Completed, Failed)
+- `all_fhir_file_upload`: REDCap file field storing the JSON payload
+- `all_fhir_fetch_date`: Timestamp when resource was successfully fetched
+- `all_fhir_error_message`: Error details for failed fetch operations
+- `all_fhir_pagination_info`: JSON metadata for paginated resource collections
 
 ### Data & Privacy Considerations
 
