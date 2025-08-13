@@ -4,6 +4,7 @@ require_once(dirname(__DIR__, 2) . '/vendor/autoload.php');
 use Vanderbilt\FhirSnapshot\Services\RepeatedFormDataAccessor;
 use Vanderbilt\FhirSnapshot\Services\RepeatedFormResourceManager;
 use Vanderbilt\FhirSnapshot\Services\ResourceSynchronizationService;
+use Vanderbilt\FhirSnapshot\Services\FhirCategoryService;
 use Vanderbilt\FhirSnapshot\Queue\QueueManager;
 use Vanderbilt\FhirSnapshot\ValueObjects\MappingResource;
 use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
@@ -15,6 +16,8 @@ $dataAccessor = new RepeatedFormDataAccessor($projectId);
 $queueManager = new QueueManager($module);
 $syncService = new ResourceSynchronizationService($dataAccessor, $queueManager, $projectId);
 $resourceManager = new RepeatedFormResourceManager($dataAccessor, $syncService, $queueManager, $projectId);
+$fhirCategoryService = new FhirCategoryService();
+$availableCategories = $fhirCategoryService->getAvailableCategories();
 
 $action = $_POST['action'] ?? $_GET['action'] ?? 'view';
 $message = '';
@@ -288,13 +291,11 @@ $projectSummary = $resourceManager->getProjectSummary();
             <label for="predefined_resource_spec">Predefined Resource:</label>
             <select name="predefined_resource_spec" id="predefined_resource_spec">
                 <option value="">Select Predefined Resource</option>
-                <option value="Observation?category=vital-signs">Vital Signs</option>
-                <option value="Observation?category=social-history">Social History</option>
-                <option value="DiagnosticReport?category=LAB">Laboratory Reports</option>
-                <option value="Condition?category=problem-list-item">Problem List</option>
-                <option value="Medication?status=active">Active Medications</option>
-                <option value="Procedure?status=completed">Completed Procedures</option>
-                <option value="Encounter?status=finished">Finished Encounters</option>
+                <?php foreach ($availableCategories as $category): ?>
+                    <option value="<?= htmlspecialchars($category['resourceSpec']) ?>">
+                        <?= htmlspecialchars($category['name']) ?>
+                    </option>
+                <?php endforeach; ?>
             </select>
             <small>Choose from standard REDCap FHIR categories</small>
         </div>
