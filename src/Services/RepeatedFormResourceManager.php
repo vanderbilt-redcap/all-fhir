@@ -68,6 +68,16 @@ class RepeatedFormResourceManager
         $this->projectId = $module->getProjectId();
     }
 
+    /**
+     * Get all MRNs in the project
+     * 
+     * @return array Array of MRN strings
+     */
+    public function getAllMrns(): array
+    {
+        return $this->dataAccessor->getAllMrns();
+    }
+
     public function addMappingResource(MappingResource $resource): array
     {
         $existingMrns = $this->dataAccessor->getAllMrns();
