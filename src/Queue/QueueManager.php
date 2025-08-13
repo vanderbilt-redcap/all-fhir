@@ -6,6 +6,67 @@ use Vanderbilt\FhirSnapshot\FhirSnapshot;
 use Vanderbilt\FhirSnapshot\ValueObjects\Task;
 use InvalidArgumentException;
 
+/**
+ * QueueManager
+ * 
+ * Manages a persistent task queue stored in REDCap project settings for background job processing.
+ * 
+ * ROLE & RESPONSIBILITIES:
+ * - Provides persistent task storage using REDCap project settings
+ * - Manages task lifecycle (add, update, remove, retrieve)
+ * - Supports task filtering and querying by status, key, or ID
+ * - Provides queue statistics and monitoring capabilities
+ * - Handles task serialization and deserialization
+ * 
+ * STORAGE MECHANISM:
+ * - Uses REDCap project settings for persistence across requests
+ * - Tasks stored as JSON-encoded arrays in 'tasks' setting key
+ * - Automatically handles serialization of Task value objects
+ * - Maintains data integrity through validation and error handling
+ * 
+ * CORE OPERATIONS:
+ * 
+ * TASK MANAGEMENT:
+ * - addTask($key, $params, $metadata): Create and store new task
+ * - updateTaskStatus($taskId, $status): Update task lifecycle status
+ * - removeTask($taskId): Remove specific task from queue
+ * - removeCompletedTasks(): Bulk cleanup of completed tasks
+ * 
+ * TASK RETRIEVAL:
+ * - getNextPendingTask(): Get oldest pending task for processing
+ * - getTasksByStatus($status): Filter tasks by lifecycle status
+ * - getTasksByKey($key): Filter tasks by task type/processor
+ * - getTaskById($taskId): Retrieve specific task by unique ID
+ * 
+ * QUEUE MONITORING:
+ * - getQueueStatistics(): Get counts by status (pending, processing, etc.)
+ * - clearQueue(): Remove all tasks (administrative function)
+ * - getTasks(): Get all tasks in queue
+ * 
+ * INTEGRATION WITH PROCESSING SYSTEM:
+ * - QueueProcessor calls getNextPendingTask() to retrieve work
+ * - Task processors update status via updateTaskStatus()
+ * - Failed tasks remain in queue for retry or manual intervention
+ * - Completed tasks can be cleaned up periodically
+ * 
+ * ERROR HANDLING:
+ * - Invalid task data is logged and skipped during retrieval
+ * - Task validation ensures data integrity
+ * - Graceful handling of corrupted or missing task data
+ * - Atomic operations to prevent queue corruption
+ * 
+ * USAGE PATTERNS:
+ * - Add work: $queueManager->addTask('fhir_fetch', $params)
+ * - Process work: $task = $queueManager->getNextPendingTask()
+ * - Update progress: $queueManager->updateTaskStatus($taskId, 'processing')
+ * - Monitor queue: $stats = $queueManager->getQueueStatistics()
+ * 
+ * PERFORMANCE CONSIDERATIONS:
+ * - Queue size should be monitored to prevent project settings bloat
+ * - Completed tasks should be regularly cleaned up
+ * - Large queues may impact REDCap project settings performance
+ * - Consider external queue systems for high-volume scenarios
+ */
 class QueueManager
 {
     private const TASKS_SETTING_KEY = 'tasks';

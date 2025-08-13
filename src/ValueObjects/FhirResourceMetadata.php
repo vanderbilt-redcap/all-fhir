@@ -5,6 +5,53 @@ namespace Vanderbilt\FhirSnapshot\ValueObjects;
 use InvalidArgumentException;
 use JsonSerializable;
 
+/**
+ * FhirResourceMetadata
+ * 
+ * Immutable value object representing metadata about a FHIR resource stored in REDCap repeated forms.
+ * 
+ * ROLE & RESPONSIBILITIES:
+ * - Encapsulates all metadata associated with a FHIR resource fetch operation
+ * - Manages resource lifecycle status (pending → fetching → completed/failed)
+ * - Provides REDCap-compatible data structure conversion
+ * - Handles file storage references and error tracking
+ * - Supports pagination metadata for large FHIR resource sets
+ * 
+ * STATUS LIFECYCLE:
+ * PENDING    → Resource instance created, awaiting FHIR fetch
+ * FETCHING   → FHIR fetch operation in progress
+ * COMPLETED  → Successfully fetched and stored FHIR data
+ * FAILED     → FHIR fetch failed (with error details)
+ * OUTDATED   → Resource mapping updated, data needs refetch
+ * DELETED    → Resource mapping removed (archived for audit)
+ * 
+ * KEY FEATURES:
+ * - Immutable design with fluent "with" methods for state changes
+ * - Direct REDCap repeated form data structure generation
+ * - File reference management through REDCap edoc IDs
+ * - Comprehensive error message and pagination support
+ * - Status validation and type safety
+ * 
+ * REDCap INTEGRATION:
+ * - Maps to repeated form fields with 'all_fhir_' prefix
+ * - Generates proper repeat_instances data structure
+ * - Handles repeat instance numbering and management
+ * - Compatible with REDCap::saveData operations
+ * 
+ * USAGE PATTERNS:
+ * - Create: FhirResourceMetadata::create($resourceType, $repeatInstance)
+ * - Update status: $metadata->withStatus(STATUS_COMPLETED)
+ * - Add file: $metadata->withEdocId($edocId)
+ * - REDCap save: $metadata->toRedCapData($recordId, $eventId, $instrumentName)
+ * 
+ * FIELD MAPPINGS:
+ * - all_fhir_resource_type: FHIR resource type (Patient, Observation, etc.)
+ * - all_fhir_resource_status: Current status in lifecycle
+ * - all_fhir_file_upload: REDCap edoc ID containing JSON payload
+ * - all_fhir_fetch_date: Timestamp of successful fetch
+ * - all_fhir_error_message: Details when fetch fails
+ * - all_fhir_pagination_info: JSON metadata for paginated results
+ */
 class FhirResourceMetadata implements JsonSerializable
 {
     public const STATUS_PENDING = 'pending';

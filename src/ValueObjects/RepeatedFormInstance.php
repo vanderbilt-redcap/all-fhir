@@ -5,6 +5,51 @@ namespace Vanderbilt\FhirSnapshot\ValueObjects;
 use InvalidArgumentException;
 use JsonSerializable;
 
+/**
+ * RepeatedFormInstance
+ * 
+ * Immutable value object representing a single instance of a REDCap repeated form.
+ * 
+ * ROLE & RESPONSIBILITIES:
+ * - Encapsulates REDCap repeated form instance data structure
+ * - Provides proper data formatting for REDCap::saveData operations
+ * - Handles repeat instance metadata (record ID, event ID, instance number)
+ * - Manages form field data with validation and type safety
+ * - Supports both creation and parsing of REDCap data structures
+ * 
+ * REDCap REPEATED FORM STRUCTURE:
+ * This class handles the proper REDCap repeated form data structure:
+ * $data[$recordId]['repeat_instances'][$eventId][$instrumentName][$instanceNum][$field] = $value
+ * 
+ * KEY FEATURES:
+ * - Immutable design ensuring data consistency
+ * - Proper REDCap data structure handling
+ * - Validation of required REDCap identifiers
+ * - Fluent interface for data manipulation
+ * - Bi-directional REDCap data conversion
+ * 
+ * USAGE PATTERNS:
+ * 
+ * CREATION:
+ * - RepeatedFormInstance::create($recordId, $eventId, $instrument, $instance, $data)
+ * - RepeatedFormInstance::fromRedCapData($redcapDataArray)
+ * 
+ * DATA MANIPULATION:
+ * - $instance->withData(['field1' => 'value1']) - Add/update fields
+ * - $instance->getFieldValue('field_name') - Get specific field value
+ * - $instance->hasField('field_name') - Check field existence
+ * 
+ * REDCap INTEGRATION:
+ * - $instance->toRedCapSaveData() - Generate REDCap::saveData compatible array
+ * - Handles proper repeat_instances structure automatically
+ * - Maintains REDCap identifiers (record ID, event ID, instrument, instance)
+ * 
+ * VALIDATION:
+ * - Record ID and Event ID cannot be empty
+ * - Instrument name must be valid
+ * - Repeat instance number must be positive integer
+ * - Field data properly encapsulated and validated
+ */
 class RepeatedFormInstance implements JsonSerializable
 {
     private string $recordId;

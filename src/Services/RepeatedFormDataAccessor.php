@@ -6,6 +6,35 @@ use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
 use Vanderbilt\FhirSnapshot\ValueObjects\RepeatedFormInstance;
 use REDCap;
 
+/**
+ * RepeatedFormDataAccessor
+ * 
+ * Provides data access layer for managing FHIR resource metadata stored in REDCap repeated forms.
+ * 
+ * ROLE & RESPONSIBILITIES:
+ * - Handles all REDCap data operations for repeated form instances
+ * - Manages CRUD operations for FHIR resource metadata
+ * - Provides conversion utilities between MRNs and REDCap record IDs
+ * - Implements proper REDCap repeated form data structure handling
+ * - Manages repeat instance numbering and data retrieval
+ * 
+ * KEY FEATURES:
+ * - Uses correct REDCap repeated form data structure (repeat_instances)
+ * - Handles MRN to record ID conversion for REDCap compatibility
+ * - Provides status counting and summary statistics
+ * - Manages file attachments through REDCap's edoc system
+ * - Ensures data integrity through proper validation
+ * 
+ * USAGE PATTERNS:
+ * - Save resource metadata: saveResourceMetadata($recordId, $metadata)
+ * - Retrieve by type: getResourceMetadataByType($recordId, $resourceType)
+ * - Get next instance: getNextRepeatInstance($recordId)
+ * - Convert identifiers: getRecordIdByMrn($mrn) / getMrnByRecordId($recordId)
+ * 
+ * DATA STRUCTURE:
+ * Uses REDCap's repeat_instances structure:
+ * $record[$recordId]['repeat_instances'][$eventId][$instrumentName][$instanceNum][$fieldName] = $value
+ */
 class RepeatedFormDataAccessor
 {
     private string $projectId;

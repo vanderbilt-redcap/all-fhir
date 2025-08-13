@@ -6,6 +6,54 @@ use Vanderbilt\FhirSnapshot\ValueObjects\MappingResource;
 use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
 use Vanderbilt\FhirSnapshot\Queue\QueueManager;
 
+/**
+ * RepeatedFormResourceManager
+ * 
+ * High-level coordinator service that provides a unified API for managing FHIR resources 
+ * stored in REDCap repeated forms, combining data access, synchronization, and queue management.
+ * 
+ * ROLE & RESPONSIBILITIES:
+ * - Serves as the main entry point for FHIR resource management operations
+ * - Coordinates between data access layer, synchronization service, and queue manager
+ * - Provides user-friendly API methods that handle complex multi-step operations
+ * - Manages resource lifecycle from creation to archival
+ * - Generates comprehensive project summaries and reports
+ * 
+ * CORE OPERATIONS:
+ * 
+ * RESOURCE MAPPING MANAGEMENT:
+ * - Add/update/remove mapping resources with automatic synchronization
+ * - Handles MRN addition with automatic resource instance creation
+ * - Manages the complete lifecycle of resource mappings
+ * 
+ * RESOURCE STATUS & MONITORING:
+ * - Provides resource status by MRN and resource type
+ * - Generates project-wide summaries with status counts
+ * - Tracks resource metadata across all patients
+ * 
+ * DATA OPERATIONS:
+ * - Retrieves FHIR resource files from REDCap edocs
+ * - Exports resource data in structured formats
+ * - Handles bulk retry operations for failed resources
+ * - Manages resource archival and cleanup
+ * 
+ * SYNCHRONIZATION & MAINTENANCE:
+ * - Performs full project synchronization between config and data
+ * - Identifies and resolves data inconsistencies
+ * - Provides automated cleanup for orphaned instances
+ * 
+ * USER INTERFACE SUPPORT:
+ * - Maintains MRN-based external API (user-friendly)
+ * - Handles record ID conversion internally (REDCap-compatible)
+ * - Provides detailed error handling and status reporting
+ * 
+ * USAGE EXAMPLES:
+ * - $manager->addMappingResource($resource) - Add new FHIR resource mapping
+ * - $manager->getResourceStatus($mrn) - Get all resources for an MRN
+ * - $manager->retryFailedResource($mrn, $type, $instance) - Retry failed fetch
+ * - $manager->getProjectSummary() - Get complete project status overview
+ * - $manager->exportResourceData($mrn) - Export all FHIR data for MRN
+ */
 class RepeatedFormResourceManager
 {
     private RepeatedFormDataAccessor $dataAccessor;
@@ -104,8 +152,7 @@ class RepeatedFormResourceManager
         }
         
         $retryMetadata = $metadata
-            ->withStatus(FhirResourceMetadata::STATUS_PENDING)
-            ->withErrorMessage(null);
+            ->withStatus(FhirResourceMetadata::STATUS_PENDING);
         
         $this->dataAccessor->saveResourceMetadata($recordId, $retryMetadata);
         
@@ -128,7 +175,12 @@ class RepeatedFormResourceManager
         $retriedCount = 0;
         
         foreach ($allMrns as $mrn) {
-            $allMetadata = $this->dataAccessor->getAllResourceMetadata($mrn);
+            $recordId = $this->dataAccessor->getRecordIdByMrn($mrn);
+            if (!$recordId) {
+                continue;
+            }
+            
+            $allMetadata = $this->dataAccessor->getAllResourceMetadata($recordId);
             
             foreach ($allMetadata as $metadata) {
                 if (!$metadata->isFailed()) {
@@ -199,8 +251,13 @@ class RepeatedFormResourceManager
         ];
         
         foreach ($allMrns as $mrn) {
-            $statusCounts = $this->dataAccessor->getResourceStatusCounts($mrn);
-            $allMetadata = $this->dataAccessor->getAllResourceMetadata($mrn);
+            $recordId = $this->dataAccessor->getRecordIdByMrn($mrn);
+            if (!$recordId) {
+                continue; // Skip if no record ID found for this MRN
+            }
+            
+            $statusCounts = $this->dataAccessor->getResourceStatusCounts($recordId);
+            $allMetadata = $this->dataAccessor->getAllResourceMetadata($recordId);
             
             $summary['mrn_summaries'][$mrn] = [
                 'status_counts' => $statusCounts,
@@ -221,7 +278,18 @@ class RepeatedFormResourceManager
 
     public function exportResourceData(string $mrn, array $resourceTypes = []): array
     {
-        $allMetadata = $this->dataAccessor->getAllResourceMetadata($mrn);
+        $recordId = $this->dataAccessor->getRecordIdByMrn($mrn);
+        if (!$recordId) {
+            return [
+                'mrn' => $mrn,
+                'export_timestamp' => date('c'),
+                'total_resources' => 0,
+                'resources' => [],
+                'error' => 'No record found for MRN: ' . $mrn
+            ];
+        }
+        
+        $allMetadata = $this->dataAccessor->getAllResourceMetadata($recordId);
         $exportData = [];
         
         foreach ($allMetadata as $metadata) {
@@ -233,7 +301,8 @@ class RepeatedFormResourceManager
                 continue;
             }
             
-            $fileContent = \REDCap::getFile($metadata->getEdocId());
+            $eDocFile = \REDCap::getFile($metadata->getEdocId());
+            $fileContent = $eDocFile[2] ?? null; // get the content of the eDoc file
             if ($fileContent) {
                 $exportData[] = [
                     'metadata' => $metadata->toArray(),
@@ -256,7 +325,12 @@ class RepeatedFormResourceManager
         $archivedCount = 0;
         
         foreach ($allMrns as $mrn) {
-            $allMetadata = $this->dataAccessor->getAllResourceMetadata($mrn);
+            $recordId = $this->dataAccessor->getRecordIdByMrn($mrn);
+            if (!$recordId) {
+                continue;
+            }
+            
+            $allMetadata = $this->dataAccessor->getAllResourceMetadata($recordId);
             
             foreach ($allMetadata as $metadata) {
                 if (!$metadata->isCompleted()) {
@@ -275,7 +349,7 @@ class RepeatedFormResourceManager
                 }
                 
                 $archivedMetadata = $metadata->withStatus(FhirResourceMetadata::STATUS_DELETED);
-                $this->dataAccessor->saveResourceMetadata($mrn, $archivedMetadata);
+                $this->dataAccessor->saveResourceMetadata($recordId, $archivedMetadata);
                 $archivedCount++;
             }
         }

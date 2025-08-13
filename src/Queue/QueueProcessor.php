@@ -12,6 +12,77 @@ use Vanderbilt\FhirSnapshot\Queue\Processors\EmailNotificationProcessor;
 use Vanderbilt\REDCap\Classes\SystemMonitors\ResourceMonitor;
 use Exception;
 
+/**
+ * QueueProcessor
+ * 
+ * Central coordinator that processes queued tasks by routing them to appropriate task processors.
+ * 
+ * ROLE & RESPONSIBILITIES:
+ * - Orchestrates the execution of queued background tasks
+ * - Routes tasks to appropriate processors based on task key
+ * - Manages task processor registration and discovery
+ * - Handles task status updates throughout processing lifecycle
+ * - Provides centralized error handling and logging
+ * - Coordinates between QueueManager and individual TaskProcessors
+ * 
+ * PROCESSING WORKFLOW:
+ * 
+ * 1. TASK RETRIEVAL:
+ *    - Retrieves next pending task from QueueManager
+ *    - Validates task structure and required parameters
+ *    - Updates task status to PROCESSING
+ * 
+ * 2. PROCESSOR ROUTING:
+ *    - Matches task key to registered processor
+ *    - Instantiates appropriate TaskProcessor implementation
+ *    - Delegates execution to specialized processor
+ * 
+ * 3. EXECUTION MONITORING:
+ *    - Monitors processor execution and captures results
+ *    - Handles processor exceptions and errors
+ *    - Updates task status based on processor results
+ * 
+ * 4. RESULT HANDLING:
+ *    - Processes TaskProcessorResult from individual processors
+ *    - Updates QueueManager with final task status
+ *    - Logs execution results for monitoring and debugging
+ * 
+ * PROCESSOR MANAGEMENT:
+ * - Maintains registry of available task processors
+ * - Supports dynamic processor registration
+ * - Handles processor instantiation and dependency injection
+ * - Provides fallback handling for unknown task types
+ * 
+ * TASK ROUTING BY KEY:
+ * - 'enhanced_fhir_fetch' → EnhancedFhirFetchProcessor
+ * - 'archive' → ArchiveProcessor  
+ * - 'email_notification' → EmailNotificationProcessor
+ * - Custom task keys → Custom processor implementations
+ * 
+ * ERROR HANDLING:
+ * - Catches and handles processor exceptions gracefully
+ * - Updates task status to FAILED with error details
+ * - Prevents system crashes from individual task failures
+ * - Provides detailed error logging for troubleshooting
+ * 
+ * BATCH PROCESSING:
+ * - Can process multiple tasks in sequence
+ * - Supports configurable batch sizes and timeouts
+ * - Handles queue exhaustion and empty queue scenarios
+ * - Provides processing statistics and monitoring
+ * 
+ * USAGE PATTERNS:
+ * - Single task: $processor->processNextTask()
+ * - Batch processing: $processor->processTasks($batchSize)
+ * - Continuous processing: while loop with processNextTask()
+ * - Scheduled execution: Cron job or REDCap hook integration
+ * 
+ * INTEGRATION POINTS:
+ * - QueueManager: Task retrieval and status updates
+ * - TaskProcessors: Specialized task execution
+ * - Logging system: Monitoring and debugging
+ * - REDCap module system: Module lifecycle and settings
+ */
 class QueueProcessor
 {
     private FhirSnapshot $module;

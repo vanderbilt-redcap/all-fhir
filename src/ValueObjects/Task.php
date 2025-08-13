@@ -5,6 +5,66 @@ namespace Vanderbilt\FhirSnapshot\ValueObjects;
 use InvalidArgumentException;
 use JsonSerializable;
 
+/**
+ * Task
+ * 
+ * Immutable value object representing a queued background task for processing.
+ * 
+ * ROLE & RESPONSIBILITIES:
+ * - Encapsulates all information needed to execute a background task
+ * - Manages task lifecycle status (pending → processing → completed/failed)  
+ * - Provides task identification, parameters, and metadata storage
+ * - Supports task serialization for queue persistence
+ * - Enables task tracking and status monitoring
+ * 
+ * TASK LIFECYCLE:
+ * PENDING    → Task created and queued, awaiting processor
+ * PROCESSING → Task picked up by processor, currently executing
+ * COMPLETED  → Task successfully executed
+ * FAILED     → Task execution failed with error
+ * 
+ * TASK COMPONENTS:
+ * 
+ * KEY (string):
+ * - Identifies the task type and which processor should handle it
+ * - Examples: 'enhanced_fhir_fetch', 'email_notification', 'archive'
+ * - Used by QueueProcessor to route tasks to appropriate processors
+ * 
+ * PARAMS (array):
+ * - Task-specific parameters required for execution
+ * - For FHIR fetch: record_id, mrn, resource_type, repeat_instance
+ * - Serialized and stored with the task for processor access
+ * 
+ * METADATA (array):
+ * - Additional contextual information and tracking data
+ * - Created timestamp, retry count, error details, etc.
+ * - Used for monitoring, debugging, and task management
+ * 
+ * KEY FEATURES:
+ * - Immutable design with fluent "with" methods for state changes
+ * - Automatic timestamp management (created/updated)
+ * - Unique ID generation for task tracking
+ * - JSON serialization for queue storage
+ * - Status validation and type safety
+ * 
+ * INTEGRATION WITH QUEUE SYSTEM:
+ * - QueueManager stores tasks in REDCap project settings
+ * - QueueProcessor retrieves and executes tasks by key
+ * - TaskProcessors handle specific task types
+ * - Results and status updates flow back through the system
+ * 
+ * USAGE PATTERNS:
+ * - Create: Task::create($key, $params, $metadata)
+ * - Parse: Task::fromArray($storedData)
+ * - Update: $task->withStatus(STATUS_PROCESSING)
+ * - Store: $task->toArray() for QueueManager persistence
+ * 
+ * COMMON TASK KEYS:
+ * - 'enhanced_fhir_fetch': Fetch FHIR data for specific resource
+ * - 'archive': Archive completed resources
+ * - 'cleanup': Clean up orphaned or outdated data
+ * - 'notification': Send status notifications
+ */
 class Task implements JsonSerializable
 {
     public const STATUS_PENDING = 'pending';

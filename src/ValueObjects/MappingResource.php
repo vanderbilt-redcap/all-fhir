@@ -5,6 +5,57 @@ namespace Vanderbilt\FhirSnapshot\ValueObjects;
 use InvalidArgumentException;
 use JsonSerializable;
 
+/**
+ * MappingResource
+ * 
+ * Immutable value object representing a FHIR resource mapping configuration.
+ * 
+ * ROLE & RESPONSIBILITIES:
+ * - Defines which FHIR resource types should be fetched for the project
+ * - Categorizes mappings as predefined (standard FHIR) or custom (project-specific)
+ * - Provides unique identification for resource mapping configurations
+ * - Enables mapping lifecycle management (add, update, remove)
+ * - Supports configuration serialization and persistence
+ * 
+ * MAPPING TYPES:
+ * 
+ * PREDEFINED (TYPE_PREDEFINED):
+ * - Standard FHIR resource types (Patient, Observation, Condition, etc.)
+ * - Uses established FHIR specifications and schemas
+ * - Portable across different FHIR servers and implementations
+ * - Examples: "Patient", "Observation", "DiagnosticReport"
+ * 
+ * CUSTOM (TYPE_CUSTOM):
+ * - Project-specific resource mappings or extensions
+ * - May include custom FHIR profiles or local implementations
+ * - Tailored to specific organizational or research needs
+ * - Examples: Custom observation profiles, organization-specific resources
+ * 
+ * KEY FEATURES:
+ * - Immutable design ensuring configuration stability
+ * - Unique ID generation for mapping identification
+ * - Type validation and safety
+ * - JSON serialization for configuration storage
+ * - Factory methods for convenient instantiation
+ * 
+ * LIFECYCLE INTEGRATION:
+ * When mapping resources are added, updated, or removed:
+ * - ResourceSynchronizationService uses these objects to coordinate changes
+ * - All existing MRNs get corresponding repeated form instances created/updated
+ * - Queue tasks are generated to fetch the specified FHIR resource type
+ * - Status tracking occurs through FhirResourceMetadata instances
+ * 
+ * USAGE PATTERNS:
+ * - Create: MappingResource::create($resourceName, $type)
+ * - Parse: MappingResource::fromArray($configData)
+ * - Check type: $resource->isPredefined() / $resource->isCustom()
+ * - Serialize: $resource->toArray() / json_encode($resource)
+ * 
+ * VALIDATION:
+ * - Resource name cannot be empty
+ * - Type must be either TYPE_PREDEFINED or TYPE_CUSTOM
+ * - Unique ID automatically generated and validated
+ */
 class MappingResource implements JsonSerializable
 {
     public const TYPE_PREDEFINED = 'predefined';

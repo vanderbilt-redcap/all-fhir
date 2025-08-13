@@ -7,6 +7,51 @@ use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
 use Vanderbilt\FhirSnapshot\ValueObjects\Task;
 use Vanderbilt\FhirSnapshot\Queue\QueueManager;
 
+/**
+ * ResourceSynchronizationService
+ * 
+ * Manages the lifecycle synchronization of FHIR resource mappings with REDCap data instances.
+ * 
+ * ROLE & RESPONSIBILITIES:
+ * - Orchestrates resource mapping lifecycle events (create, update, delete)
+ * - Synchronizes mapping changes across all existing MRNs in the project
+ * - Manages queue task creation for FHIR data fetching operations
+ * - Handles resource instance state transitions and cleanup
+ * - Provides project-wide synchronization status reporting
+ * 
+ * KEY WORKFLOWS:
+ * 
+ * MAPPING RESOURCE CREATED:
+ * - Creates repeated form instances for all existing MRNs
+ * - Enqueues FHIR fetch tasks for the new resource type
+ * - Sets initial status to PENDING for all instances
+ * 
+ * MAPPING RESOURCE UPDATED:
+ * - Marks existing instances as OUTDATED
+ * - Creates new instances with updated mapping configuration
+ * - Enqueues refetch tasks to get updated data
+ * 
+ * MAPPING RESOURCE DELETED:
+ * - Marks instances as DELETED (preserves audit trail)
+ * - Removes pending tasks from processing queue
+ * - Archives associated JSON payload files
+ * 
+ * NEW MRN ADDED:
+ * - Creates instances for all active resource mappings
+ * - Enqueues initial fetch tasks for the new patient
+ * 
+ * SYNCHRONIZATION FEATURES:
+ * - Compares configured vs existing resource instances
+ * - Identifies missing, outdated, and orphaned instances  
+ * - Provides cleanup utilities for data consistency
+ * - Generates comprehensive sync status reports
+ * 
+ * USAGE:
+ * - syncMappingResourceCreated($resource, $existingMrns)
+ * - syncMappingResourceUpdated($resource, $existingMrns) 
+ * - syncMappingResourceDeleted($resource, $existingMrns)
+ * - compareConfiguredVsExisting($configuredResources, $existingMrns)
+ */
 class ResourceSynchronizationService
 {
     private RepeatedFormDataAccessor $dataAccessor;
@@ -177,7 +222,12 @@ class ResourceSynchronizationService
         $configuredResourceTypes = array_map(fn($resource) => $resource->getName(), $configuredResources);
         
         foreach ($existingMrns as $mrn) {
-            $existingMetadata = $this->dataAccessor->getAllResourceMetadata($mrn);
+            $recordId = $this->dataAccessor->getRecordIdByMrn($mrn);
+            if (!$recordId) {
+                continue;
+            }
+            
+            $existingMetadata = $this->dataAccessor->getAllResourceMetadata($recordId);
             $existingResourceTypes = array_map(fn($metadata) => $metadata->getResourceType(), $existingMetadata);
             
             foreach ($configuredResourceTypes as $resourceType) {
@@ -216,15 +266,20 @@ class ResourceSynchronizationService
         $cleanedCount = 0;
         
         foreach ($orphanedInstances as $instance) {
+            $recordId = $this->dataAccessor->getRecordIdByMrn($instance['mrn']);
+            if (!$recordId) {
+                continue;
+            }
+            
             $existingMetadata = $this->dataAccessor->getResourceMetadata(
-                $instance['mrn'],
+                $recordId,
                 $instance['resource_type'],
                 $instance['repeat_instance']
             );
             
             if ($existingMetadata && !$existingMetadata->isDeleted()) {
                 $deletedMetadata = $existingMetadata->withStatus(FhirResourceMetadata::STATUS_DELETED);
-                $this->dataAccessor->saveResourceMetadata($instance['mrn'], $deletedMetadata);
+                $this->dataAccessor->saveResourceMetadata($recordId, $deletedMetadata);
                 $cleanedCount++;
             }
         }
@@ -249,7 +304,12 @@ class ResourceSynchronizationService
         ];
         
         foreach ($allMrns as $mrn) {
-            $metadata = $this->dataAccessor->getAllResourceMetadata($mrn);
+            $recordId = $this->dataAccessor->getRecordIdByMrn($mrn);
+            if (!$recordId) {
+                continue;
+            }
+            
+            $metadata = $this->dataAccessor->getAllResourceMetadata($recordId);
             foreach ($metadata as $item) {
                 $statusCounts[$item->getStatus()]++;
             }

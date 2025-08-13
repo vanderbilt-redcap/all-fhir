@@ -6,6 +6,75 @@ use Vanderbilt\FhirSnapshot\ValueObjects\Task;
 use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
 use Vanderbilt\FhirSnapshot\Services\RepeatedFormDataAccessor;
 
+/**
+ * EnhancedFhirFetchProcessor
+ * 
+ * Specialized task processor for fetching FHIR resources and storing them in REDCap repeated forms.
+ * 
+ * ROLE & RESPONSIBILITIES:
+ * - Processes 'enhanced_fhir_fetch' tasks from the queue system
+ * - Fetches FHIR resources from external APIs/servers
+ * - Stores FHIR JSON payloads as REDCap edoc files
+ * - Updates resource metadata status throughout the fetch process
+ * - Handles FHIR-specific error conditions and pagination
+ * 
+ * PROCESSING WORKFLOW:
+ * 
+ * 1. TASK VALIDATION:
+ *    - Validates required parameters (record_id, mrn, resource_type, repeat_instance)
+ *    - Ensures task has proper structure for FHIR fetch operation
+ * 
+ * 2. STATUS MANAGEMENT:
+ *    - Updates resource status to FETCHING before beginning
+ *    - Creates resource metadata if not exists
+ *    - Tracks progress through REDCap repeated form updates
+ * 
+ * 3. FHIR DATA RETRIEVAL:
+ *    - Connects to FHIR server/API using MRN and resource type
+ *    - Handles authentication, pagination, and API-specific requirements
+ *    - Processes FHIR responses and validates data structure
+ * 
+ * 4. FILE STORAGE:
+ *    - Stores FHIR JSON payload as REDCap edoc file
+ *    - Generates descriptive filename for tracking
+ *    - Links file to resource metadata via edoc ID
+ * 
+ * 5. COMPLETION HANDLING:
+ *    - Updates resource status to COMPLETED on success
+ *    - Records fetch timestamp and pagination metadata
+ *    - Clears any previous error messages
+ * 
+ * 6. ERROR HANDLING:
+ *    - Updates resource status to FAILED on errors
+ *    - Stores detailed error messages for troubleshooting
+ *    - Maintains data integrity even when fetch fails
+ * 
+ * FHIR-SPECIFIC FEATURES:
+ * - Handles pagination for large FHIR resource sets
+ * - Generates mock FHIR data for testing/development
+ * - Supports different FHIR resource types (Patient, Observation, etc.)
+ * - Manages FHIR-specific error conditions and retry scenarios
+ * 
+ * TASK PARAMETERS REQUIRED:
+ * - record_id: REDCap record identifier
+ * - mrn: Medical Record Number for FHIR API calls
+ * - resource_type: FHIR resource type (Patient, Observation, etc.)
+ * - repeat_instance: REDCap repeated form instance number
+ * - mapping_resource_id: (optional) Associated mapping configuration ID
+ * - is_refetch: (optional) Flag indicating this is a refetch operation
+ * 
+ * INTEGRATION:
+ * - Extends AbstractTaskProcessor for common processor functionality
+ * - Uses RepeatedFormDataAccessor for REDCap data operations
+ * - Updates FhirResourceMetadata throughout processing lifecycle
+ * - Returns TaskProcessorResult with success/failure status and details
+ * 
+ * PERFORMANCE & RELIABILITY:
+ * - Includes configurable delays to avoid overwhelming FHIR servers
+ * - Handles network timeouts and connection issues gracefully
+ * - Supports retry mechanisms for transient failures
+ * - Provides detailed logging for monitoring and debugging
+ */
 class EnhancedFhirFetchProcessor extends AbstractTaskProcessor
 {
     private RepeatedFormDataAccessor $dataAccessor;
