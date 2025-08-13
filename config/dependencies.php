@@ -8,6 +8,9 @@ use Vanderbilt\FhirSnapshot\Controllers\MrnController;
 use Vanderbilt\FhirSnapshot\Controllers\SystemController;
 use Vanderbilt\FhirSnapshot\Controllers\ArchiveController;
 use Vanderbilt\FhirSnapshot\Controllers\ProjectSettingsController;
+use Vanderbilt\FhirSnapshot\Services\FhirCategoryService;
+use Vanderbilt\FhirSnapshot\Services\FhirMetadataService;
+use Vanderbilt\FhirSnapshot\Services\MappingResourceService;
 use Vanderbilt\REDCap\Classes\Fhir\FhirSystem\FhirSystemManager;
 
 return function (ContainerBuilder $containerBuilder) {
@@ -19,6 +22,12 @@ return function (ContainerBuilder $containerBuilder) {
         ArchiveController::class => fn(Container $c) => new ArchiveController($c->get(FhirSnapshot::class)),
         FetchController::class => fn(Container $c) => new FetchController($c->get(FhirSnapshot::class)),
         MrnController::class => fn(Container $c) => new MrnController($c->get(FhirSnapshot::class)),
-        ProjectSettingsController::class => fn(Container $c) => new ProjectSettingsController($c->get(FhirSnapshot::class), $c->get(FhirSystemManager::class)),
+        ProjectSettingsController::class => fn(Container $c) => new ProjectSettingsController(
+            $c->get(FhirSnapshot::class),
+            $c->get(FhirSystemManager::class),
+            $c->get(MappingResourceService::class),
+            $c->get(FhirMetadataService::class),
+            $c->get(FhirCategoryService::class)
+        ),
     ]);
 };
