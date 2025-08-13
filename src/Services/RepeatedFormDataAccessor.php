@@ -2,6 +2,7 @@
 
 namespace Vanderbilt\FhirSnapshot\Services;
 
+use Vanderbilt\FhirSnapshot\Constants\FhirFormFields;
 use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
 use Vanderbilt\FhirSnapshot\ValueObjects\RepeatedFormInstance;
 use REDCap;
@@ -46,12 +47,12 @@ class RepeatedFormDataAccessor
         $this->projectId = $projectId;
         $this->instrumentName = $instrumentName;
         $this->fieldMap = [
-            'resource_type' => 'all_fhir_resource_type',
-            'status' => 'all_fhir_resource_status',
-            'file_upload' => 'all_fhir_file_upload',
-            'fetch_date' => 'all_fhir_fetch_date',
-            'error_message' => 'all_fhir_error_message',
-            'pagination_info' => 'all_fhir_pagination_info'
+            'resource_type' => FhirFormFields::RESOURCE_TYPE,
+            'status' => FhirFormFields::RESOURCE_STATUS,
+            'file_upload' => FhirFormFields::FILE_UPLOAD,
+            'fetch_date' => FhirFormFields::FETCH_DATE,
+            'error_message' => FhirFormFields::ERROR_MESSAGE,
+            'pagination_info' => FhirFormFields::PAGINATION_INFO
         ];
     }
 

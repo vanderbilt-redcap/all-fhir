@@ -4,6 +4,7 @@ namespace Vanderbilt\FhirSnapshot\ValueObjects;
 
 use InvalidArgumentException;
 use JsonSerializable;
+use Vanderbilt\FhirSnapshot\Constants\FhirFormFields;
 
 /**
  * FhirResourceMetadata
@@ -260,12 +261,12 @@ class FhirResourceMetadata implements JsonSerializable
                     $eventId => [
                         $instrumentName => [
                             $this->repeatInstance => [
-                                'all_fhir_resource_type' => $this->resourceType,
-                                'all_fhir_resource_status' => $this->status,
-                                'all_fhir_file_upload' => $this->edocId,
-                                'all_fhir_fetch_date' => $this->fetchDate,
-                                'all_fhir_error_message' => $this->errorMessage,
-                                'all_fhir_pagination_info' => $this->paginationInfo ? json_encode($this->paginationInfo) : null
+                                FhirFormFields::RESOURCE_TYPE => $this->resourceType,
+                                FhirFormFields::RESOURCE_STATUS => $this->status,
+                                FhirFormFields::FILE_UPLOAD => $this->edocId,
+                                FhirFormFields::FETCH_DATE => $this->fetchDate,
+                                FhirFormFields::ERROR_MESSAGE => $this->errorMessage,
+                                FhirFormFields::PAGINATION_INFO => $this->paginationInfo ? json_encode($this->paginationInfo) : null
                             ]
                         ]
                     ]
