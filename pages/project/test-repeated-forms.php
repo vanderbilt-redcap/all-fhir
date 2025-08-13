@@ -49,16 +49,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
             case 'add_mapping_resource':
                 $resourceName = $_POST['resource_name'] ?? '';
-                $resourceTypeInput = $_POST['resource_type_input'] ?? '';
+                $resourceType = $_POST['resource_type'] ?? '';
+                $mappingType = $_POST['mapping_type'] ?? '';
                 
-                if (empty($resourceName) || empty($resourceTypeInput)) {
-                    throw new Exception('Resource Name and Type are required');
+                if (empty($resourceName) || empty($resourceType) || empty($mappingType)) {
+                    throw new Exception('Resource Name, FHIR Resource Type, and Mapping Type are required');
                 }
                 
-                $mappingResource = MappingResource::create($resourceName, $resourceTypeInput);
+                // The MappingResource expects name (FHIR resource type) and type (predefined/custom)
+                $mappingResource = MappingResource::create($resourceType, $mappingType);
                 $tasks = $resourceManager->addMappingResource($mappingResource);
                 
-                $message = "Added mapping resource: $resourceName. Created " . count($tasks) . " fetch tasks.";
+                $message = "Added mapping resource: $resourceName ($resourceType) as $mappingType. Created " . count($tasks) . " fetch tasks.";
                 break;
                 
             case 'retry_failed':
@@ -125,6 +127,12 @@ $projectSummary = $resourceManager->getProjectSummary();
 .form-group input, .form-group select {
     width: 200px;
     padding: 5px;
+}
+.form-group small {
+    display: block;
+    color: #666;
+    font-size: 0.9em;
+    margin-top: 2px;
 }
 .btn {
     padding: 8px 15px;
@@ -250,24 +258,39 @@ $projectSummary = $resourceManager->getProjectSummary();
 <div class="test-section">
     <h3>Add New Mapping Resource</h3>
     <form method="post">
+        <input type="hidden" name="redcap_csrf_token" value="<?= System::getCsrfToken() ?>">
         <input type="hidden" name="action" value="add_mapping_resource">
         
         <div class="form-group">
-            <label for="resource_name">Resource Name:</label>
-            <input type="text" name="resource_name" id="resource_name" placeholder="e.g., Lab Results" required>
+            <label for="resource_name">Display Name:</label>
+            <input type="text" name="resource_name" id="resource_name" placeholder="e.g., Lab Results, Patient Demographics" required>
+            <small>Friendly name for this mapping (for display purposes)</small>
         </div>
         
         <div class="form-group">
-            <label for="resource_type_input">Resource Type:</label>
-            <select name="resource_type_input" id="resource_type_input" required>
-                <option value="">Select Resource Type</option>
+            <label for="resource_type">FHIR Resource Type:</label>
+            <select name="resource_type" id="resource_type" required>
+                <option value="">Select FHIR Resource Type</option>
                 <option value="Patient">Patient</option>
                 <option value="Observation">Observation</option>
                 <option value="Condition">Condition</option>
                 <option value="Medication">Medication</option>
                 <option value="Procedure">Procedure</option>
                 <option value="DiagnosticReport">DiagnosticReport</option>
+                <option value="Encounter">Encounter</option>
+                <option value="AllergyIntolerance">AllergyIntolerance</option>
+                <option value="Immunization">Immunization</option>
             </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="mapping_type">Mapping Type:</label>
+            <select name="mapping_type" id="mapping_type" required>
+                <option value="">Select Mapping Type</option>
+                <option value="predefined">Predefined (Standard FHIR resource)</option>
+                <option value="custom">Custom (Project-specific mapping)</option>
+            </select>
+            <small>Predefined for standard FHIR resources, Custom for project-specific mappings</small>
         </div>
         
         <button type="submit" class="btn btn-success">Add Mapping Resource</button>
