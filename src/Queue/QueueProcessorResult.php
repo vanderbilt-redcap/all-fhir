@@ -3,7 +3,7 @@
 namespace Vanderbilt\FhirSnapshot\Queue;
 
 use Vanderbilt\FhirSnapshot\ValueObjects\Task;
-use Vanderbilt\FhirSnapshot\Queue\Processors\TaskProcessorResult;
+use Vanderbilt\FhirSnapshot\ValueObjects\TaskProcessorResult;
 use Exception;
 
 class QueueProcessorResult

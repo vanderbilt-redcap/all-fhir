@@ -5,7 +5,7 @@ namespace Vanderbilt\FhirSnapshot\Queue;
 use Vanderbilt\FhirSnapshot\FhirSnapshot;
 use Vanderbilt\FhirSnapshot\ValueObjects\Task;
 use Vanderbilt\FhirSnapshot\Queue\Processors\TaskProcessorInterface;
-use Vanderbilt\FhirSnapshot\Queue\Processors\TaskProcessorResult;
+use Vanderbilt\FhirSnapshot\ValueObjects\TaskProcessorResult;
 use Vanderbilt\FhirSnapshot\Queue\Processors\FhirFetchProcessor;
 use Vanderbilt\FhirSnapshot\Queue\Processors\ArchiveProcessor;
 use Vanderbilt\FhirSnapshot\Queue\Processors\EmailNotificationProcessor;

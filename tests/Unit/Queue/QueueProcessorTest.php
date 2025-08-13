@@ -8,7 +8,7 @@ use Vanderbilt\FhirSnapshot\Queue\QueueProcessor;
 use Vanderbilt\FhirSnapshot\Queue\QueueManager;
 use Vanderbilt\FhirSnapshot\ValueObjects\Task;
 use Vanderbilt\FhirSnapshot\Queue\Processors\TaskProcessorInterface;
-use Vanderbilt\FhirSnapshot\Queue\Processors\TaskProcessorResult;
+use Vanderbilt\FhirSnapshot\ValueObjects\TaskProcessorResult;
 use Vanderbilt\FhirSnapshot\FhirSnapshot;
 use Vanderbilt\REDCap\Classes\SystemMonitors\ResourceMonitor;
 use Vanderbilt\REDCap\Classes\SystemMonitors\MemoryMonitor;

@@ -1,6 +1,6 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Queue\Processors;
+namespace Vanderbilt\FhirSnapshot\ValueObjects;
 
 /**
  * TaskProcessorResult
