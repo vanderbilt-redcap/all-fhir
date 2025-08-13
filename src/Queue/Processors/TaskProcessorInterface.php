@@ -3,6 +3,7 @@
 namespace Vanderbilt\FhirSnapshot\Queue\Processors;
 
 use Vanderbilt\FhirSnapshot\ValueObjects\Task;
+use Vanderbilt\FhirSnapshot\ValueObjects\TaskProcessorResult;
 
 interface TaskProcessorInterface
 {

@@ -15,28 +15,32 @@
             "key": "fhir-system",
             "name": "FHIR System",
             "required": true,
-            "type": "text"
+            "type": "text",
+            "hidden": true
         },
         {
             "key": "mapping-resources",
             "name": "Mapping Resource",
-            "required": true,
-            "type": "text",
-            "repeatable":true
+            "required": false,
+            "type": "json",
+            "repeatable":true,
+            "hidden": true
         },
         {
             "key": "custom-mapping-resources",
             "name": "Custom Mapping Resource",
-            "required": true,
-            "type": "text",
-            "repeatable":true
+            "required": false,
+            "type": "json",
+            "repeatable":true,
+            "hidden": true
         },
         {
             "key": "tasks",
             "name": "Task",
             "required": false,
-            "type": "descriptive",
-            "repeatable":true
+            "type": "json",
+            "repeatable":true,
+            "hidden": true
         }
     ],
     "links": {

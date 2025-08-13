@@ -5,6 +5,7 @@ namespace Vanderbilt\FhirSnapshot\Queue\Processors;
 use Vanderbilt\FhirSnapshot\FhirSnapshot;
 use Vanderbilt\FhirSnapshot\ValueObjects\Task;
 use Exception;
+use Vanderbilt\FhirSnapshot\ValueObjects\TaskProcessorResult;
 
 abstract class AbstractTaskProcessor implements TaskProcessorInterface
 {
@@ -92,16 +93,16 @@ abstract class AbstractTaskProcessor implements TaskProcessorInterface
 
     protected function logInfo(string $message): void
     {
-        $this->module->logToFile("[QUEUE][INFO] $message");
+        $this->module->log("[QUEUE][INFO] $message", []);
     }
 
     protected function logError(string $message): void
     {
-        $this->module->logToFile("[QUEUE][ERROR] $message");
+        $this->module->log("[QUEUE][ERROR] $message", []);
     }
 
     protected function logDebug(string $message): void
     {
-        $this->module->logToFile("[QUEUE][DEBUG] $message");
+        $this->module->log("[QUEUE][DEBUG] $message", []);
     }
 }
