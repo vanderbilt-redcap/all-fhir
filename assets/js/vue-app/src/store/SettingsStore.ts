@@ -48,27 +48,28 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   }
 
-  const addPredefinedResource = (name: string) => {
-    const resource: MappingResource = { name, type: 'predefined' }
+  const addPredefinedResource = (name: string, resourceSpec: string) => {
+    const resource: MappingResource = { name, resourceSpec, type: 'predefined' }
     selectedMappingResources.value.push(resource)
   }
 
-  const addCustomResource = (expression: string) => {
-    const [name, query] = expression.split('?')
+  const addCustomResource = (name: string, resourceSpec: string) => {
     const resource: MappingResource = {
       name,
+      resourceSpec,
       type: 'custom',
-      parameters: query ? `?${query}` : '',
     }
     selectedCustomMappingResources.value.push(resource)
   }
 
   const removeResource = (resource: MappingResource, type: 'predefined' | 'custom') => {
     if (type === 'predefined') {
-      const index = selectedMappingResources.value.findIndex(r => r.name === resource.name)
+      const index = selectedMappingResources.value.findIndex(r => 
+        r.name === resource.name && r.resourceSpec === resource.resourceSpec)
       if (index > -1) selectedMappingResources.value.splice(index, 1)
     } else {
-      const index = selectedCustomMappingResources.value.findIndex(r => r.name === resource.name)
+      const index = selectedCustomMappingResources.value.findIndex(r => 
+        r.name === resource.name && r.resourceSpec === resource.resourceSpec)
       if (index > -1) selectedCustomMappingResources.value.splice(index, 1)
     }
   }

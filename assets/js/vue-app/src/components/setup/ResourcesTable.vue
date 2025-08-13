@@ -4,7 +4,7 @@
             <tr>
                 <th>Name</th>
                 <th>Type</th>
-                <th>Parameters</th>
+                <th>Resource Specification</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -12,7 +12,7 @@
             <tr v-for="resource in allResources" :key="`${resource.type}-${resource.name}`">
                 <td>{{ resource.name }}</td>
                 <td>{{ resource.type }}</td>
-                <td>{{ resource.parameters || '-' }}</td>
+                <td>{{ resource.resourceSpec || '-' }}</td>
                 <td>
                     <button 
                         type="button" 

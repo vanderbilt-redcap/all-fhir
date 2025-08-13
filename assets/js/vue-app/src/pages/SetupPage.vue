@@ -49,7 +49,8 @@ const anyLoading = computed(() => loading.value.fetch || loading.value.save)
 const resourceModal = useTemplateRef<any>('resourceModal')
 
 const getNewForm = (): ResourceFormType => ({
-    customResource: '',
+    displayName: '',
+    customResourceSpec: '',
     predefinedResource: '',
     resourceType: RESOURCE_TYPE.PREDEFINED
 })
@@ -61,10 +62,26 @@ async function handleAdd() {
     form.value = getNewForm() // Reset form before showing
     const confirmed = await resourceModal.value.show()
     if (confirmed) {
+        // Validate form data
+        if (!form.value.displayName.trim()) {
+            alert('Display Name is required');
+            return;
+        }
+
         if (form.value.resourceType === RESOURCE_TYPE.PREDEFINED) {
-            settingsStore.addPredefinedResource(form.value.predefinedResource)
+            if (!form.value.predefinedResource) {
+                alert('Please select a predefined resource');
+                return;
+            }
+            // For predefined resources, use the selected predefined resource as resourceSpec
+            settingsStore.addPredefinedResource(form.value.displayName, form.value.predefinedResource)
         } else {
-            settingsStore.addCustomResource(form.value.customResource)
+            if (!form.value.customResourceSpec.trim()) {
+                alert('Resource Specification is required for custom resources');
+                return;
+            }
+            // For custom resources, use the entered custom resourceSpec
+            settingsStore.addCustomResource(form.value.displayName, form.value.customResourceSpec)
         }
     }
 }

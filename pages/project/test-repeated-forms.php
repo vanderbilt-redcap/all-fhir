@@ -49,18 +49,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
             case 'add_mapping_resource':
                 $resourceName = $_POST['resource_name'] ?? '';
-                $resourceType = $_POST['resource_type'] ?? '';
                 $mappingType = $_POST['mapping_type'] ?? '';
                 
-                if (empty($resourceName) || empty($resourceType) || empty($mappingType)) {
-                    throw new Exception('Resource Name, FHIR Resource Type, and Mapping Type are required');
+                // Get resourceSpec based on mapping type
+                $resourceSpec = '';
+                if ($mappingType === 'predefined') {
+                    $resourceSpec = $_POST['predefined_resource_spec'] ?? '';
+                } elseif ($mappingType === 'custom') {
+                    $resourceSpec = $_POST['custom_resource_spec'] ?? '';
                 }
                 
-                // The MappingResource expects name (FHIR resource type) and type (predefined/custom)
-                $mappingResource = MappingResource::create($resourceType, $mappingType);
+                if (empty($resourceName) || empty($mappingType) || empty($resourceSpec)) {
+                    throw new Exception('Display Name, Mapping Type, and Resource Specification are required');
+                }
+                
+                // Create MappingResource with separate name and resourceSpec
+                $mappingResource = MappingResource::create($resourceName, $resourceSpec, $mappingType);
                 $tasks = $resourceManager->addMappingResource($mappingResource);
                 
-                $message = "Added mapping resource: $resourceName ($resourceType) as $mappingType. Created " . count($tasks) . " fetch tasks.";
+                $message = "Added mapping resource: $resourceName ($resourceSpec) as $mappingType. Created " . count($tasks) . " fetch tasks.";
                 break;
                 
             case 'retry_failed':
@@ -257,44 +264,75 @@ $projectSummary = $resourceManager->getProjectSummary();
 
 <div class="test-section">
     <h3>Add New Mapping Resource</h3>
-    <form method="post">
+    <form method="post" id="mapping-resource-form">
         <input type="hidden" name="redcap_csrf_token" value="<?= System::getCsrfToken() ?>">
         <input type="hidden" name="action" value="add_mapping_resource">
         
         <div class="form-group">
             <label for="resource_name">Display Name:</label>
-            <input type="text" name="resource_name" id="resource_name" placeholder="e.g., Lab Results, Patient Demographics" required>
-            <small>Friendly name for this mapping (for display purposes)</small>
-        </div>
-        
-        <div class="form-group">
-            <label for="resource_type">FHIR Resource Type:</label>
-            <select name="resource_type" id="resource_type" required>
-                <option value="">Select FHIR Resource Type</option>
-                <option value="Patient">Patient</option>
-                <option value="Observation">Observation</option>
-                <option value="Condition">Condition</option>
-                <option value="Medication">Medication</option>
-                <option value="Procedure">Procedure</option>
-                <option value="DiagnosticReport">DiagnosticReport</option>
-                <option value="Encounter">Encounter</option>
-                <option value="AllergyIntolerance">AllergyIntolerance</option>
-                <option value="Immunization">Immunization</option>
-            </select>
+            <input type="text" name="resource_name" id="resource_name" placeholder="e.g., Vital Signs, Social History" required>
+            <small>User-friendly name shown in the interface</small>
         </div>
         
         <div class="form-group">
             <label for="mapping_type">Mapping Type:</label>
-            <select name="mapping_type" id="mapping_type" required>
+            <select name="mapping_type" id="mapping_type" onchange="toggleResourceSpec()" required>
                 <option value="">Select Mapping Type</option>
-                <option value="predefined">Predefined (Standard FHIR resource)</option>
-                <option value="custom">Custom (Project-specific mapping)</option>
+                <option value="predefined">Predefined (REDCap Category)</option>
+                <option value="custom">Custom (FHIR Query)</option>
             </select>
-            <small>Predefined for standard FHIR resources, Custom for project-specific mappings</small>
+        </div>
+        
+        <!-- Predefined Resource Dropdown -->
+        <div class="form-group" id="predefined-group" style="display: none;">
+            <label for="predefined_resource_spec">Predefined Resource:</label>
+            <select name="predefined_resource_spec" id="predefined_resource_spec">
+                <option value="">Select Predefined Resource</option>
+                <option value="Observation?category=vital-signs">Vital Signs</option>
+                <option value="Observation?category=social-history">Social History</option>
+                <option value="DiagnosticReport?category=LAB">Laboratory Reports</option>
+                <option value="Condition?category=problem-list-item">Problem List</option>
+                <option value="Medication?status=active">Active Medications</option>
+                <option value="Procedure?status=completed">Completed Procedures</option>
+                <option value="Encounter?status=finished">Finished Encounters</option>
+            </select>
+            <small>Choose from standard REDCap FHIR categories</small>
+        </div>
+        
+        <!-- Custom Resource Text Field -->
+        <div class="form-group" id="custom-group" style="display: none;">
+            <label for="custom_resource_spec">FHIR Resource Specification:</label>
+            <input type="text" name="custom_resource_spec" id="custom_resource_spec" placeholder="e.g., Observation?category=social-history&status=final">
+            <small>Enter custom FHIR query specification with parameters</small>
         </div>
         
         <button type="submit" class="btn btn-success">Add Mapping Resource</button>
     </form>
+    
+    <script>
+    function toggleResourceSpec() {
+        const mappingType = document.getElementById('mapping_type').value;
+        const predefinedGroup = document.getElementById('predefined-group');
+        const customGroup = document.getElementById('custom-group');
+        
+        if (mappingType === 'predefined') {
+            predefinedGroup.style.display = 'block';
+            customGroup.style.display = 'none';
+            document.getElementById('custom_resource_spec').removeAttribute('required');
+            document.getElementById('predefined_resource_spec').setAttribute('required', 'required');
+        } else if (mappingType === 'custom') {
+            predefinedGroup.style.display = 'none';
+            customGroup.style.display = 'block';
+            document.getElementById('predefined_resource_spec').removeAttribute('required');
+            document.getElementById('custom_resource_spec').setAttribute('required', 'required');
+        } else {
+            predefinedGroup.style.display = 'none';
+            customGroup.style.display = 'none';
+            document.getElementById('predefined_resource_spec').removeAttribute('required');
+            document.getElementById('custom_resource_spec').removeAttribute('required');
+        }
+    }
+    </script>
 </div>
 
 <div class="test-section">

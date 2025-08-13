@@ -8,9 +8,9 @@ export type ResourceType = 'predefined' | 'custom'
 
 export interface MappingResource {
   id?: string
-  name: string           // E.g. "Observation"
+  name: string           // User-friendly display name (e.g., "Vital Signs")
+  resourceSpec: string   // FHIR query specification (e.g., "Observation?category=vital-signs")
   type: ResourceType     // "predefined" or "custom"
-  parameters?: string    // E.g. "?category=social-history"
 }
 
 export interface ProjectSettings {

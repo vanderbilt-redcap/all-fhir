@@ -33,11 +33,38 @@ use Vanderbilt\REDCap\Classes\Fhir\FhirCategory;
 class FhirCategoryService
 {
     /**
-     * Get the list of available FHIR mapping categories
+     * Get the list of available FHIR mapping categories with their resource specifications
      * 
-     * @return array
+     * Returns array of category objects with display name and FHIR resourceSpec
+     * 
+     * @return array Array of category objects with 'name' and 'resourceSpec' keys
      */
     public function getAvailableCategories(): array
+    {
+        return [
+            ['name' => 'Vital Signs', 'resourceSpec' => 'Observation?category=vital-signs'],
+            ['name' => 'Laboratory Results', 'resourceSpec' => 'DiagnosticReport?category=LAB'],
+            ['name' => 'Social History', 'resourceSpec' => 'Observation?category=social-history'],
+            ['name' => 'Problem List', 'resourceSpec' => 'Condition?category=problem-list-item'],
+            ['name' => 'Medications', 'resourceSpec' => 'Medication?status=active'],
+            ['name' => 'Procedures', 'resourceSpec' => 'Procedure?status=completed'],
+            ['name' => 'Encounters', 'resourceSpec' => 'Encounter?status=finished'],
+            ['name' => 'Allergies', 'resourceSpec' => 'AllergyIntolerance?clinicalStatus=active'],
+            ['name' => 'Immunizations', 'resourceSpec' => 'Immunization?status=completed'],
+            ['name' => 'Demographics', 'resourceSpec' => 'Patient'],
+            ['name' => 'Appointments', 'resourceSpec' => 'Appointment?status=booked'],
+            ['name' => 'Coverage', 'resourceSpec' => 'Coverage?status=active'],
+            ['name' => 'Conditions', 'resourceSpec' => 'Condition?clinicalStatus=active'],
+        ];
+    }
+
+    /**
+     * Get legacy category constants for backward compatibility
+     * 
+     * @return array Array of FhirCategory constants
+     * @deprecated Use getAvailableCategories() for new implementations
+     */
+    public function getLegacyCategories(): array
     {
         return [
             FhirCategory::APPOINTMENT_APPOINTMENTS,
