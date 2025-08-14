@@ -90,24 +90,38 @@ class QueueProcessor
     private QueueManager $queueManager;
     private ResourceMonitor $resourceMonitor;
     
-    /** @var TaskProcessorInterface[] */
-    private array $processors = [];
+    /** @var TaskProcessorInterface[] Lazy-loaded processor instances */
+    private array $processorInstances = [];
+    
+    /** @var array Mapping of task keys to processor factory functions */
+    private array $processorFactories = [];
 
     public function __construct(
-        FhirSnapshot $module, 
-        QueueManager $queueManager, 
-        ResourceMonitor $resourceMonitor
+        FhirSnapshot $module,
+        QueueManager $queueManager,
+        ResourceMonitor $resourceMonitor,
+        array $processorFactories = []
     ) {
         $this->module = $module;
         $this->queueManager = $queueManager;
         $this->resourceMonitor = $resourceMonitor;
-        
-        $this->registerDefaultProcessors();
+        $this->processorFactories = $processorFactories;
     }
 
-    public function registerProcessor(TaskProcessorInterface $processor): void
+    /**
+     * Register a processor factory function for a specific task key
+     */
+    public function registerProcessorFactory(string $taskKey, callable $factory): void
     {
-        $this->processors[$processor->getTaskKey()] = $processor;
+        $this->processorFactories[$taskKey] = $factory;
+    }
+    
+    /**
+     * Register an already instantiated processor (for compatibility)
+     */
+    public function registerProcessorInstance(TaskProcessorInterface $processor): void
+    {
+        $this->processorInstances[$processor->getTaskKey()] = $processor;
     }
 
     public function process(): QueueProcessorResult
@@ -192,15 +206,32 @@ class QueueProcessor
     private function getProcessorForTask(Task $task): ?TaskProcessorInterface
     {
         $taskKey = $task->getKey();
-        return $this->processors[$taskKey] ?? null;
+        
+        // Check if already instantiated
+        if (isset($this->processorInstances[$taskKey])) {
+            return $this->processorInstances[$taskKey];
+        }
+        
+        // Check if processor factory is registered
+        if (!isset($this->processorFactories[$taskKey])) {
+            return null;
+        }
+        
+        // Lazy load the processor using the factory function
+        $factory = $this->processorFactories[$taskKey];
+        try {
+            $processor = $factory();
+            
+            // Cache the instance for future use
+            $this->processorInstances[$taskKey] = $processor;
+            
+            return $processor;
+        } catch (\Exception $e) {
+            $this->logError("Failed to instantiate processor for task key '{$taskKey}': " . $e->getMessage());
+            return null;
+        }
     }
 
-    private function registerDefaultProcessors(): void
-    {
-        $this->registerProcessor(new FhirFetchProcessor($this->module));
-        $this->registerProcessor(new ArchiveProcessor($this->module));
-        $this->registerProcessor(new EmailNotificationProcessor($this->module));
-    }
 
     private function logProcessingSummary(QueueProcessorResult $result): void
     {
@@ -237,8 +268,13 @@ class QueueProcessor
         return $this->resourceMonitor;
     }
 
-    public function getRegisteredProcessors(): array
+    public function getRegisteredProcessorFactories(): array
     {
-        return $this->processors;
+        return array_keys($this->processorFactories);
+    }
+    
+    public function getInstantiatedProcessors(): array
+    {
+        return $this->processorInstances;
     }
 }

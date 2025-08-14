@@ -7,7 +7,6 @@ use Vanderbilt\FhirSnapshot\Controllers\FetchController;
 use Vanderbilt\FhirSnapshot\Controllers\MrnController;
 use Vanderbilt\FhirSnapshot\Controllers\ArchiveController;
 use Vanderbilt\FhirSnapshot\Controllers\ProjectSettingsController;
-use Vanderbilt\FhirSnapshot\Queue\QueueManager;
 use Vanderbilt\FhirSnapshot\Services\FhirCategoryService;
 use Vanderbilt\FhirSnapshot\Services\FhirMetadataService;
 use Vanderbilt\FhirSnapshot\Services\FhirResourceService;
@@ -15,7 +14,15 @@ use Vanderbilt\FhirSnapshot\Services\MappingResourceService;
 use Vanderbilt\FhirSnapshot\Services\RepeatedFormDataAccessor;
 use Vanderbilt\FhirSnapshot\Services\RepeatedFormResourceManager;
 use Vanderbilt\FhirSnapshot\Services\ResourceSynchronizationService;
+use Vanderbilt\FhirSnapshot\Queue\QueueManager;
+use Vanderbilt\FhirSnapshot\Queue\QueueProcessor;
+use Vanderbilt\FhirSnapshot\Queue\Processors\FhirFetchProcessor;
+use Vanderbilt\FhirSnapshot\Queue\Processors\ArchiveProcessor;
+use Vanderbilt\FhirSnapshot\Queue\Processors\EmailNotificationProcessor;
 use Vanderbilt\REDCap\Classes\Fhir\FhirSystem\FhirSystemManager;
+use Vanderbilt\REDCap\Classes\SystemMonitors\MemoryMonitor;
+use Vanderbilt\REDCap\Classes\SystemMonitors\ResourceMonitor;
+use Vanderbilt\REDCap\Classes\SystemMonitors\TimeMonitor;
 
 use function DI\factory;
 
@@ -44,6 +51,32 @@ return function (ContainerBuilder $containerBuilder) {
             );
         }),
         FhirResourceService::class => fn(Container $c) => new FhirResourceService($c->get(RepeatedFormDataAccessor::class)),
+
+        // Define how to instantiate queue components
+        QueueManager::class => fn(Container $c) => new QueueManager($c->get(FhirSnapshot::class)),
+        MemoryMonitor::class => fn(Container $c) => new MemoryMonitor(0.8),
+        TimeMonitor::class => fn(Container $c) => new TimeMonitor('30 minutes'),
+        ResourceMonitor::class => fn(Container $c) => new ResourceMonitor($c->get(MemoryMonitor::class), $c->get(ResourceMonitor::class)),
+        QueueProcessor::class => factory(function(Container $c) {
+            $processorFactories = [
+                'fhir_fetch' => fn() => $c->get(FhirFetchProcessor::class),
+                'enhanced_fhir_fetch' => fn() => $c->get(FhirFetchProcessor::class), // Legacy compatibility
+                'archive' => fn() => $c->get(ArchiveProcessor::class),
+                'email_notification' => fn() => $c->get(EmailNotificationProcessor::class),
+            ];
+            
+            return new QueueProcessor(
+                $c->get(FhirSnapshot::class),
+                $c->get(QueueManager::class),
+                $c->get(ResourceMonitor::class),
+                $processorFactories
+            );
+        }),
+        
+        // Define how to instantiate processors
+        FhirFetchProcessor::class => fn(Container $c) => new FhirFetchProcessor($c->get(FhirResourceService::class)),
+        ArchiveProcessor::class => fn(Container $c) => new ArchiveProcessor($c->get(FhirSnapshot::class)),
+        EmailNotificationProcessor::class => fn(Container $c) => new EmailNotificationProcessor($c->get(FhirSnapshot::class)),
 
         // Define how to instantiate the controllers.
         ArchiveController::class => fn(Container $c) => new ArchiveController($c->get(FhirSnapshot::class)),
