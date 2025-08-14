@@ -1,50 +1,44 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Queue\Processors;
+namespace Vanderbilt\FhirSnapshot\Services;
 
-use Vanderbilt\FhirSnapshot\ValueObjects\Task;
 use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
-use Vanderbilt\FhirSnapshot\Services\RepeatedFormDataAccessor;
 
 /**
- * EnhancedFhirFetchProcessor
+ * FhirResourceService
  * 
- * Specialized task processor for fetching FHIR resources and storing them in REDCap repeated forms.
+ * Service for fetching FHIR resources and storing them in REDCap repeated forms.
  * 
  * ROLE & RESPONSIBILITIES:
- * - Processes 'enhanced_fhir_fetch' tasks from the queue system
  * - Fetches FHIR resources from external APIs/servers
  * - Stores FHIR JSON payloads as REDCap edoc files
  * - Updates resource metadata status throughout the fetch process
  * - Handles FHIR-specific error conditions and pagination
+ * - Generates mock FHIR data for testing/development
  * 
  * PROCESSING WORKFLOW:
  * 
- * 1. TASK VALIDATION:
- *    - Validates required parameters (record_id, mrn, resource_type, repeat_instance)
- *    - Ensures task has proper structure for FHIR fetch operation
- * 
- * 2. STATUS MANAGEMENT:
+ * 1. STATUS MANAGEMENT:
  *    - Updates resource status to FETCHING before beginning
  *    - Creates resource metadata if not exists
  *    - Tracks progress through REDCap repeated form updates
  * 
- * 3. FHIR DATA RETRIEVAL:
+ * 2. FHIR DATA RETRIEVAL:
  *    - Connects to FHIR server/API using MRN and resource type
  *    - Handles authentication, pagination, and API-specific requirements
  *    - Processes FHIR responses and validates data structure
  * 
- * 4. FILE STORAGE:
+ * 3. FILE STORAGE:
  *    - Stores FHIR JSON payload as REDCap edoc file
  *    - Generates descriptive filename for tracking
  *    - Links file to resource metadata via edoc ID
  * 
- * 5. COMPLETION HANDLING:
+ * 4. COMPLETION HANDLING:
  *    - Updates resource status to COMPLETED on success
  *    - Records fetch timestamp and pagination metadata
  *    - Clears any previous error messages
  * 
- * 6. ERROR HANDLING:
+ * 5. ERROR HANDLING:
  *    - Updates resource status to FAILED on errors
  *    - Stores detailed error messages for troubleshooting
  *    - Maintains data integrity even when fetch fails
@@ -54,28 +48,8 @@ use Vanderbilt\FhirSnapshot\Services\RepeatedFormDataAccessor;
  * - Generates mock FHIR data for testing/development
  * - Supports different FHIR resource types (Patient, Observation, etc.)
  * - Manages FHIR-specific error conditions and retry scenarios
- * 
- * TASK PARAMETERS REQUIRED:
- * - record_id: REDCap record identifier
- * - mrn: Medical Record Number for FHIR API calls
- * - resource_type: FHIR resource type (Patient, Observation, etc.)
- * - repeat_instance: REDCap repeated form instance number
- * - mapping_resource_id: (optional) Associated mapping configuration ID
- * - is_refetch: (optional) Flag indicating this is a refetch operation
- * 
- * INTEGRATION:
- * - Extends AbstractTaskProcessor for common processor functionality
- * - Uses RepeatedFormDataAccessor for REDCap data operations
- * - Updates FhirResourceMetadata throughout processing lifecycle
- * - Returns TaskProcessorResult with success/failure status and details
- * 
- * PERFORMANCE & RELIABILITY:
- * - Includes configurable delays to avoid overwhelming FHIR servers
- * - Handles network timeouts and connection issues gracefully
- * - Supports retry mechanisms for transient failures
- * - Provides detailed logging for monitoring and debugging
  */
-class EnhancedFhirFetchProcessor extends AbstractTaskProcessor
+class FhirResourceService
 {
     private RepeatedFormDataAccessor $dataAccessor;
 
@@ -84,27 +58,25 @@ class EnhancedFhirFetchProcessor extends AbstractTaskProcessor
         $this->dataAccessor = $dataAccessor;
     }
 
-    public function getTaskKey(): string
-    {
-        return 'enhanced_fhir_fetch';
-    }
-
-    protected function doProcess(Task $task): TaskProcessorResult
-    {
-        $validationResult = $this->validateParams($task, ['record_id', 'mrn', 'resource_type', 'repeat_instance']);
-        if ($validationResult !== null) {
-            return $validationResult;
-        }
-
-        $params = $task->getParams();
-        $recordId = $params['record_id'];
-        $mrn = $params['mrn'];
-        $resourceType = $params['resource_type'];
-        $repeatInstance = (int) $params['repeat_instance'];
-        $mappingResourceId = $params['mapping_resource_id'] ?? null;
-        $isRefetch = $params['is_refetch'] ?? false;
-
-        $this->logInfo("Enhanced FHIR fetch for Record ID: $recordId, MRN: $mrn, Resource: $resourceType, Instance: $repeatInstance");
+    /**
+     * Fetch and store FHIR resource for a given record
+     * 
+     * @param string $recordId REDCap record identifier
+     * @param string $mrn Medical Record Number for FHIR API calls
+     * @param string $resourceType FHIR resource type (Patient, Observation, etc.)
+     * @param int $repeatInstance REDCap repeated form instance number
+     * @param array $options Additional options (mapping_resource_id, is_refetch, etc.)
+     * @return array Result array with success status, message, and data
+     */
+    public function fetchAndStoreResource(
+        string $recordId,
+        string $mrn,
+        string $resourceType,
+        int $repeatInstance,
+        array $options = []
+    ): array {
+        $mappingResourceId = $options['mapping_resource_id'] ?? null;
+        $isRefetch = $options['is_refetch'] ?? false;
 
         $metadata = $this->dataAccessor->getResourceMetadata($recordId, $resourceType, $repeatInstance);
         
@@ -119,7 +91,11 @@ class EnhancedFhirFetchProcessor extends AbstractTaskProcessor
             $fhirData = $this->fetchFhirResource($mrn, $resourceType, $isRefetch);
             
             if ($fhirData === null) {
-                return $this->handleFetchFailure($recordId, $mrn, $metadata, "No data found for resource type: $resourceType");
+                return $this->handleFetchFailure(
+                    $recordId,
+                    $metadata,
+                    "No data found for resource type: $resourceType"
+                );
             }
 
             $edocId = $this->storeFhirDataAsFile($fhirData, $mrn, $resourceType);
@@ -127,8 +103,7 @@ class EnhancedFhirFetchProcessor extends AbstractTaskProcessor
             $completedMetadata = $metadata
                 ->withStatus(FhirResourceMetadata::STATUS_COMPLETED)
                 ->withEdocId($edocId)
-                ->withFetchDate(date('Y-m-d H:i:s'))
-                ->withErrorMessage(null);
+                ->withFetchDate(date('Y-m-d H:i:s'));
 
             if (isset($fhirData['pagination'])) {
                 $completedMetadata = $completedMetadata->withPaginationInfo($fhirData['pagination']);
@@ -136,28 +111,37 @@ class EnhancedFhirFetchProcessor extends AbstractTaskProcessor
 
             $this->dataAccessor->saveResourceMetadata($recordId, $completedMetadata);
 
-            $resultMessage = "Successfully fetched and stored $resourceType for Record ID: $recordId, MRN: $mrn (Instance: $repeatInstance)";
-            
-            return TaskProcessorResult::success($resultMessage, [
-                'record_id' => $recordId,
-                'mrn' => $mrn,
-                'resource_type' => $resourceType,
-                'repeat_instance' => $repeatInstance,
-                'edoc_id' => $edocId,
-                'data_size' => strlen(json_encode($fhirData)),
-                'is_refetch' => $isRefetch,
-                'mapping_resource_id' => $mappingResourceId
-            ]);
+            return [
+                'success' => true,
+                'message' => "Successfully fetched and stored $resourceType for Record ID: $recordId, MRN: $mrn (Instance: $repeatInstance)",
+                'data' => [
+                    'record_id' => $recordId,
+                    'mrn' => $mrn,
+                    'resource_type' => $resourceType,
+                    'repeat_instance' => $repeatInstance,
+                    'edoc_id' => $edocId,
+                    'data_size' => strlen(json_encode($fhirData)),
+                    'is_refetch' => $isRefetch,
+                    'mapping_resource_id' => $mappingResourceId
+                ]
+            ];
 
         } catch (\Exception $e) {
-            return $this->handleFetchFailure($recordId, $mrn, $metadata, $e->getMessage());
+            return $this->handleFetchFailure($recordId, $metadata, $e->getMessage());
         }
     }
 
-    private function fetchFhirResource(string $mrn, string $resourceType, bool $isRefetch): ?array
+    /**
+     * Fetch FHIR resource data from external source
+     * 
+     * @param string $mrn Medical Record Number
+     * @param string $resourceType FHIR resource type
+     * @param bool $isRefetch Whether this is a refetch operation
+     * @return array|null FHIR data array or null if not found
+     */
+    public function fetchFhirResource(string $mrn, string $resourceType, bool $isRefetch = false): ?array
     {
-        $this->logDebug("Fetching $resourceType data for MRN: $mrn" . ($isRefetch ? ' (refetch)' : ''));
-        
+        // Simulate API call delay
         usleep(200000); // 0.2 seconds simulation
         
         if (rand(1, 100) <= 85) { // 85% success rate
@@ -190,7 +174,13 @@ class EnhancedFhirFetchProcessor extends AbstractTaskProcessor
         return null;
     }
 
-    private function generateMockResourceData(string $resourceType): array
+    /**
+     * Generate mock FHIR resource data for testing
+     * 
+     * @param string $resourceType FHIR resource type
+     * @return array Mock data structure
+     */
+    public function generateMockResourceData(string $resourceType): array
     {
         $baseData = [
             'identifier' => [
@@ -245,7 +235,16 @@ class EnhancedFhirFetchProcessor extends AbstractTaskProcessor
         };
     }
 
-    private function storeFhirDataAsFile(array $fhirData, string $mrn, string $resourceType): int
+    /**
+     * Store FHIR data as REDCap edoc file
+     * 
+     * @param array $fhirData FHIR data to store
+     * @param string $mrn Medical Record Number
+     * @param string $resourceType FHIR resource type
+     * @return int REDCap edoc ID
+     * @throws \RuntimeException If file storage fails
+     */
+    public function storeFhirDataAsFile(array $fhirData, string $mrn, string $resourceType): int
     {
         $jsonContent = json_encode($fhirData, JSON_PRETTY_PRINT);
         $filename = sprintf('%s_%s_%s.json', $resourceType, $mrn, date('Y-m-d_H-i-s'));
@@ -264,22 +263,34 @@ class EnhancedFhirFetchProcessor extends AbstractTaskProcessor
         return $edocId;
     }
 
-    private function handleFetchFailure(string $recordId, string $mrn, FhirResourceMetadata $metadata, string $errorMessage): TaskProcessorResult
-    {
-        $this->logError("FHIR fetch failed for Record ID: $recordId, MRN: $mrn, Resource: " . $metadata->getResourceType() . " - $errorMessage");
-        
+    /**
+     * Handle fetch failure by updating metadata and returning error result
+     * 
+     * @param string $recordId REDCap record identifier
+     * @param FhirResourceMetadata $metadata Resource metadata
+     * @param string $errorMessage Error message
+     * @return array Error result array
+     */
+    private function handleFetchFailure(
+        string $recordId,
+        FhirResourceMetadata $metadata,
+        string $errorMessage
+    ): array {
         $failedMetadata = $metadata
             ->withStatus(FhirResourceMetadata::STATUS_FAILED)
             ->withErrorMessage($errorMessage);
         
         $this->dataAccessor->saveResourceMetadata($recordId, $failedMetadata);
         
-        return TaskProcessorResult::failure($errorMessage, [
-            'record_id' => $recordId,
-            'mrn' => $mrn,
-            'resource_type' => $metadata->getResourceType(),
-            'repeat_instance' => $metadata->getRepeatInstance(),
-            'error' => $errorMessage
-        ]);
+        return [
+            'success' => false,
+            'message' => $errorMessage,
+            'data' => [
+                'record_id' => $recordId,
+                'resource_type' => $metadata->getResourceType(),
+                'repeat_instance' => $metadata->getRepeatInstance(),
+                'error' => $errorMessage
+            ]
+        ];
     }
 }

@@ -54,7 +54,8 @@ use Exception;
  * - Provides fallback handling for unknown task types
  * 
  * TASK ROUTING BY KEY:
- * - 'enhanced_fhir_fetch' → EnhancedFhirFetchProcessor
+ * - 'fhir_fetch' → FhirFetchProcessor (handles both batch and enhanced functionality)
+ * - 'enhanced_fhir_fetch' → FhirFetchProcessor (legacy compatibility)
  * - 'archive' → ArchiveProcessor  
  * - 'email_notification' → EmailNotificationProcessor
  * - Custom task keys → Custom processor implementations

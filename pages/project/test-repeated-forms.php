@@ -15,7 +15,7 @@ $projectId = PROJECT_ID;
 $dataAccessor = new RepeatedFormDataAccessor($projectId);
 $queueManager = new QueueManager($module);
 $syncService = new ResourceSynchronizationService($dataAccessor, $queueManager, $projectId);
-$resourceManager = new RepeatedFormResourceManager($dataAccessor, $syncService, $queueManager, $projectId);
+$resourceManager = new RepeatedFormResourceManager($module, $dataAccessor, $syncService, $queueManager);
 $fhirCategoryService = new FhirCategoryService();
 $availableCategories = $fhirCategoryService->getAvailableCategories();
 
@@ -212,16 +212,16 @@ $projectSummary = $resourceManager->getProjectSummary();
             <td><?= $projectSummary['total_mrns'] ?></td>
         </tr>
         <tr>
-            <th>Pending Tasks</th>
+            <th>Queue: Pending Tasks</th>
             <td><?= $projectSummary['sync_status']['pending_tasks'] ?></td>
         </tr>
         <tr>
-            <th>Failed Tasks</th>
+            <th>Queue: Failed Tasks</th>
             <td><?= $projectSummary['sync_status']['failed_tasks'] ?></td>
         </tr>
     </table>
     
-    <h4>Overall Status Counts</h4>
+    <h4>Resource Status Counts</h4>
     <table class="status-table">
         <?php foreach ($projectSummary['overall_status_counts'] as $status => $count): ?>
             <tr>
