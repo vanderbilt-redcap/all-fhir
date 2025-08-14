@@ -6,14 +6,14 @@ use Vanderbilt\FhirSnapshot\ValueObjects\Task;
 use Vanderbilt\FhirSnapshot\ValueObjects\TaskProcessorResult;
 use Vanderbilt\FhirSnapshot\Services\FhirResourceService;
 use Vanderbilt\FhirSnapshot\Constants;
+use Vanderbilt\FhirSnapshot\FhirSnapshot;
 
 class FhirFetchProcessor extends AbstractTaskProcessor
 {
-    private FhirResourceService $fhirResourceService;
 
-    public function __construct(FhirResourceService $fhirResourceService)
+    public function __construct(FhirSnapshot $module, private FhirResourceService $fhirResourceService)
     {
-        $this->fhirResourceService = $fhirResourceService;
+        parent::__construct($module);
     }
 
     public function getTaskKey(): string

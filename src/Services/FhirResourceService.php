@@ -247,12 +247,13 @@ class FhirResourceService
     public function storeFhirDataAsFile(array $fhirData, string $mrn, string $resourceType): int
     {
         $jsonContent = json_encode($fhirData, JSON_PRETTY_PRINT);
-        $filename = sprintf('%s_%s_%s.json', $resourceType, $mrn, date('Y-m-d_H-i-s'));
+        $projectId = $this->dataAccessor->getProjectId();
+        $filename = sprintf('%s_%s_%s_%s.json', $projectId, $mrn, $resourceType, date('Y-m-d_H-i-s'));
         
         $tempPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $filename;
         file_put_contents($tempPath, $jsonContent);
         
-        $edocId = \REDCap::storeFile($tempPath, $filename);
+        $edocId = \REDCap::storeFile($tempPath, $projectId, $filename);
         
         unlink($tempPath);
         

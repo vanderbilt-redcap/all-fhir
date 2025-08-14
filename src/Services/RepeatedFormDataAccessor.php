@@ -57,17 +57,20 @@ class RepeatedFormDataAccessor
         ];
     }
 
+    public function getProjectId() { return $this->projectId; }
+
     public function saveResourceMetadata(string $recordId, FhirResourceMetadata $metadata): bool
     {
         $eventId = $this->getEventId();
         $redcapData = $metadata->toRedCapData($recordId, $eventId, $this->instrumentName);
         
-        $result = REDCap::saveData(
-            $this->projectId,
-            'array',
-            $redcapData,
-            'overwrite'
-        );
+        $result = REDCap::saveData([
+            'project_id'=>$this->projectId,
+            'dataFormat'=>'array',
+            'data'=>$redcapData,
+            'skipFileUploadFields'=>false,
+            'overwriteBehavior' => 'overwrite',
+        ]);
         
         return empty($result['errors']);
     }

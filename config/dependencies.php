@@ -79,7 +79,7 @@ return function (ContainerBuilder $containerBuilder) {
         }),
         
         // Define how to instantiate processors
-        FhirFetchProcessor::class => fn(Container $c) => new FhirFetchProcessor($c->get(FhirResourceService::class)),
+        FhirFetchProcessor::class => fn(Container $c) => new FhirFetchProcessor($c->get(FhirSnapshot::class), $c->get(FhirResourceService::class)),
         ArchiveProcessor::class => fn(Container $c) => new ArchiveProcessor($c->get(FhirSnapshot::class)),
         EmailNotificationProcessor::class => fn(Container $c) => new EmailNotificationProcessor($c->get(FhirSnapshot::class)),
 
