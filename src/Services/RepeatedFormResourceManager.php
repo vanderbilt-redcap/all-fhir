@@ -6,6 +6,7 @@ use Vanderbilt\FhirSnapshot\FhirSnapshot;
 use Vanderbilt\FhirSnapshot\ValueObjects\MappingResource;
 use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
 use Vanderbilt\FhirSnapshot\Queue\QueueManager;
+use Vanderbilt\FhirSnapshot\Constants;
 
 /**
  * RepeatedFormResourceManager
@@ -161,7 +162,7 @@ class RepeatedFormResourceManager
         
         $this->dataAccessor->saveResourceMetadata($recordId, $retryMetadata);
         
-        $task = \Vanderbilt\FhirSnapshot\ValueObjects\Task::create('enhanced_fhir_fetch', [
+        $task = \Vanderbilt\FhirSnapshot\ValueObjects\Task::create(Constants::TASK_FHIR_FETCH, [
             'record_id' => $recordId,
             'mrn' => $mrn,
             'resource_type' => $resourceType,
@@ -223,7 +224,8 @@ class RepeatedFormResourceManager
             
             $this->dataAccessor->saveResourceMetadata($missing['mrn'], $metadata);
             
-            $task = \Vanderbilt\FhirSnapshot\ValueObjects\Task::create('enhanced_fhir_fetch', [
+            $task = \Vanderbilt\FhirSnapshot\ValueObjects\Task::create(Constants::TASK_FHIR_FETCH, [
+                'record_id' => $this->dataAccessor->getRecordIdByMrn($missing['mrn']),
                 'mrn' => $missing['mrn'],
                 'resource_type' => $missing['resource_type'],
                 'repeat_instance' => $nextInstance,

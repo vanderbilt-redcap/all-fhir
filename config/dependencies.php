@@ -20,7 +20,7 @@ use Vanderbilt\FhirSnapshot\Queue\Processors\FhirFetchProcessor;
 use Vanderbilt\FhirSnapshot\Queue\Processors\ArchiveProcessor;
 use Vanderbilt\FhirSnapshot\Queue\Processors\EmailNotificationProcessor;
 use Vanderbilt\FhirSnapshot\Settings\Settings;
-use Vanderbilt\FhirSnapshot\Settings\SettingsInterface;
+use Vanderbilt\FhirSnapshot\Constants;
 use Vanderbilt\REDCap\Classes\Fhir\FhirSystem\FhirSystemManager;
 use Vanderbilt\REDCap\Classes\SystemMonitors\MemoryMonitor;
 use Vanderbilt\REDCap\Classes\SystemMonitors\ResourceMonitor;
@@ -30,12 +30,10 @@ use function DI\factory;
 
 return function (ContainerBuilder $containerBuilder) {
     $containerBuilder->addDefinitions([
-        SettingsInterface::class => function () {
-            return new Settings([
-                'memory_threshold'  => 0.8,
-                'time_threshold'    => '30 minutes',
-            ]);
-        },
+        Settings::class => fn() => new Settings([
+            'memory_threshold'  => 0.8,
+            'time_threshold'    => '30 minutes',
+        ]),
         // Define how to instantiate the FhirSnapshot class.
         FhirSnapshot::class => fn (Container $c) => FhirSnapshot::getInstance(),
         RepeatedFormDataAccessor::class => factory(function(Container $c) {
@@ -64,13 +62,12 @@ return function (ContainerBuilder $containerBuilder) {
         QueueManager::class => fn(Container $c) => new QueueManager($c->get(FhirSnapshot::class)),
         MemoryMonitor::class => fn(Container $c) => new MemoryMonitor($c->get(Settings::class)->get('memory_threshold')),
         TimeMonitor::class => fn(Container $c) => new TimeMonitor($c->get(Settings::class)->get('time_threshold')),
-        ResourceMonitor::class => fn(Container $c) => new ResourceMonitor($c->get(MemoryMonitor::class), $c->get(ResourceMonitor::class)),
+        ResourceMonitor::class => fn(Container $c) => new ResourceMonitor($c->get(MemoryMonitor::class), $c->get(TimeMonitor::class)),
         QueueProcessor::class => factory(function(Container $c) {
             $processorFactories = [
-                'fhir_fetch' => fn() => $c->get(FhirFetchProcessor::class),
-                'enhanced_fhir_fetch' => fn() => $c->get(FhirFetchProcessor::class),
-                'archive' => fn() => $c->get(ArchiveProcessor::class),
-                'email_notification' => fn() => $c->get(EmailNotificationProcessor::class),
+                Constants::TASK_FHIR_FETCH => fn() => $c->get(FhirFetchProcessor::class),
+                Constants::TASK_ARCHIVE => fn() => $c->get(ArchiveProcessor::class),
+                Constants::TASK_EMAIL_NOTIFICATION => fn() => $c->get(EmailNotificationProcessor::class),
             ];
             
             return new QueueProcessor(

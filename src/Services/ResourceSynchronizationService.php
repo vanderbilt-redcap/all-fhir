@@ -6,6 +6,7 @@ use Vanderbilt\FhirSnapshot\ValueObjects\MappingResource;
 use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
 use Vanderbilt\FhirSnapshot\ValueObjects\Task;
 use Vanderbilt\FhirSnapshot\Queue\QueueManager;
+use Vanderbilt\FhirSnapshot\Constants;
 
 /**
  * ResourceSynchronizationService
@@ -84,7 +85,7 @@ class ResourceSynchronizationService
             
             $this->dataAccessor->saveResourceMetadata($recordId, $metadata);
             
-            $task = Task::create('enhanced_fhir_fetch', [
+            $task = Task::create(Constants::TASK_FHIR_FETCH, [
                 'record_id' => $recordId,
                 'mrn' => $mrn,
                 'resource_type' => $resource->getName(),
@@ -123,7 +124,7 @@ class ResourceSynchronizationService
             
             $this->dataAccessor->saveResourceMetadata($recordId, $newMetadata);
             
-            $task = Task::create('enhanced_fhir_fetch', [
+            $task = Task::create(Constants::TASK_FHIR_FETCH, [
                 'record_id' => $recordId,
                 'mrn' => $mrn,
                 'resource_type' => $resource->getName(),
@@ -196,7 +197,7 @@ class ResourceSynchronizationService
             
             $this->dataAccessor->saveResourceMetadata($recordId, $metadata);
             
-            $task = Task::create('enhanced_fhir_fetch', [
+            $task = Task::create(Constants::TASK_FHIR_FETCH, [
                 'record_id' => $recordId,
                 'mrn' => $mrn,
                 'resource_type' => $resource->getName(),

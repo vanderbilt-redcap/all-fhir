@@ -27,7 +27,7 @@ use JsonSerializable;
  * 
  * KEY (string):
  * - Identifies the task type and which processor should handle it
- * - Examples: 'enhanced_fhir_fetch', 'email_notification', 'archive'
+ * - Examples: 'fhir_fetch', 'email_notification', 'archive'
  * - Used by QueueProcessor to route tasks to appropriate processors
  * 
  * PARAMS (array):
@@ -60,7 +60,7 @@ use JsonSerializable;
  * - Store: $task->toArray() for QueueManager persistence
  * 
  * COMMON TASK KEYS:
- * - 'enhanced_fhir_fetch': Fetch FHIR data for specific resource
+ * - 'fhir_fetch': Fetch FHIR data for specific resource
  * - 'archive': Archive completed resources
  * - 'cleanup': Clean up orphaned or outdated data
  * - 'notification': Send status notifications

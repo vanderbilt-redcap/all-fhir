@@ -1,15 +1,14 @@
 <?php
 namespace Vanderbilt\FhirSnapshot;
 
-
+use DI\Container;
 use ExternalModules\AbstractExternalModule;
-use Vanderbilt\FhirSnapshot\Queue\QueueManager;
 use Vanderbilt\FhirSnapshot\Queue\QueueProcessor;
-use Vanderbilt\REDCap\Classes\SystemMonitors\ResourceMonitor;
 
 class FhirSnapshot extends AbstractExternalModule {
 
     private static FhirSnapshot $instance;
+    private static ?Container $globalContainer = null;
 
     public static function getInstance() {
         if(!isset(self::$instance)) {
@@ -18,6 +17,27 @@ class FhirSnapshot extends AbstractExternalModule {
             else self::$instance = new self();
         }
         return self::$instance;
+    }
+
+    public function getContainer(): Container {
+        return self::getOrCreateContainer();
+    }
+
+    public static function getOrCreateContainer(): Container {
+        if (self::$globalContainer === null) {
+            $createContainer = require __DIR__ . '/config/container.php';
+            self::$globalContainer = $createContainer();
+
+            // Ensure this specific instance is registered
+            $instance = self::getInstance();
+            self::$globalContainer->set(FhirSnapshot::class, $instance);
+        }
+        return self::$globalContainer;
+    }
+
+    // Reset for testing
+    public static function resetContainer(): void {
+        self::$globalContainer = null;
     }
 
     function redcap_module_api($action, $payload, $project_id, $user_id, $format, $returnFormat, $csvDelim) {
@@ -45,32 +65,25 @@ class FhirSnapshot extends AbstractExternalModule {
 
     function processQueue() {
         try {
-            // Initialize ResourceMonitor with appropriate limits for cron jobs
-            $resourceMonitor = ResourceMonitor::create([
-                'memory' => 0.8,      // 80% memory threshold
-                'time' => '30 minutes' // Allow 50 seconds for processing (cron runs every minute)
-            ]);
             $results = [];
+            $c = $this->getContainer();
+            if(!$c) {
+                return $results;
+            }
             
             foreach($this->getProjectsWithModuleEnabled() as $localProjectId){
                 $this->setProjectId($localProjectId);
 
-                // Initialize queue components
-                $queueManager = new QueueManager($this);
-                $queueProcessor = new QueueProcessor(
-                    $this, 
-                    $queueManager, 
-                    $resourceMonitor
-                );
+                $queueProcessor = $c->get(QueueProcessor::class);
                 // Process the queue
                 $result = $queueProcessor->process();
                 // Log processing summary
-                $this->logToFile("Queue processing completed: " . json_encode($result->toArray()));
+                $this->log("Queue processing completed: ", ['result' => json_encode($result->toArray())]);
                 $results[] = $result;
             }
             return $results;
         } catch (\Exception $e) {
-            $this->logToFile("Error in processQueue: " . $e->getMessage());
+            $this->log("Error in processQueue: ", ['message' => $e->getMessage()]);
             throw $e;
         }
     }

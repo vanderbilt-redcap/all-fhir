@@ -55,7 +55,6 @@ use Exception;
  * 
  * TASK ROUTING BY KEY:
  * - 'fhir_fetch' → FhirFetchProcessor (handles both batch and enhanced functionality)
- * - 'enhanced_fhir_fetch' → FhirFetchProcessor (legacy compatibility)
  * - 'archive' → ArchiveProcessor  
  * - 'email_notification' → EmailNotificationProcessor
  * - Custom task keys → Custom processor implementations

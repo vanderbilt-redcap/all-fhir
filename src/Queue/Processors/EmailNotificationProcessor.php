@@ -2,6 +2,7 @@
 
 namespace Vanderbilt\FhirSnapshot\Queue\Processors;
 
+use Vanderbilt\FhirSnapshot\Constants;
 use Vanderbilt\FhirSnapshot\ValueObjects\Task;
 use Vanderbilt\FhirSnapshot\ValueObjects\TaskProcessorResult;
 
@@ -9,7 +10,7 @@ class EmailNotificationProcessor extends AbstractTaskProcessor
 {
     public function getTaskKey(): string
     {
-        return 'send_email';
+        return Constants::TASK_EMAIL_NOTIFICATION;
     }
 
     protected function doProcess(Task $task): TaskProcessorResult

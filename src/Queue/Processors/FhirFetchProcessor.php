@@ -5,6 +5,7 @@ namespace Vanderbilt\FhirSnapshot\Queue\Processors;
 use Vanderbilt\FhirSnapshot\ValueObjects\Task;
 use Vanderbilt\FhirSnapshot\ValueObjects\TaskProcessorResult;
 use Vanderbilt\FhirSnapshot\Services\FhirResourceService;
+use Vanderbilt\FhirSnapshot\Constants;
 
 class FhirFetchProcessor extends AbstractTaskProcessor
 {
@@ -17,26 +18,27 @@ class FhirFetchProcessor extends AbstractTaskProcessor
 
     public function getTaskKey(): string
     {
-        return 'fhir_fetch';
+        return Constants::TASK_FHIR_FETCH;
     }
 
     public function canHandle(string $taskKey): bool
     {
-        return in_array($taskKey, ['fhir_fetch', 'enhanced_fhir_fetch']);
+        return $taskKey === Constants::TASK_FHIR_FETCH;
     }
 
     protected function doProcess(Task $task): TaskProcessorResult
     {
-        $taskKey = $task->getKey();
+        $params = $task->getParams();
         
-        if ($taskKey === 'enhanced_fhir_fetch') {
-            return $this->processEnhancedFhirFetch($task);
+        // Check if this is an individual resource fetch (has record_id and repeat_instance)
+        if (isset($params['record_id']) && isset($params['repeat_instance'])) {
+            return $this->processIndividualFhirFetch($task);
         } else {
             return $this->processBatchFhirFetch($task);
         }
     }
 
-    private function processEnhancedFhirFetch(Task $task): TaskProcessorResult
+    private function processIndividualFhirFetch(Task $task): TaskProcessorResult
     {
         $validationResult = $this->validateParams($task, ['record_id', 'mrn', 'resource_type', 'repeat_instance']);
         if ($validationResult !== null) {
@@ -51,7 +53,7 @@ class FhirFetchProcessor extends AbstractTaskProcessor
         $mappingResourceId = $params['mapping_resource_id'] ?? null;
         $isRefetch = $params['is_refetch'] ?? false;
 
-        $this->logInfo("Enhanced FHIR fetch for Record ID: $recordId, MRN: $mrn, Resource: $resourceType, Instance: $repeatInstance");
+        $this->logInfo("Individual FHIR fetch for Record ID: $recordId, MRN: $mrn, Resource: $resourceType, Instance: $repeatInstance");
 
         $result = $this->fhirResourceService->fetchAndStoreResource(
             $recordId,

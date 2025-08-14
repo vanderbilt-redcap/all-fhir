@@ -2,6 +2,7 @@
 
 namespace Vanderbilt\FhirSnapshot\Queue\Processors;
 
+use Vanderbilt\FhirSnapshot\Constants;
 use Vanderbilt\FhirSnapshot\ValueObjects\Task;
 use Vanderbilt\FhirSnapshot\ValueObjects\TaskProcessorResult;
 
@@ -9,7 +10,7 @@ class ArchiveProcessor extends AbstractTaskProcessor
 {
     public function getTaskKey(): string
     {
-        return 'create_archive';
+        return Constants::TASK_ARCHIVE;
     }
 
     protected function doProcess(Task $task): TaskProcessorResult
