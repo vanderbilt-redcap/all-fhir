@@ -4,6 +4,7 @@ namespace Vanderbilt\FhirSnapshot\ValueObjects;
 
 use InvalidArgumentException;
 use JsonSerializable;
+use Vanderbilt\FhirSnapshot\Constants;
 use Vanderbilt\FhirSnapshot\Constants\FhirFormFields;
 
 /**
@@ -253,7 +254,7 @@ class FhirResourceMetadata implements JsonSerializable
         return $this->status === self::STATUS_DELETED;
     }
 
-    public function toRedCapData(string $recordId, string $eventId, string $instrumentName = 'fhir_resources'): array
+    public function toRedCapData(string $recordId, string $eventId, string $instrumentName = Constants::DEFAULT_INSTRUMENT_NAME): array
     {
         return [
             $recordId => [

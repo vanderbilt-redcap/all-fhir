@@ -2,6 +2,7 @@
 
 namespace Vanderbilt\FhirSnapshot\Services;
 
+use Vanderbilt\FhirSnapshot\Constants;
 use Vanderbilt\FhirSnapshot\Constants\FhirFormFields;
 use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
 use Vanderbilt\FhirSnapshot\ValueObjects\RepeatedFormInstance;
@@ -42,7 +43,7 @@ class RepeatedFormDataAccessor
     private string $instrumentName;
     private array $fieldMap;
 
-    public function __construct(string $projectId, string $instrumentName = 'fhir_resources')
+    public function __construct(string $projectId, string $instrumentName = Constants::DEFAULT_INSTRUMENT_NAME)
     {
         $this->projectId = $projectId;
         $this->instrumentName = $instrumentName;

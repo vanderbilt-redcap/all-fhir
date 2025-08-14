@@ -8,13 +8,13 @@ use Vanderbilt\FhirSnapshot\Controllers\MrnController;
 use Vanderbilt\FhirSnapshot\Controllers\ArchiveController;
 use Vanderbilt\FhirSnapshot\Controllers\ProjectSettingsController;
 use Vanderbilt\FhirSnapshot\Queue\QueueManager;
-use Vanderbilt\FhirSnapshot\Factories\RepeatedFormDataAccessorFactory;
-use Vanderbilt\FhirSnapshot\Factories\RepeatedFormResourceManagerFactory;
 use Vanderbilt\FhirSnapshot\Services\FhirCategoryService;
 use Vanderbilt\FhirSnapshot\Services\FhirMetadataService;
 use Vanderbilt\FhirSnapshot\Services\FhirResourceService;
 use Vanderbilt\FhirSnapshot\Services\MappingResourceService;
 use Vanderbilt\FhirSnapshot\Services\RepeatedFormDataAccessor;
+use Vanderbilt\FhirSnapshot\Services\RepeatedFormResourceManager;
+use Vanderbilt\FhirSnapshot\Services\ResourceSynchronizationService;
 use Vanderbilt\REDCap\Classes\Fhir\FhirSystem\FhirSystemManager;
 
 use function DI\factory;
@@ -27,15 +27,23 @@ return function (ContainerBuilder $containerBuilder) {
             $module = $c->get(FhirSnapshot::class);
             return new RepeatedFormDataAccessor($module->getProjectId());
         }),
+        ResourceSynchronizationService::class => factory(function(Container $c) {
+            $module = $c->get(FhirSnapshot::class);
+            return new ResourceSynchronizationService(
+                $c->get(RepeatedFormDataAccessor::class),
+                $c->get(QueueManager::class),
+                $module->getProjectId()
+            );
+        }),
+        RepeatedFormResourceManager::class => factory(function(Container $c) {
+            return new RepeatedFormResourceManager(
+                $c->get(FhirSnapshot::class),
+                $c->get(RepeatedFormDataAccessor::class),
+                $c->get(ResourceSynchronizationService::class),
+                $c->get(QueueManager::class)
+            );
+        }),
         FhirResourceService::class => fn(Container $c) => new FhirResourceService($c->get(RepeatedFormDataAccessor::class)),
-
-        // Define how to instantiate factories
-        RepeatedFormDataAccessorFactory::class => fn(Container $c) => new RepeatedFormDataAccessorFactory(),
-        RepeatedFormResourceManagerFactory::class => fn(Container $c) => new RepeatedFormResourceManagerFactory(
-            $c->get(RepeatedFormDataAccessorFactory::class),
-            $c->get(FhirSnapshot::class),
-            $c->get(QueueManager::class)
-        ),
 
         // Define how to instantiate the controllers.
         ArchiveController::class => fn(Container $c) => new ArchiveController($c->get(FhirSnapshot::class)),
@@ -47,7 +55,7 @@ return function (ContainerBuilder $containerBuilder) {
             $c->get(MappingResourceService::class),
             $c->get(FhirMetadataService::class),
             $c->get(FhirCategoryService::class),
-            $c->get(RepeatedFormResourceManagerFactory::class)
+            $c->get(RepeatedFormResourceManager::class)
         ),
     ]);
 };

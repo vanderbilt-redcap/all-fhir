@@ -5,7 +5,7 @@ namespace Vanderbilt\FhirSnapshot\Controllers;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Vanderbilt\FhirSnapshot\FhirSnapshot;
-use Vanderbilt\FhirSnapshot\Factories\RepeatedFormResourceManagerFactory;
+use Vanderbilt\FhirSnapshot\Services\RepeatedFormResourceManager;
 use Vanderbilt\FhirSnapshot\Services\FhirCategoryService;
 use Vanderbilt\FhirSnapshot\Services\FhirMetadataService;
 use Vanderbilt\FhirSnapshot\Services\MappingResourceService;
@@ -21,7 +21,7 @@ class ProjectSettingsController extends AbstractController
         protected MappingResourceService $mappingResourceService,
         protected FhirMetadataService $fhirMetadataService,
         protected FhirCategoryService $fhirCategoryService,
-        protected RepeatedFormResourceManagerFactory $resourceManagerFactory
+        protected RepeatedFormResourceManager $resourceManager
     ) {
         parent::__construct($module);
     }
@@ -176,17 +176,13 @@ class ProjectSettingsController extends AbstractController
         }
         
         try {
-            // Create project-specific resource manager
-            $projectId = $this->module->getProjectId();
-            $resourceManager = $this->resourceManagerFactory->create($projectId);
-            
             // Get all MRNs for sync operations
-            $allMrns = $resourceManager->getAllMrns();
+            $allMrns = $this->resourceManager->getAllMrns();
             $syncResults['total_mrns'] = count($allMrns);
             
             // Process added resources
             foreach ($changeResults['added'] as $resource) {
-                $tasks = $resourceManager->addMappingResource($resource);
+                $tasks = $this->resourceManager->addMappingResource($resource);
                 $syncResults['resources_added']++;
                 $syncResults['tasks_created'] += count($tasks);
                 $syncResults['instances_updated'] += count($allMrns);
@@ -196,7 +192,7 @@ class ProjectSettingsController extends AbstractController
             foreach ($changeResults['modified'] as $resource) {
                 // For modified resources, we need to update existing instances
                 // This is a simplified approach - in practice you might want more granular control
-                $tasks = $resourceManager->updateMappingResource($resource);
+                $tasks = $this->resourceManager->updateMappingResource($resource);
                 $syncResults['resources_modified']++;
                 $syncResults['tasks_created'] += count($tasks);
                 $syncResults['instances_updated'] += count($allMrns);
@@ -204,7 +200,7 @@ class ProjectSettingsController extends AbstractController
             
             // Process removed resources  
             foreach ($changeResults['removed'] as $resource) {
-                $result = $resourceManager->removeMappingResource($resource);
+                $result = $this->resourceManager->removeMappingResource($resource);
                 $syncResults['resources_removed']++;
                 $syncResults['instances_updated'] += $result['instances_affected'] ?? 0;
             }
