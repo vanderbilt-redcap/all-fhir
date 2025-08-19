@@ -163,14 +163,16 @@ class RepeatedFormResourceManager
         
         $this->dataAccessor->saveResourceMetadata($recordId, $retryMetadata);
         
-        // Create simple generic task
-        $task = \Vanderbilt\FhirSnapshot\ValueObjects\Task::create(Constants::TASK_FHIR_FETCH, [
-            'trigger' => 'retry_single_resource'
-        ]);
+        // Create simple generic task only if none pending
+        if (!$this->hasPendingFhirFetchTask()) {
+            $task = \Vanderbilt\FhirSnapshot\ValueObjects\Task::create(Constants::TASK_FHIR_FETCH, [
+                'trigger' => 'retry_single_resource'
+            ]);
+            
+            $this->queueManager->addTask($task->getKey(), $task->getParams(), $task->getMetadata());
+        }
         
-        $this->queueManager->addTask($task->getKey(), $task->getParams(), $task->getMetadata());
-        
-        return true;
+        return true; // Retry marked as pending, will be processed by existing or new task
     }
 
     public function bulkRetryFailed(array $filters = []): int
@@ -206,8 +208,8 @@ class RepeatedFormResourceManager
             }
         }
         
-        // Create simple generic retry task for all failed resources
-        if ($retriedCount > 0) {
+        // Create simple generic retry task for all failed resources only if none pending
+        if ($retriedCount > 0 && !$this->hasPendingFhirFetchTask()) {
             $task = \Vanderbilt\FhirSnapshot\ValueObjects\Task::create(Constants::TASK_FHIR_FETCH, [
                 'trigger' => 'bulk_retry_failed'
             ]);
@@ -241,8 +243,8 @@ class RepeatedFormResourceManager
             $createdInstances++;
         }
         
-        // Create simple generic sync task if there are missing instances
-        if ($createdInstances > 0) {
+        // Create simple generic sync task if there are missing instances and no pending task
+        if ($createdInstances > 0 && !$this->hasPendingFhirFetchTask()) {
             $task = \Vanderbilt\FhirSnapshot\ValueObjects\Task::create(Constants::TASK_FHIR_FETCH, [
                 'trigger' => 'full_sync'
             ]);
@@ -377,5 +379,23 @@ class RepeatedFormResourceManager
         }
         
         return $archivedCount;
+    }
+
+    /**
+     * Check if there are any pending FHIR fetch tasks in the queue
+     * 
+     * @return bool True if there is at least one pending FHIR fetch task
+     */
+    private function hasPendingFhirFetchTask(): bool
+    {
+        $pendingTasks = $this->queueManager->getTasksByStatus('pending');
+        
+        foreach ($pendingTasks as $task) {
+            if ($task->getKey() === Constants::TASK_FHIR_FETCH) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 }

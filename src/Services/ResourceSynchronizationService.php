@@ -24,13 +24,13 @@ use Vanderbilt\FhirSnapshot\Constants;
  * 
  * MAPPING RESOURCE CREATED:
  * - Creates repeated form instances for all existing MRNs
- * - Enqueues FHIR fetch tasks for the new resource type
+ * - Enqueues simple generic FHIR fetch task (only if no pending task exists)
  * - Sets initial status to PENDING for all instances
  * 
  * MAPPING RESOURCE UPDATED:
  * - Marks existing instances as OUTDATED
  * - Creates new instances with updated mapping configuration
- * - Enqueues refetch tasks to get updated data
+ * - Enqueues simple generic refetch task (only if no pending task exists)
  * 
  * MAPPING RESOURCE DELETED:
  * - Marks instances as DELETED (preserves audit trail)
@@ -39,7 +39,7 @@ use Vanderbilt\FhirSnapshot\Constants;
  * 
  * NEW MRN ADDED:
  * - Creates instances for all active resource mappings
- * - Enqueues initial fetch tasks for the new patient
+ * - Enqueues simple generic fetch task for new patient (only if no pending task exists)
  * 
  * SYNCHRONIZATION FEATURES:
  * - Compares configured vs existing resource instances
@@ -85,14 +85,18 @@ class ResourceSynchronizationService
             $createdInstances++;
         }
         
-        // Create simple generic FHIR fetch task
-        $task = Task::create(Constants::TASK_FHIR_FETCH, [
-            'trigger' => 'new_mapping_resource' // Optional context for logging
-        ]);
+        // Create simple generic FHIR fetch task only if none pending
+        if (!$this->hasPendingFhirFetchTask()) {
+            $task = Task::create(Constants::TASK_FHIR_FETCH, [
+                'trigger' => 'new_mapping_resource' // Optional context for logging
+            ]);
+            
+            $this->queueManager->addTask($task->getKey(), $task->getParams(), $task->getMetadata());
+            
+            return [$task];
+        }
         
-        $this->queueManager->addTask($task->getKey(), $task->getParams(), $task->getMetadata());
-        
-        return [$task];
+        return []; // No new task needed - existing pending task will handle it
     }
 
     public function syncMappingResourceUpdated(MappingResource $resource, array $existingMrns): array
@@ -124,14 +128,18 @@ class ResourceSynchronizationService
             $newInstances++;
         }
         
-        // Create simple generic FHIR fetch task for refetch
-        $task = Task::create(Constants::TASK_FHIR_FETCH, [
-            'trigger' => 'updated_mapping_resource' // Optional context for logging
-        ]);
+        // Create simple generic FHIR fetch task for refetch only if none pending
+        if (!$this->hasPendingFhirFetchTask()) {
+            $task = Task::create(Constants::TASK_FHIR_FETCH, [
+                'trigger' => 'updated_mapping_resource' // Optional context for logging
+            ]);
+            
+            $this->queueManager->addTask($task->getKey(), $task->getParams(), $task->getMetadata());
+            
+            return [$task];
+        }
         
-        $this->queueManager->addTask($task->getKey(), $task->getParams(), $task->getMetadata());
-        
-        return [$task];
+        return []; // No new task needed - existing pending task will handle it
     }
 
     public function syncMappingResourceDeleted(MappingResource $resource, array $existingMrns): array
@@ -191,14 +199,18 @@ class ResourceSynchronizationService
             $createdInstances++;
         }
         
-        // Create simple generic FHIR fetch task for new MRN
-        $task = Task::create(Constants::TASK_FHIR_FETCH, [
-            'trigger' => 'new_mrn' // Optional context for logging
-        ]);
+        // Create simple generic FHIR fetch task for new MRN only if none pending
+        if (!$this->hasPendingFhirFetchTask()) {
+            $task = Task::create(Constants::TASK_FHIR_FETCH, [
+                'trigger' => 'new_mrn' // Optional context for logging
+            ]);
+            
+            $this->queueManager->addTask($task->getKey(), $task->getParams(), $task->getMetadata());
+            
+            return [$task];
+        }
         
-        $this->queueManager->addTask($task->getKey(), $task->getParams(), $task->getMetadata());
-        
-        return [$task];
+        return []; // No new task needed - existing pending task will handle it
     }
 
     public function compareConfiguredVsExisting(array $configuredResources, array $existingMrns): array
@@ -275,6 +287,24 @@ class ResourceSynchronizationService
         }
         
         return $cleanedCount;
+    }
+
+    /**
+     * Check if there are any pending FHIR fetch tasks in the queue
+     * 
+     * @return bool True if there is at least one pending FHIR fetch task
+     */
+    private function hasPendingFhirFetchTask(): bool
+    {
+        $pendingTasks = $this->queueManager->getTasksByStatus('pending');
+        
+        foreach ($pendingTasks as $task) {
+            if ($task->getKey() === Constants::TASK_FHIR_FETCH) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 
     public function getProjectSyncStatus(): array
