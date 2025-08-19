@@ -206,6 +206,7 @@ $projectSummary = $resourceManager->getProjectSummary();
 
 <div class="test-section">
     <h3>Project Summary</h3>
+    <p><em>This section displays overall project statistics including total MRNs, background queue processing status (pending/failed tasks), and resource status counts across all patients in the FHIR snapshot system.</em></p>
     <table class="status-table">
         <tr>
             <th>Total MRNs</th>
@@ -234,6 +235,7 @@ $projectSummary = $resourceManager->getProjectSummary();
 
 <div class="test-section">
     <h3>Create New Resource Instance</h3>
+    <p><em>This section manually creates new FHIR resource instances in the repeated forms structure for testing purposes, simulating what the background queue processor would create during normal operation.</em></p>
     <form method="post">
         <input type="hidden" name="redcap_csrf_token" value="<?= System::getCsrfToken() ?>">
         <input type="hidden" name="action" value="create_instance">
@@ -267,6 +269,7 @@ $projectSummary = $resourceManager->getProjectSummary();
 
 <div class="test-section">
     <h3>Add New Mapping Resource</h3>
+    <p><em>This section adds new FHIR resource types to fetch from the configured FHIR system. It supports both predefined REDCap categories and custom FHIR query specifications (e.g., <code>Observation?category=social-history</code>) to define what data should be retrieved.</em></p>
     <form method="post" id="mapping-resource-form">
         <input type="hidden" name="redcap_csrf_token" value="<?= System::getCsrfToken() ?>">
         <input type="hidden" name="action" value="add_mapping_resource">
@@ -338,6 +341,7 @@ $projectSummary = $resourceManager->getProjectSummary();
 
 <div class="test-section">
     <h3>Retry Failed Resource</h3>
+    <p><em>This section retries specific FHIR resources that failed during the background queue processing, allowing recovery from transient errors, connectivity issues, or break-the-glass restrictions that may have been resolved.</em></p>
     <form method="post">
         <input type="hidden" name="action" value="retry_failed">
         
@@ -367,6 +371,7 @@ $projectSummary = $resourceManager->getProjectSummary();
 
 <div class="test-section">
     <h3>Export Resource Data</h3>
+    <p><em>This section exports all stored FHIR JSON payloads for a specific patient (MRN) as a downloadable JSON file, providing access to the raw FHIR data useful for auditing, research workflows, or external analysis.</em></p>
     <form method="post">
         <input type="hidden" name="action" value="export_data">
         
@@ -386,6 +391,7 @@ $projectSummary = $resourceManager->getProjectSummary();
 
 <div class="test-section">
     <h3>MRN Details</h3>
+    <p><em>This section displays detailed status information for each patient's FHIR resources, showing the repeated forms structure with individual resource instances, their processing status, fetch timestamps, and any error messages encountered during data retrieval.</em></p>
     <?php if (!empty($allMrns)): ?>
         <?php foreach (array_slice($allMrns, 0, 5) as $mrn): ?>
             <?php 
