@@ -173,7 +173,7 @@ class QueueProcessor
                     "No processor found for task key: {$task->getKey()}"
                 );
             } else {
-                $result = $processor->process($task);
+                $result = $processor->process($task, $this->resourceMonitor);
             }
 
             // Update task status based on result

@@ -42,7 +42,6 @@ class FhirFetchProcessor extends AbstractTaskProcessor
     {
         $params = $task->getParams();
         $startTime = microtime(true);
-        $startMemory = memory_get_usage(true);
         
         $this->logInfo("Starting generic FHIR fetch task - Trigger: " . ($params['trigger'] ?? 'unknown'));
         
@@ -52,9 +51,7 @@ class FhirFetchProcessor extends AbstractTaskProcessor
                 'started_at' => date('Y-m-d H:i:s'),
                 'completed_at' => null,
                 'duration_seconds' => 0,
-                'termination_reason' => 'completed',
-                'memory_peak_mb' => 0,
-                'memory_limit_percent' => 0
+                'termination_reason' => 'completed'
             ],
             'statistics' => [
                 'total_mrns_targeted' => 0,
@@ -110,8 +107,8 @@ class FhirFetchProcessor extends AbstractTaskProcessor
         foreach ($pendingResources as $resource) {
             $resourceStartTime = microtime(true);
             
-            // Check resource limits before processing each resource
-            if ($this->shouldPauseProcessing($startTime)) {
+            // Check resource limits before processing each resource using inherited method
+            if ($this->shouldPauseProcessing()) {
                 $this->logInfo("Resource limits approaching, creating continuation task");
                 $taskSummary['execution']['termination_reason'] = 'resource_limit_approached';
                 $taskSummary['continuation']['next_task_needed'] = true;
@@ -190,7 +187,12 @@ class FhirFetchProcessor extends AbstractTaskProcessor
         $endTime = microtime(true);
         $taskSummary['execution']['completed_at'] = date('Y-m-d H:i:s');
         $taskSummary['execution']['duration_seconds'] = round($endTime - $startTime, 2);
-        $taskSummary['execution']['memory_peak_mb'] = round((memory_get_peak_usage(true) - $startMemory) / 1024 / 1024, 2);
+        
+        // Add resource status information if monitor available
+        $resourceStatus = $this->getResourceStatus();
+        if (!empty($resourceStatus)) {
+            $taskSummary['execution']['resource_status'] = $resourceStatus;
+        }
         
         // Calculate performance metrics
         if (!empty($processingTimes)) {
@@ -227,14 +229,13 @@ class FhirFetchProcessor extends AbstractTaskProcessor
             if (!$recordId) continue;
             
             $allMetadata = $this->dataAccessor->getAllResourceMetadata($recordId);
+            /** @var FhirResourceMetadata $meta */
             foreach ($allMetadata as $meta) {
                 if ($meta->isPending()) {
                     $pendingResources[] = [
                         'mrn' => $mrn,
                         'record_id' => $recordId,
-                        'metadata' => $meta,
-                        'resource_type' => $meta->getResourceType(),
-                        'repeat_instance' => $meta->getRepeatInstance()
+                        'metadata' => $meta
                     ];
                 }
             }
@@ -256,10 +257,10 @@ class FhirFetchProcessor extends AbstractTaskProcessor
             $result = $this->fhirResourceService->fetchAndStoreResource(
                 $resource['record_id'],
                 $resource['mrn'],
-                $resource['resource_type'],
-                $resource['repeat_instance'],
+                $resource['metadata']->getResourceType(),
+                $resource['metadata']->getRepeatInstance(),
                 [
-                    'resource_spec' => $resource['resource_type'], // Default to resource type
+                    'resource_spec' => $resource['metadata']->getResourceType(), // Default to resource type
                     'mapping_resource_id' => null // Will be determined by the service
                 ]
             );
@@ -298,40 +299,6 @@ class FhirFetchProcessor extends AbstractTaskProcessor
                 'success' => false,
                 'error' => $e->getMessage()
             ];
-        }
-    }
-    
-    private function shouldPauseProcessing(float $startTime): bool
-    {
-        // Check time limit (30 minutes max)
-        $maxExecutionTime = 30 * 60; // 30 minutes
-        if ((microtime(true) - $startTime) > $maxExecutionTime) {
-            return true;
-        }
-        
-        // Check memory limit (80% of available)
-        $memoryLimit = ini_get('memory_limit');
-        if ($memoryLimit !== '-1') {
-            $memoryLimitBytes = $this->convertToBytes($memoryLimit);
-            $currentUsage = memory_get_usage(true);
-            if ($currentUsage > ($memoryLimitBytes * 0.8)) {
-                return true;
-            }
-        }
-        
-        return false;
-    }
-    
-    private function convertToBytes(string $memoryLimit): int
-    {
-        $unit = strtolower(substr($memoryLimit, -1));
-        $value = (int) $memoryLimit;
-        
-        switch ($unit) {
-            case 'g': return $value * 1024 * 1024 * 1024;
-            case 'm': return $value * 1024 * 1024;
-            case 'k': return $value * 1024;
-            default: return $value;
         }
     }
     

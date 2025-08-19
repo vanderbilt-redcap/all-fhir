@@ -4,6 +4,7 @@ namespace Vanderbilt\FhirSnapshot\Queue\Processors;
 
 use Vanderbilt\FhirSnapshot\ValueObjects\Task;
 use Vanderbilt\FhirSnapshot\ValueObjects\TaskProcessorResult;
+use Vanderbilt\REDCap\Classes\SystemMonitors\ResourceMonitor;
 
 interface TaskProcessorInterface
 {
@@ -11,9 +12,10 @@ interface TaskProcessorInterface
      * Process a task
      *
      * @param Task $task The task to process
+     * @param ResourceMonitor|null $resourceMonitor Optional resource monitor for tracking time/memory
      * @return TaskProcessorResult The result of processing
      */
-    public function process(Task $task): TaskProcessorResult;
+    public function process(Task $task, ?ResourceMonitor $resourceMonitor = null): TaskProcessorResult;
 
     /**
      * Get the task key this processor handles

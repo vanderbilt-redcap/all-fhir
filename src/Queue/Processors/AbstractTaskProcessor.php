@@ -6,18 +6,22 @@ use Vanderbilt\FhirSnapshot\FhirSnapshot;
 use Vanderbilt\FhirSnapshot\ValueObjects\Task;
 use Exception;
 use Vanderbilt\FhirSnapshot\ValueObjects\TaskProcessorResult;
+use Vanderbilt\REDCap\Classes\SystemMonitors\ResourceMonitor;
 
 abstract class AbstractTaskProcessor implements TaskProcessorInterface
 {
     protected FhirSnapshot $module;
+    protected ?ResourceMonitor $resourceMonitor = null;
 
     public function __construct(FhirSnapshot $module)
     {
         $this->module = $module;
     }
 
-    public function process(Task $task): TaskProcessorResult
+    public function process(Task $task, ?ResourceMonitor $resourceMonitor = null): TaskProcessorResult
     {
+        $this->resourceMonitor = $resourceMonitor;
+        
         if (!$this->canProcess($task)) {
             return TaskProcessorResult::failure(
                 sprintf('Processor %s cannot handle task with key: %s', 
@@ -89,6 +93,34 @@ abstract class AbstractTaskProcessor implements TaskProcessorInterface
         }
 
         return null;
+    }
+
+    /**
+     * Check if resources are within acceptable limits
+     *
+     * @return bool True if resources are OK, false if limits exceeded
+     */
+    protected function shouldPauseProcessing(): bool
+    {
+        if ($this->resourceMonitor === null) {
+            return false; // No monitoring available
+        }
+        
+        return !$this->resourceMonitor->checkResources();
+    }
+
+    /**
+     * Get resource monitor status information
+     *
+     * @return array Status information about resources
+     */
+    protected function getResourceStatus(): array
+    {
+        if ($this->resourceMonitor === null) {
+            return [];
+        }
+        
+        return $this->resourceMonitor->getStatus();
     }
 
     protected function logInfo(string $message): void
