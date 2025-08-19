@@ -163,14 +163,9 @@ class RepeatedFormResourceManager
         
         $this->dataAccessor->saveResourceMetadata($recordId, $retryMetadata);
         
-        // Create generic task for retry (will process all pending resources including this one)
+        // Create simple generic task
         $task = \Vanderbilt\FhirSnapshot\ValueObjects\Task::create(Constants::TASK_FHIR_FETCH, [
-            'operation' => 'retry_single_resource',
-            'target_mrn' => $mrn,
-            'target_record_id' => $recordId,
-            'resource_type' => $resourceType,
-            'retry_specific_instance' => $repeatInstance,
-            'is_retry' => true
+            'trigger' => 'retry_single_resource'
         ]);
         
         $this->queueManager->addTask($task->getKey(), $task->getParams(), $task->getMetadata());
@@ -211,13 +206,10 @@ class RepeatedFormResourceManager
             }
         }
         
-        // Create single generic retry task for all failed resources
+        // Create simple generic retry task for all failed resources
         if ($retriedCount > 0) {
             $task = \Vanderbilt\FhirSnapshot\ValueObjects\Task::create(Constants::TASK_FHIR_FETCH, [
-                'operation' => 'bulk_retry_failed',
-                'resource_type_filter' => $filters['resource_type'] ?? null,
-                'total_retry_count' => $retriedCount,
-                'is_bulk_retry' => true
+                'trigger' => 'bulk_retry_failed'
             ]);
             
             $this->queueManager->addTask($task->getKey(), $task->getParams(), $task->getMetadata());
@@ -249,13 +241,10 @@ class RepeatedFormResourceManager
             $createdInstances++;
         }
         
-        // Create single generic sync task if there are missing instances
+        // Create simple generic sync task if there are missing instances
         if ($createdInstances > 0) {
             $task = \Vanderbilt\FhirSnapshot\ValueObjects\Task::create(Constants::TASK_FHIR_FETCH, [
-                'operation' => 'full_sync',
-                'created_instances' => $createdInstances,
-                'target_mrn_count' => count($existingMrns),
-                'is_sync_created' => true
+                'trigger' => 'full_sync'
             ]);
             
             $this->queueManager->addTask($task->getKey(), $task->getParams(), $task->getMetadata());

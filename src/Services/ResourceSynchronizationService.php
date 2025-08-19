@@ -85,15 +85,9 @@ class ResourceSynchronizationService
             $createdInstances++;
         }
         
-        // Create single generic FHIR fetch task
+        // Create simple generic FHIR fetch task
         $task = Task::create(Constants::TASK_FHIR_FETCH, [
-            'resource_type' => $resource->getName(),
-            'resource_spec' => $resource->getResourceSpec(),
-            'mapping_resource_id' => $resource->getId(),
-            'mapping_resource_name' => $resource->getName(),
-            'target_mrn_count' => count($existingMrns),
-            'created_instances' => $createdInstances,
-            'operation' => 'new_mapping_resource'
+            'trigger' => 'new_mapping_resource' // Optional context for logging
         ]);
         
         $this->queueManager->addTask($task->getKey(), $task->getParams(), $task->getMetadata());
@@ -130,17 +124,9 @@ class ResourceSynchronizationService
             $newInstances++;
         }
         
-        // Create single generic FHIR fetch task for refetch
+        // Create simple generic FHIR fetch task for refetch
         $task = Task::create(Constants::TASK_FHIR_FETCH, [
-            'resource_type' => $resource->getName(),
-            'resource_spec' => $resource->getResourceSpec(),
-            'mapping_resource_id' => $resource->getId(),
-            'mapping_resource_name' => $resource->getName(),
-            'target_mrn_count' => count($existingMrns),
-            'outdated_instances' => $updatedInstances,
-            'new_instances' => $newInstances,
-            'operation' => 'updated_mapping_resource',
-            'is_refetch' => true
+            'trigger' => 'updated_mapping_resource' // Optional context for logging
         ]);
         
         $this->queueManager->addTask($task->getKey(), $task->getParams(), $task->getMetadata());
@@ -205,15 +191,9 @@ class ResourceSynchronizationService
             $createdInstances++;
         }
         
-        // Create single generic FHIR fetch task for new MRN
+        // Create simple generic FHIR fetch task for new MRN
         $task = Task::create(Constants::TASK_FHIR_FETCH, [
-            'target_mrn' => $mrn,
-            'target_record_id' => $recordId,
-            'resource_types' => array_map(fn($r) => $r->getName(), $activeResources),
-            'mapping_resource_ids' => array_map(fn($r) => $r->getId(), $activeResources),
-            'target_mrn_count' => 1,
-            'created_instances' => $createdInstances,
-            'operation' => 'new_mrn'
+            'trigger' => 'new_mrn' // Optional context for logging
         ]);
         
         $this->queueManager->addTask($task->getKey(), $task->getParams(), $task->getMetadata());

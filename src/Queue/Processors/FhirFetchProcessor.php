@@ -160,7 +160,7 @@ class FhirFetchProcessor extends AbstractTaskProcessor
         $startTime = microtime(true);
         $startMemory = memory_get_usage(true);
         
-        $this->logInfo("Starting generic FHIR fetch task - Operation: " . ($params['operation'] ?? 'unknown'));
+        $this->logInfo("Starting generic FHIR fetch task - Trigger: " . ($params['trigger'] ?? 'unknown'));
         
         // Initialize summary structure
         $taskSummary = [
@@ -197,11 +197,7 @@ class FhirFetchProcessor extends AbstractTaskProcessor
             ],
             'failed_samples' => [],
             'resource_context' => [
-                'resource_type' => $params['resource_type'] ?? null,
-                'resource_spec' => $params['resource_spec'] ?? null,
-                'mapping_resource_id' => $params['mapping_resource_id'] ?? null,
-                'mapping_resource_name' => $params['mapping_resource_name'] ?? null,
-                'operation' => $params['operation'] ?? 'unknown'
+                'trigger' => $params['trigger'] ?? 'unknown'
             ],
             'continuation' => [
                 'next_task_needed' => false,
@@ -210,8 +206,8 @@ class FhirFetchProcessor extends AbstractTaskProcessor
             ]
         ];
         
-        // Get pending resources to process
-        $pendingResources = $this->getPendingResources($params);
+        // Get pending resources to process (simplified approach)
+        $pendingResources = $this->getPendingResources();
         $taskSummary['statistics']['total_mrns_targeted'] = count($pendingResources);
         
         if (empty($pendingResources)) {
@@ -302,7 +298,7 @@ class FhirFetchProcessor extends AbstractTaskProcessor
         }
         
         // Calculate remaining pending resources
-        $remainingResources = $this->getPendingResources($params);
+        $remainingResources = $this->getPendingResources();
         $taskSummary['statistics']['total_mrns_remaining'] = count($remainingResources);
         $taskSummary['status_summary']['pending'] = count($remainingResources);
         
@@ -337,83 +333,26 @@ class FhirFetchProcessor extends AbstractTaskProcessor
         return TaskProcessorResult::success($message, $taskSummary);
     }
     
-    private function getPendingResources(array $params): array
+    private function getPendingResources(): array
     {
         $pendingResources = [];
+        $allMrns = $this->dataAccessor->getAllMrns();
         
-        // Handle different operation types
-        if (isset($params['operation'])) {
-            switch ($params['operation']) {
-                case 'new_mapping_resource':
-                case 'updated_mapping_resource':
-                    // Get all MRNs with pending resources of the specified type
-                    $allMrns = $this->dataAccessor->getAllMrns();
-                    foreach ($allMrns as $mrn) {
-                        $recordId = $this->dataAccessor->getRecordIdByMrn($mrn);
-                        if (!$recordId) continue;
-                        
-                        $metadata = $this->dataAccessor->getResourceMetadataByType($recordId, $params['resource_type']);
-                        foreach ($metadata as $meta) {
-                            if ($meta->isPending()) {
-                                $pendingResources[] = [
-                                    'mrn' => $mrn,
-                                    'record_id' => $recordId,
-                                    'resource_type' => $params['resource_type'],
-                                    'resource_spec' => $params['resource_spec'] ?? $params['resource_type'],
-                                    'repeat_instance' => $meta->getRepeatInstance(),
-                                    'metadata' => $meta
-                                ];
-                            }
-                        }
-                    }
-                    break;
-                    
-                case 'new_mrn':
-                    // Get pending resources for specific MRN
-                    if (isset($params['target_mrn'])) {
-                        $recordId = $this->dataAccessor->getRecordIdByMrn($params['target_mrn']);
-                        if ($recordId && isset($params['resource_types'])) {
-                            foreach ($params['resource_types'] as $resourceType) {
-                                $metadata = $this->dataAccessor->getResourceMetadataByType($recordId, $resourceType);
-                                foreach ($metadata as $meta) {
-                                    if ($meta->isPending()) {
-                                        $pendingResources[] = [
-                                            'mrn' => $params['target_mrn'],
-                                            'record_id' => $recordId,
-                                            'resource_type' => $resourceType,
-                                            'resource_spec' => $resourceType, // Default to resource type
-                                            'repeat_instance' => $meta->getRepeatInstance(),
-                                            'metadata' => $meta
-                                        ];
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    break;
-                    
-                default:
-                    // Generic: get all pending resources
-                    $allMrns = $this->dataAccessor->getAllMrns();
-                    foreach ($allMrns as $mrn) {
-                        $recordId = $this->dataAccessor->getRecordIdByMrn($mrn);
-                        if (!$recordId) continue;
-                        
-                        $allMetadata = $this->dataAccessor->getAllResourceMetadata($recordId);
-                        foreach ($allMetadata as $meta) {
-                            if ($meta->isPending()) {
-                                $pendingResources[] = [
-                                    'mrn' => $mrn,
-                                    'record_id' => $recordId,
-                                    'resource_type' => $meta->getResourceType(),
-                                    'resource_spec' => $meta->getResourceType(),
-                                    'repeat_instance' => $meta->getRepeatInstance(),
-                                    'metadata' => $meta
-                                ];
-                            }
-                        }
-                    }
-                    break;
+        foreach ($allMrns as $mrn) {
+            $recordId = $this->dataAccessor->getRecordIdByMrn($mrn);
+            if (!$recordId) continue;
+            
+            $allMetadata = $this->dataAccessor->getAllResourceMetadata($recordId);
+            foreach ($allMetadata as $meta) {
+                if ($meta->isPending()) {
+                    $pendingResources[] = [
+                        'mrn' => $mrn,
+                        'record_id' => $recordId,
+                        'metadata' => $meta,
+                        'resource_type' => $meta->getResourceType(),
+                        'repeat_instance' => $meta->getRepeatInstance()
+                    ];
+                }
             }
         }
         
@@ -429,14 +368,14 @@ class FhirFetchProcessor extends AbstractTaskProcessor
         $this->dataAccessor->saveResourceMetadata($resource['record_id'], $metadata);
         
         try {
-            // Fetch the resource
+            // Fetch the resource - determine resource spec dynamically
             $result = $this->fhirResourceService->fetchAndStoreResource(
                 $resource['record_id'],
                 $resource['mrn'],
                 $resource['resource_type'],
                 $resource['repeat_instance'],
                 [
-                    'resource_spec' => $resource['resource_spec'],
+                    'resource_spec' => $resource['resource_type'], // Default to resource type
                     'mapping_resource_id' => null // Will be determined by the service
                 ]
             );
