@@ -157,16 +157,19 @@ class RepeatedFormResourceManager
             return false;
         }
         
+        // Mark as pending for retry
         $retryMetadata = $metadata
-            ->withStatus(FhirResourceMetadata::STATUS_PENDING);
+            ->withStatus(FhirResourceMetadata::STATUS_PENDING); // Clear previous error
         
         $this->dataAccessor->saveResourceMetadata($recordId, $retryMetadata);
         
+        // Create generic task for retry (will process all pending resources including this one)
         $task = \Vanderbilt\FhirSnapshot\ValueObjects\Task::create(Constants::TASK_FHIR_FETCH, [
-            'record_id' => $recordId,
-            'mrn' => $mrn,
+            'operation' => 'retry_single_resource',
+            'target_mrn' => $mrn,
+            'target_record_id' => $recordId,
             'resource_type' => $resourceType,
-            'repeat_instance' => $repeatInstance,
+            'retry_specific_instance' => $repeatInstance,
             'is_retry' => true
         ]);
         
@@ -180,6 +183,7 @@ class RepeatedFormResourceManager
         $allMrns = $this->dataAccessor->getAllMrns();
         $retriedCount = 0;
         
+        // Mark all failed resources as pending
         foreach ($allMrns as $mrn) {
             $recordId = $this->dataAccessor->getRecordIdByMrn($mrn);
             if (!$recordId) {
@@ -197,11 +201,26 @@ class RepeatedFormResourceManager
                     continue;
                 }
                 
-                $success = $this->retryFailedResource($mrn, $metadata->getResourceType(), $metadata->getRepeatInstance());
-                if ($success) {
-                    $retriedCount++;
-                }
+                // Mark as pending for retry
+                $retryMetadata = $metadata
+                    ->withStatus(FhirResourceMetadata::STATUS_PENDING)
+                    ->withErrorMessage(null); // Clear previous error
+                
+                $this->dataAccessor->saveResourceMetadata($recordId, $retryMetadata);
+                $retriedCount++;
             }
+        }
+        
+        // Create single generic retry task for all failed resources
+        if ($retriedCount > 0) {
+            $task = \Vanderbilt\FhirSnapshot\ValueObjects\Task::create(Constants::TASK_FHIR_FETCH, [
+                'operation' => 'bulk_retry_failed',
+                'resource_type_filter' => $filters['resource_type'] ?? null,
+                'total_retry_count' => $retriedCount,
+                'is_bulk_retry' => true
+            ]);
+            
+            $this->queueManager->addTask($task->getKey(), $task->getParams(), $task->getMetadata());
         }
         
         return $retriedCount;
@@ -218,17 +237,24 @@ class RepeatedFormResourceManager
             'comparison' => $comparison
         ];
         
+        $createdInstances = 0;
+        
+        // Create missing instances
         foreach ($comparison['missing_instances'] as $missing) {
-            $nextInstance = $this->dataAccessor->getNextRepeatInstance($missing['mrn']);
+            $recordId = $this->dataAccessor->getRecordIdByMrn($missing['mrn']);
+            $nextInstance = $this->dataAccessor->getNextRepeatInstance($recordId);
             $metadata = FhirResourceMetadata::create($missing['resource_type'], $nextInstance);
             
-            $this->dataAccessor->saveResourceMetadata($missing['mrn'], $metadata);
-            
+            $this->dataAccessor->saveResourceMetadata($recordId, $metadata);
+            $createdInstances++;
+        }
+        
+        // Create single generic sync task if there are missing instances
+        if ($createdInstances > 0) {
             $task = \Vanderbilt\FhirSnapshot\ValueObjects\Task::create(Constants::TASK_FHIR_FETCH, [
-                'record_id' => $this->dataAccessor->getRecordIdByMrn($missing['mrn']),
-                'mrn' => $missing['mrn'],
-                'resource_type' => $missing['resource_type'],
-                'repeat_instance' => $nextInstance,
+                'operation' => 'full_sync',
+                'created_instances' => $createdInstances,
+                'target_mrn_count' => count($existingMrns),
                 'is_sync_created' => true
             ]);
             

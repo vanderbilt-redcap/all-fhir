@@ -71,8 +71,8 @@ class ResourceSynchronizationService
 
     public function syncMappingResourceCreated(MappingResource $resource, array $existingMrns): array
     {
-        $tasks = [];
-        
+        // Create metadata instances for all MRNs
+        $createdInstances = 0;
         foreach ($existingMrns as $mrn) {
             $recordId = $this->dataAccessor->getRecordIdByMrn($mrn);
             if (!$recordId) {
@@ -80,29 +80,32 @@ class ResourceSynchronizationService
             }
             
             $nextInstance = $this->dataAccessor->getNextRepeatInstance($recordId);
-            
             $metadata = FhirResourceMetadata::create($resource->getName(), $nextInstance);
-            
             $this->dataAccessor->saveResourceMetadata($recordId, $metadata);
-            
-            $task = Task::create(Constants::TASK_FHIR_FETCH, [
-                'record_id' => $recordId,
-                'mrn' => $mrn,
-                'resource_type' => $resource->getName(),
-                'repeat_instance' => $nextInstance,
-                'mapping_resource_id' => $resource->getId()
-            ]);
-            
-            $tasks[] = $task;
-            $this->queueManager->addTask($task->getKey(), $task->getParams(), $task->getMetadata());
+            $createdInstances++;
         }
         
-        return $tasks;
+        // Create single generic FHIR fetch task
+        $task = Task::create(Constants::TASK_FHIR_FETCH, [
+            'resource_type' => $resource->getName(),
+            'resource_spec' => $resource->getResourceSpec(),
+            'mapping_resource_id' => $resource->getId(),
+            'mapping_resource_name' => $resource->getName(),
+            'target_mrn_count' => count($existingMrns),
+            'created_instances' => $createdInstances,
+            'operation' => 'new_mapping_resource'
+        ]);
+        
+        $this->queueManager->addTask($task->getKey(), $task->getParams(), $task->getMetadata());
+        
+        return [$task];
     }
 
     public function syncMappingResourceUpdated(MappingResource $resource, array $existingMrns): array
     {
-        $tasks = [];
+        // Mark existing instances as outdated and create new instances
+        $updatedInstances = 0;
+        $newInstances = 0;
         
         foreach ($existingMrns as $mrn) {
             $recordId = $this->dataAccessor->getRecordIdByMrn($mrn);
@@ -110,34 +113,39 @@ class ResourceSynchronizationService
                 continue;
             }
             
+            // Mark existing instances as outdated
             $existingMetadata = $this->dataAccessor->getResourceMetadataByType($recordId, $resource->getName());
-            
             foreach ($existingMetadata as $metadata) {
                 if (!$metadata->isDeleted()) {
                     $updatedMetadata = $metadata->withStatus(FhirResourceMetadata::STATUS_OUTDATED);
                     $this->dataAccessor->saveResourceMetadata($recordId, $updatedMetadata);
+                    $updatedInstances++;
                 }
             }
             
+            // Create new instance for updated resource
             $nextInstance = $this->dataAccessor->getNextRepeatInstance($recordId);
             $newMetadata = FhirResourceMetadata::create($resource->getName(), $nextInstance);
-            
             $this->dataAccessor->saveResourceMetadata($recordId, $newMetadata);
-            
-            $task = Task::create(Constants::TASK_FHIR_FETCH, [
-                'record_id' => $recordId,
-                'mrn' => $mrn,
-                'resource_type' => $resource->getName(),
-                'repeat_instance' => $nextInstance,
-                'mapping_resource_id' => $resource->getId(),
-                'is_refetch' => true
-            ]);
-            
-            $tasks[] = $task;
-            $this->queueManager->addTask($task->getKey(), $task->getParams(), $task->getMetadata());
+            $newInstances++;
         }
         
-        return $tasks;
+        // Create single generic FHIR fetch task for refetch
+        $task = Task::create(Constants::TASK_FHIR_FETCH, [
+            'resource_type' => $resource->getName(),
+            'resource_spec' => $resource->getResourceSpec(),
+            'mapping_resource_id' => $resource->getId(),
+            'mapping_resource_name' => $resource->getName(),
+            'target_mrn_count' => count($existingMrns),
+            'outdated_instances' => $updatedInstances,
+            'new_instances' => $newInstances,
+            'operation' => 'updated_mapping_resource',
+            'is_refetch' => true
+        ]);
+        
+        $this->queueManager->addTask($task->getKey(), $task->getParams(), $task->getMetadata());
+        
+        return [$task];
     }
 
     public function syncMappingResourceDeleted(MappingResource $resource, array $existingMrns): array
@@ -183,33 +191,34 @@ class ResourceSynchronizationService
 
     public function syncNewMrn(string $mrn, array $activeResources): array
     {
-        $tasks = [];
-        
         $recordId = $this->dataAccessor->getRecordIdByMrn($mrn);
         if (!$recordId) {
-            return $tasks;
+            return [];
         }
         
+        // Create metadata instances for all active resources for this MRN
+        $createdInstances = 0;
         foreach ($activeResources as $resource) {
             $nextInstance = $this->dataAccessor->getNextRepeatInstance($recordId);
-            
             $metadata = FhirResourceMetadata::create($resource->getName(), $nextInstance);
-            
             $this->dataAccessor->saveResourceMetadata($recordId, $metadata);
-            
-            $task = Task::create(Constants::TASK_FHIR_FETCH, [
-                'record_id' => $recordId,
-                'mrn' => $mrn,
-                'resource_type' => $resource->getName(),
-                'repeat_instance' => $nextInstance,
-                'mapping_resource_id' => $resource->getId()
-            ]);
-            
-            $tasks[] = $task;
-            $this->queueManager->addTask($task->getKey(), $task->getParams(), $task->getMetadata());
+            $createdInstances++;
         }
         
-        return $tasks;
+        // Create single generic FHIR fetch task for new MRN
+        $task = Task::create(Constants::TASK_FHIR_FETCH, [
+            'target_mrn' => $mrn,
+            'target_record_id' => $recordId,
+            'resource_types' => array_map(fn($r) => $r->getName(), $activeResources),
+            'mapping_resource_ids' => array_map(fn($r) => $r->getId(), $activeResources),
+            'target_mrn_count' => 1,
+            'created_instances' => $createdInstances,
+            'operation' => 'new_mrn'
+        ]);
+        
+        $this->queueManager->addTask($task->getKey(), $task->getParams(), $task->getMetadata());
+        
+        return [$task];
     }
 
     public function compareConfiguredVsExisting(array $configuredResources, array $existingMrns): array

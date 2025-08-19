@@ -70,7 +70,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $mappingResource = MappingResource::create($resourceName, $resourceSpec, $mappingType);
                 $tasks = $resourceManager->addMappingResource($mappingResource);
                 
-                $message = "Added mapping resource: $resourceName ($resourceSpec) as $mappingType. Created " . count($tasks) . " fetch tasks.";
+                if (count($tasks) === 1) {
+                    $message = "Added mapping resource: $resourceName ($resourceSpec) as $mappingType. Created 1 generic FHIR fetch task.";
+                } else {
+                    $message = "Added mapping resource: $resourceName ($resourceSpec) as $mappingType. Created " . count($tasks) . " fetch tasks.";
+                }
                 break;
                 
             case 'retry_failed':
@@ -307,6 +311,66 @@ $filteredTasks = $statusFilter === 'all' ? $allTasks : $queueManager->getTasksBy
     padding: 5px;
     font-family: monospace;
     font-size: 12px;
+}
+.summary-section {
+    margin: 10px 0;
+    padding: 10px;
+    background: #f8f9fa;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+.summary-section h5 {
+    margin: 0 0 10px 0;
+    color: #495057;
+}
+.metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    margin: 10px 0;
+}
+.metric-item {
+    background: white;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    text-align: center;
+}
+.metric-value {
+    font-size: 18px;
+    font-weight: bold;
+    color: #007cba;
+}
+.metric-label {
+    font-size: 12px;
+    color: #666;
+    margin-top: 2px;
+}
+.error-list {
+    list-style: none;
+    padding: 0;
+    margin: 5px 0;
+}
+.error-item {
+    padding: 3px 8px;
+    margin: 2px 0;
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: 3px;
+    font-size: 12px;
+}
+.failed-samples {
+    max-height: 150px;
+    overflow-y: auto;
+}
+.sample-item {
+    padding: 5px;
+    margin: 2px 0;
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 3px;
+    font-size: 11px;
+    font-family: monospace;
 }
 </style>
 
@@ -560,6 +624,167 @@ $filteredTasks = $statusFilter === 'all' ? $allTasks : $queueManager->getTasksBy
 </div>
 
 <div class="test-section">
+    <h3>Task Summaries</h3>
+    <p><em>This section displays rich summary information from completed generic FHIR fetch tasks, including processing statistics, performance metrics, error analysis, and operational intelligence.</em></p>
+    
+    <?php 
+    $completedTasks = $queueManager->getTasksByStatus('completed');
+    $tasksWithSummaries = array_filter($completedTasks, function($task) {
+        $data = $task->getMetadata();
+        return isset($data['execution']) || isset($data['statistics']);
+    });
+    ?>
+    
+    <?php if (!empty($tasksWithSummaries)): ?>
+        <?php foreach (array_slice(array_reverse($tasksWithSummaries), 0, 5) as $task): ?>
+            <?php 
+            $summary = $task->getMetadata();
+            $execution = $summary['execution'] ?? [];
+            $statistics = $summary['statistics'] ?? [];
+            $statusSummary = $summary['status_summary'] ?? [];
+            $errors = $summary['errors'] ?? [];
+            $performance = $summary['performance'] ?? [];
+            $failedSamples = $summary['failed_samples'] ?? [];
+            $resourceContext = $summary['resource_context'] ?? [];
+            $continuation = $summary['continuation'] ?? [];
+            ?>
+            <div class="summary-section">
+                <h4>Task Summary: <?= htmlspecialchars(substr($task->getId(), 0, 20)) ?>...</h4>
+                <p><strong>Resource:</strong> <?= htmlspecialchars($resourceContext['mapping_resource_name'] ?? $resourceContext['resource_type'] ?? 'Unknown') ?> 
+                   <strong>Operation:</strong> <?= htmlspecialchars($resourceContext['operation'] ?? 'Unknown') ?>
+                   <strong>Completed:</strong> <?= htmlspecialchars($execution['completed_at'] ?? 'Unknown') ?></p>
+                
+                <!-- Execution Overview -->
+                <?php if (!empty($execution)): ?>
+                <div class="summary-section">
+                    <h5>Execution Summary</h5>
+                    <div class="metric-grid">
+                        <div class="metric-item">
+                            <div class="metric-value"><?= htmlspecialchars($execution['duration_seconds'] ?? 0) ?>s</div>
+                            <div class="metric-label">Duration</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value"><?= htmlspecialchars($execution['memory_peak_mb'] ?? 0) ?>MB</div>
+                            <div class="metric-label">Peak Memory</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value"><?= ucfirst($execution['termination_reason'] ?? 'Unknown') ?></div>
+                            <div class="metric-label">Termination</div>
+                        </div>
+                        <?php if (isset($continuation['next_task_needed']) && $continuation['next_task_needed']): ?>
+                        <div class="metric-item">
+                            <div class="metric-value">Yes</div>
+                            <div class="metric-label">Continuation Needed</div>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+                
+                <!-- Statistics Overview -->
+                <?php if (!empty($statistics)): ?>
+                <div class="summary-section">
+                    <h5>Processing Statistics</h5>
+                    <div class="metric-grid">
+                        <div class="metric-item">
+                            <div class="metric-value"><?= htmlspecialchars($statistics['total_mrns_processed'] ?? 0) ?></div>
+                            <div class="metric-label">MRNs Processed</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value"><?= htmlspecialchars($statistics['resources_created'] ?? 0) ?></div>
+                            <div class="metric-label">Resources Created</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value"><?= htmlspecialchars($statistics['resources_failed'] ?? 0) ?></div>
+                            <div class="metric-label">Resources Failed</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value"><?= htmlspecialchars($statistics['api_calls_made'] ?? 0) ?></div>
+                            <div class="metric-label">API Calls</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value"><?= number_format($statistics['total_payload_size_mb'] ?? 0, 1) ?>MB</div>
+                            <div class="metric-label">Total Payload</div>
+                        </div>
+                        <?php if (isset($statistics['total_mrns_remaining']) && $statistics['total_mrns_remaining'] > 0): ?>
+                        <div class="metric-item">
+                            <div class="metric-value"><?= htmlspecialchars($statistics['total_mrns_remaining']) ?></div>
+                            <div class="metric-label">Remaining</div>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+                
+                <!-- Performance Metrics -->
+                <?php if (!empty($performance) && ($performance['avg_processing_time_seconds'] ?? 0) > 0): ?>
+                <div class="summary-section">
+                    <h5>Performance Metrics</h5>
+                    <div class="metric-grid">
+                        <div class="metric-item">
+                            <div class="metric-value"><?= number_format($performance['avg_processing_time_seconds'] ?? 0, 3) ?>s</div>
+                            <div class="metric-label">Avg Processing Time</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value"><?= number_format($performance['throughput_mrns_per_minute'] ?? 0, 1) ?></div>
+                            <div class="metric-label">MRNs/Minute</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value"><?= number_format($performance['api_response_avg_ms'] ?? 0, 1) ?>ms</div>
+                            <div class="metric-label">Avg API Response</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value"><?= number_format($performance['fastest_mrn_seconds'] ?? 0, 3) ?>s</div>
+                            <div class="metric-label">Fastest MRN</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value"><?= number_format($performance['slowest_mrn_seconds'] ?? 0, 3) ?>s</div>
+                            <div class="metric-label">Slowest MRN</div>
+                        </div>
+                    </div>
+                </div>
+                <?php endif; ?>
+                
+                <!-- Error Analysis -->
+                <?php if (!empty($errors)): ?>
+                <div class="summary-section">
+                    <h5>Error Analysis</h5>
+                    <ul class="error-list">
+                        <?php foreach ($errors as $errorType => $count): ?>
+                        <li class="error-item">
+                            <strong><?= ucfirst(str_replace('_', ' ', $errorType)) ?>:</strong> <?= $count ?>
+                        </li>
+                        <?php endforeach; ?>
+                    </ul>
+                </div>
+                <?php endif; ?>
+                
+                <!-- Failed Samples -->
+                <?php if (!empty($failedSamples)): ?>
+                <div class="summary-section">
+                    <h5>Failed Samples</h5>
+                    <div class="failed-samples">
+                        <?php foreach ($failedSamples as $sample): ?>
+                        <div class="sample-item">
+                            <strong>MRN:</strong> <?= htmlspecialchars($sample['mrn'] ?? 'Unknown') ?><br>
+                            <strong>Error:</strong> <?= htmlspecialchars($sample['error'] ?? 'Unknown error') ?>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+            </div>
+        <?php endforeach; ?>
+        
+        <?php if (count($tasksWithSummaries) > 5): ?>
+            <p><em>Showing latest 5 task summaries of <?= count($tasksWithSummaries) ?> total completed tasks with summaries.</em></p>
+        <?php endif; ?>
+    <?php else: ?>
+        <p>No completed tasks with summaries found.</p>
+    <?php endif; ?>
+</div>
+
+<div class="test-section">
     <h3>Create New Task</h3>
     <p><em>This section allows you to create custom background tasks for testing the queue system. You can specify the task key (processor type), parameters as JSON, and metadata as JSON.</em></p>
     <form method="post">
@@ -581,8 +806,8 @@ $filteredTasks = $statusFilter === 'all' ? $allTasks : $queueManager->getTasksBy
         
         <div class="form-group">
             <label for="task_params">Parameters (JSON):</label>
-            <textarea name="task_params" id="task_params" placeholder='{"mrn": "123456", "resource_type": "Patient"}'>{}</textarea>
-            <small>Task-specific parameters as JSON</small>
+            <textarea name="task_params" id="task_params" placeholder='{"operation": "test", "resource_type": "Patient", "target_mrn_count": 10}'>{}</textarea>
+            <small>Task-specific parameters as JSON (use "operation" for generic tasks)</small>
         </div>
         
         <div class="form-group">
