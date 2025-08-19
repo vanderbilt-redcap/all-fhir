@@ -104,6 +104,77 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header('Content-Disposition: attachment; filename="fhir_export_' . $exportMrn . '_' . date('Y-m-d_H-i-s') . '.json"');
                 echo json_encode($exportData, JSON_PRETTY_PRINT);
                 exit;
+                
+            case 'create_task':
+                $taskKey = $_POST['task_key'] ?? '';
+                $taskParams = $_POST['task_params'] ?? '{}';
+                $taskMetadata = $_POST['task_metadata'] ?? '{}';
+                
+                if (empty($taskKey)) {
+                    throw new Exception('Task key is required');
+                }
+                
+                $params = json_decode($taskParams, true);
+                $metadata = json_decode($taskMetadata, true);
+                
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    throw new Exception('Invalid JSON in parameters or metadata: ' . json_last_error_msg());
+                }
+                
+                $task = $queueManager->addTask($taskKey, $params ?: [], $metadata ?: []);
+                $message = "Created task with ID: {$task->getId()}, Key: $taskKey";
+                break;
+                
+            case 'update_task':
+                $taskId = $_POST['task_id'] ?? '';
+                $newStatus = $_POST['task_status'] ?? '';
+                $updateMetadata = $_POST['update_metadata'] ?? '{}';
+                
+                if (empty($taskId) || empty($newStatus)) {
+                    throw new Exception('Task ID and status are required');
+                }
+                
+                $metadata = json_decode($updateMetadata, true);
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    throw new Exception('Invalid JSON in metadata: ' . json_last_error_msg());
+                }
+                
+                $statusUpdated = $queueManager->updateTaskStatus($taskId, $newStatus);
+                if ($metadata && is_array($metadata) && !empty($metadata)) {
+                    $queueManager->updateTaskMetadata($taskId, $metadata);
+                }
+                
+                if ($statusUpdated) {
+                    $message = "Updated task $taskId to status: $newStatus";
+                } else {
+                    $error = "Task $taskId not found";
+                }
+                break;
+                
+            case 'delete_task':
+                $taskId = $_POST['delete_task_id'] ?? '';
+                
+                if (empty($taskId)) {
+                    throw new Exception('Task ID is required');
+                }
+                
+                $removed = $queueManager->removeTask($taskId);
+                if ($removed) {
+                    $message = "Deleted task: $taskId";
+                } else {
+                    $error = "Task $taskId not found";
+                }
+                break;
+                
+            case 'delete_completed_tasks':
+                $removedCount = $queueManager->removeCompletedTasks();
+                $message = "Removed $removedCount completed tasks";
+                break;
+                
+            case 'clear_queue':
+                $queueManager->clearQueue();
+                $message = "Cleared all tasks from queue";
+                break;
         }
     } catch (Exception $e) {
         $error = $e->getMessage();
@@ -112,6 +183,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $allMrns = $dataAccessor->getAllMrns();
 $projectSummary = $resourceManager->getProjectSummary();
+
+// Get task data for display
+$allTasks = $queueManager->getTasks();
+$queueStats = $queueManager->getQueueStatistics();
+$statusFilter = $_GET['status_filter'] ?? 'all';
+$filteredTasks = $statusFilter === 'all' ? $allTasks : $queueManager->getTasksByStatus($statusFilter);
 ?>
 
 <style>
@@ -190,6 +267,47 @@ $projectSummary = $resourceManager->getProjectSummary();
 .status-failed { color: #721c24; }
 .status-outdated { color: #533f03; }
 .status-deleted { color: #6c757d; }
+.status-processing { color: #0c5460; }
+.task-filter-buttons {
+    margin: 10px 0;
+}
+.filter-btn {
+    padding: 5px 10px;
+    margin: 2px;
+    border: 1px solid #ddd;
+    background: #f8f9fa;
+    color: #333;
+    text-decoration: none;
+    border-radius: 3px;
+    display: inline-block;
+}
+.filter-btn.active {
+    background: #007cba;
+    color: white;
+}
+.json-display {
+    background: #f8f9fa;
+    padding: 5px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 11px;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.task-id {
+    font-family: monospace;
+    font-size: 11px;
+    color: #666;
+}
+.form-group textarea {
+    width: 200px;
+    height: 80px;
+    padding: 5px;
+    font-family: monospace;
+    font-size: 12px;
+}
 </style>
 
 <div class="projhdr">
@@ -387,6 +505,171 @@ $projectSummary = $resourceManager->getProjectSummary();
         
         <button type="submit" class="btn btn-primary">Export Data (JSON)</button>
     </form>
+</div>
+
+<div class="test-section">
+    <h3>Queue Task List</h3>
+    <p><em>This section displays all background tasks in the queue system, allowing you to monitor task status, filter by status, and view task details including parameters and metadata for testing the queue processing system.</em></p>
+    
+    <div class="task-filter-buttons">
+        <a href="?status_filter=all" class="filter-btn <?= $statusFilter === 'all' ? 'active' : '' ?>">All (<?= $queueStats['total'] ?>)</a>
+        <a href="?status_filter=pending" class="filter-btn <?= $statusFilter === 'pending' ? 'active' : '' ?>">Pending (<?= $queueStats['pending'] ?>)</a>
+        <a href="?status_filter=processing" class="filter-btn <?= $statusFilter === 'processing' ? 'active' : '' ?>">Processing (<?= $queueStats['processing'] ?>)</a>
+        <a href="?status_filter=completed" class="filter-btn <?= $statusFilter === 'completed' ? 'active' : '' ?>">Completed (<?= $queueStats['completed'] ?>)</a>
+        <a href="?status_filter=failed" class="filter-btn <?= $statusFilter === 'failed' ? 'active' : '' ?>">Failed (<?= $queueStats['failed'] ?>)</a>
+    </div>
+    
+    <?php if (!empty($filteredTasks)): ?>
+        <table class="status-table">
+            <thead>
+                <tr>
+                    <th>Task ID</th>
+                    <th>Key</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Updated</th>
+                    <th>Parameters</th>
+                    <th>Metadata</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($filteredTasks as $task): ?>
+                    <tr>
+                        <td class="task-id"><?= htmlspecialchars($task->getId()) ?></td>
+                        <td><?= htmlspecialchars($task->getKey()) ?></td>
+                        <td class="status-<?= $task->getStatus() ?>"><?= ucfirst($task->getStatus()) ?></td>
+                        <td><?= date('M j, Y H:i', strtotime($task->getCreatedAt())) ?></td>
+                        <td><?= date('M j, Y H:i', strtotime($task->getUpdatedAt())) ?></td>
+                        <td>
+                            <div class="json-display" title="<?= htmlspecialchars(json_encode($task->getParams(), JSON_PRETTY_PRINT)) ?>">
+                                <?= !empty($task->getParams()) ? htmlspecialchars(json_encode($task->getParams())) : '-' ?>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="json-display" title="<?= htmlspecialchars(json_encode($task->getMetadata(), JSON_PRETTY_PRINT)) ?>">
+                                <?= !empty($task->getMetadata()) ? htmlspecialchars(json_encode($task->getMetadata())) : '-' ?>
+                            </div>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    <?php else: ?>
+        <p>No tasks found<?= $statusFilter !== 'all' ? " with status: $statusFilter" : '' ?>.</p>
+    <?php endif; ?>
+</div>
+
+<div class="test-section">
+    <h3>Create New Task</h3>
+    <p><em>This section allows you to create custom background tasks for testing the queue system. You can specify the task key (processor type), parameters as JSON, and metadata as JSON.</em></p>
+    <form method="post">
+        <input type="hidden" name="redcap_csrf_token" value="<?= System::getCsrfToken() ?>">
+        <input type="hidden" name="action" value="create_task">
+        
+        <div class="form-group">
+            <label for="task_key">Task Key:</label>
+            <select name="task_key" id="task_key" required>
+                <option value="">Select Task Type</option>
+                <option value="fhir_fetch">fhir_fetch</option>
+                <option value="archive">archive</option>
+                <option value="cleanup">cleanup</option>
+                <option value="notification">notification</option>
+                <option value="test_task">test_task</option>
+            </select>
+            <small>Type of task processor to handle this task</small>
+        </div>
+        
+        <div class="form-group">
+            <label for="task_params">Parameters (JSON):</label>
+            <textarea name="task_params" id="task_params" placeholder='{"mrn": "123456", "resource_type": "Patient"}'>{}</textarea>
+            <small>Task-specific parameters as JSON</small>
+        </div>
+        
+        <div class="form-group">
+            <label for="task_metadata">Metadata (JSON):</label>
+            <textarea name="task_metadata" id="task_metadata" placeholder='{"retry_count": 0, "priority": "normal"}'>{}</textarea>
+            <small>Additional metadata as JSON</small>
+        </div>
+        
+        <button type="submit" class="btn btn-success">Create Task</button>
+    </form>
+</div>
+
+<div class="test-section">
+    <h3>Update Task</h3>
+    <p><em>This section allows you to update existing tasks by changing their status or adding metadata. Use this to test task lifecycle transitions and metadata updates.</em></p>
+    <form method="post">
+        <input type="hidden" name="redcap_csrf_token" value="<?= System::getCsrfToken() ?>">
+        <input type="hidden" name="action" value="update_task">
+        
+        <div class="form-group">
+            <label for="task_id">Task ID:</label>
+            <select name="task_id" id="task_id" required>
+                <option value="">Select Task</option>
+                <?php foreach ($allTasks as $task): ?>
+                    <option value="<?= htmlspecialchars($task->getId()) ?>">
+                        <?= htmlspecialchars(substr($task->getId(), 0, 20)) ?>... (<?= $task->getKey() ?> - <?= $task->getStatus() ?>)
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="task_status">New Status:</label>
+            <select name="task_status" id="task_status" required>
+                <option value="">Select Status</option>
+                <option value="pending">Pending</option>
+                <option value="processing">Processing</option>
+                <option value="completed">Completed</option>
+                <option value="failed">Failed</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="update_metadata">Additional Metadata (JSON):</label>
+            <textarea name="update_metadata" id="update_metadata" placeholder='{"error_message": "Connection timeout", "retry_count": 1}'>{}</textarea>
+            <small>Additional metadata to merge (JSON)</small>
+        </div>
+        
+        <button type="submit" class="btn btn-warning">Update Task</button>
+    </form>
+</div>
+
+<div class="test-section">
+    <h3>Delete Tasks</h3>
+    <p><em>This section provides bulk operations for task cleanup including deleting specific tasks, removing all completed tasks, or clearing the entire queue for testing purposes.</em></p>
+    
+    <div style="margin: 15px 0;">
+        <h4>Delete Specific Task</h4>
+        <form method="post" style="display: inline-block; margin-right: 20px;">
+            <input type="hidden" name="redcap_csrf_token" value="<?= System::getCsrfToken() ?>">
+            <input type="hidden" name="action" value="delete_task">
+            <select name="delete_task_id" required>
+                <option value="">Select Task</option>
+                <?php foreach ($allTasks as $task): ?>
+                    <option value="<?= htmlspecialchars($task->getId()) ?>">
+                        <?= htmlspecialchars(substr($task->getId(), 0, 20)) ?>... (<?= $task->getKey() ?> - <?= $task->getStatus() ?>)
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <button type="submit" class="btn btn-danger">Delete Task</button>
+        </form>
+    </div>
+    
+    <div style="margin: 15px 0;">
+        <h4>Bulk Operations</h4>
+        <form method="post" style="display: inline-block; margin-right: 10px;">
+            <input type="hidden" name="redcap_csrf_token" value="<?= System::getCsrfToken() ?>">
+            <input type="hidden" name="action" value="delete_completed_tasks">
+            <button type="submit" class="btn btn-warning">Remove All Completed Tasks (<?= $queueStats['completed'] ?>)</button>
+        </form>
+        
+        <form method="post" style="display: inline-block;" onsubmit="return confirm('Are you sure you want to clear ALL tasks from the queue?');">
+            <input type="hidden" name="redcap_csrf_token" value="<?= System::getCsrfToken() ?>">
+            <input type="hidden" name="action" value="clear_queue">
+            <button type="submit" class="btn btn-danger">Clear Entire Queue (<?= $queueStats['total'] ?>)</button>
+        </form>
+    </div>
 </div>
 
 <div class="test-section">
