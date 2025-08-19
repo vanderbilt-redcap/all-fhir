@@ -246,7 +246,7 @@ class FhirResourceService
      */
     public function storeFhirDataAsFile(array $fhirData, string $mrn, string $resourceType): int
     {
-        $jsonContent = json_encode($fhirData, JSON_PRETTY_PRINT);
+        $jsonContent = json_encode($fhirData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         $projectId = $this->dataAccessor->getProjectId();
         $filename = sprintf('%s_%s_%s_%s.json', $projectId, $mrn, $resourceType, date('Y-m-d_H-i-s'));
         
