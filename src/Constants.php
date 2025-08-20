@@ -9,4 +9,9 @@ class Constants {
     const TASK_FHIR_FETCH = 'fhir_fetch';
     const TASK_ARCHIVE = 'archive';
     const TASK_EMAIL_NOTIFICATION = 'email_notification';
+    
+    // Project Settings Keys
+    const SETTING_FHIR_SYSTEM = 'fhir-system';
+    const SETTING_MAPPING_RESOURCES = 'mapping-resources';
+    const SETTING_CUSTOM_MAPPING_RESOURCES = 'custom-mapping-resources';
 }

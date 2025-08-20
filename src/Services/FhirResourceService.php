@@ -2,6 +2,7 @@
 
 namespace Vanderbilt\FhirSnapshot\Services;
 
+use Vanderbilt\FhirSnapshot\Contracts\FhirClientInterface;
 use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
 
 /**
@@ -10,11 +11,11 @@ use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
  * Service for fetching FHIR resources and storing them in REDCap repeated forms.
  * 
  * ROLE & RESPONSIBILITIES:
- * - Fetches FHIR resources from external APIs/servers
+ * - Fetches FHIR resources from external APIs/servers via FhirClientInterface
  * - Stores FHIR JSON payloads as REDCap edoc files
  * - Updates resource metadata status throughout the fetch process
  * - Handles FHIR-specific error conditions and pagination
- * - Generates mock FHIR data for testing/development
+ * - Manages the complete lifecycle of FHIR resource retrieval and storage
  * 
  * PROCESSING WORKFLOW:
  * 
@@ -45,17 +46,21 @@ use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
  * 
  * FHIR-SPECIFIC FEATURES:
  * - Handles pagination for large FHIR resource sets
- * - Generates mock FHIR data for testing/development
  * - Supports different FHIR resource types (Patient, Observation, etc.)
  * - Manages FHIR-specific error conditions and retry scenarios
+ * - Integrates with REDCap's FHIR infrastructure via clean interface abstraction
  */
 class FhirResourceService
 {
     private RepeatedFormDataAccessor $dataAccessor;
+    private FhirClientInterface $fhirClient;
 
-    public function __construct(RepeatedFormDataAccessor $dataAccessor)
-    {
+    public function __construct(
+        RepeatedFormDataAccessor $dataAccessor,
+        FhirClientInterface $fhirClient
+    ) {
         $this->dataAccessor = $dataAccessor;
+        $this->fhirClient = $fhirClient;
     }
 
     /**
@@ -88,7 +93,7 @@ class FhirResourceService
         $this->dataAccessor->saveResourceMetadata($recordId, $metadata);
 
         try {
-            $fhirData = $this->fetchFhirResource($mrn, $resourceType, $isRefetch);
+            $fhirData = $this->fhirClient->fetchFhirResource($mrn, $resourceType, $isRefetch);
             
             if ($fhirData === null) {
                 return $this->handleFetchFailure(
@@ -131,109 +136,6 @@ class FhirResourceService
         }
     }
 
-    /**
-     * Fetch FHIR resource data from external source
-     * 
-     * @param string $mrn Medical Record Number
-     * @param string $resourceType FHIR resource type
-     * @param bool $isRefetch Whether this is a refetch operation
-     * @return array|null FHIR data array or null if not found
-     */
-    public function fetchFhirResource(string $mrn, string $resourceType, bool $isRefetch = false): ?array
-    {
-        // Simulate API call delay
-        usleep(200000); // 0.2 seconds simulation
-        
-        if (rand(1, 100) <= 85) { // 85% success rate
-            $mockData = [
-                'resourceType' => $resourceType,
-                'id' => uniqid($resourceType . '_', true),
-                'subject' => [
-                    'reference' => "Patient/$mrn"
-                ],
-                'meta' => [
-                    'lastUpdated' => date('c'),
-                    'versionId' => $isRefetch ? '2' : '1'
-                ],
-                'data' => $this->generateMockResourceData($resourceType),
-                'fetchedAt' => date('c')
-            ];
-
-            if (rand(1, 10) <= 3) { // 30% chance of pagination
-                $mockData['pagination'] = [
-                    'total' => rand(50, 200),
-                    'pageSize' => 20,
-                    'currentPage' => 1,
-                    'hasNext' => true
-                ];
-            }
-
-            return $mockData;
-        }
-        
-        return null;
-    }
-
-    /**
-     * Generate mock FHIR resource data for testing
-     * 
-     * @param string $resourceType FHIR resource type
-     * @return array Mock data structure
-     */
-    public function generateMockResourceData(string $resourceType): array
-    {
-        $baseData = [
-            'identifier' => [
-                [
-                    'system' => 'http://hospital.example.org',
-                    'value' => uniqid('id_', true)
-                ]
-            ],
-            'status' => 'active'
-        ];
-
-        return match($resourceType) {
-            'Patient' => array_merge($baseData, [
-                'name' => [
-                    [
-                        'given' => ['John'],
-                        'family' => 'Doe'
-                    ]
-                ],
-                'gender' => 'male',
-                'birthDate' => '1980-01-01'
-            ]),
-            'Observation' => array_merge($baseData, [
-                'code' => [
-                    'coding' => [
-                        [
-                            'system' => 'http://loinc.org',
-                            'code' => '8302-2',
-                            'display' => 'Body height'
-                        ]
-                    ]
-                ],
-                'valueQuantity' => [
-                    'value' => rand(150, 200),
-                    'unit' => 'cm'
-                ],
-                'effectiveDateTime' => date('c')
-            ]),
-            'Condition' => array_merge($baseData, [
-                'code' => [
-                    'coding' => [
-                        [
-                            'system' => 'http://snomed.info/sct',
-                            'code' => '44054006',
-                            'display' => 'Diabetes mellitus type 2'
-                        ]
-                    ]
-                ],
-                'onsetDateTime' => date('c', strtotime('-1 year'))
-            ]),
-            default => $baseData
-        };
-    }
 
     /**
      * Store FHIR data as REDCap edoc file

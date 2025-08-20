@@ -7,16 +7,34 @@ use PHPUnit\Framework\MockObject\MockObject;
 use Vanderbilt\FhirSnapshot\Queue\Processors\FhirFetchProcessor;
 use Vanderbilt\FhirSnapshot\ValueObjects\Task;
 use Vanderbilt\FhirSnapshot\FhirSnapshot;
+use Vanderbilt\FhirSnapshot\Services\FhirResourceService;
+use Vanderbilt\FhirSnapshot\Services\RepeatedFormDataAccessor;
+use Tests\Mocks\MockFhirClient;
 
 class FhirFetchProcessorTest extends TestCase
 {
     private FhirFetchProcessor $processor;
     private MockObject $mockModule;
+    private MockObject $mockDataAccessor;
+    private FhirResourceService $fhirResourceService;
+    private MockFhirClient $mockFhirClient;
 
     protected function setUp(): void
     {
         $this->mockModule = $this->createMock(FhirSnapshot::class);
-        $this->processor = new FhirFetchProcessor($this->mockModule);
+        $this->mockDataAccessor = $this->createMock(RepeatedFormDataAccessor::class);
+        $this->mockFhirClient = new MockFhirClient();
+        
+        $this->fhirResourceService = new FhirResourceService(
+            $this->mockDataAccessor,
+            $this->mockFhirClient
+        );
+        
+        $this->processor = new FhirFetchProcessor(
+            $this->mockModule, 
+            $this->fhirResourceService, 
+            $this->mockDataAccessor
+        );
     }
 
     public function testGetTaskKey(): void

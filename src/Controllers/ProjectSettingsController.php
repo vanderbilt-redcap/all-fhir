@@ -4,6 +4,7 @@ namespace Vanderbilt\FhirSnapshot\Controllers;
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use Vanderbilt\FhirSnapshot\Constants;
 use Vanderbilt\FhirSnapshot\FhirSnapshot;
 use Vanderbilt\FhirSnapshot\Services\RepeatedFormResourceManager;
 use Vanderbilt\FhirSnapshot\Services\FhirCategoryService;
@@ -27,9 +28,9 @@ class ProjectSettingsController extends AbstractController
     }
 
     public function getSettings(Request $request, Response $response) {
-        $fhirSystem = $this->module->getProjectSetting('fhir-system');
-        $selectedMappingResourcesData = $this->module->getProjectSetting('mapping-resources') ?? [];
-        $selectedCustomMappingResourcesData = $this->module->getProjectSetting('custom-mapping-resources') ?? [];
+        $fhirSystem = $this->module->getProjectSetting(Constants::SETTING_FHIR_SYSTEM);
+        $selectedMappingResourcesData = $this->module->getProjectSetting(Constants::SETTING_MAPPING_RESOURCES) ?? [];
+        $selectedCustomMappingResourcesData = $this->module->getProjectSetting(Constants::SETTING_CUSTOM_MAPPING_RESOURCES) ?? [];
         
         // Convert stored data to MappingResource value objects
         $selectedMappingResources = $this->mappingResourceService->convertToMappingResources($selectedMappingResourcesData, MappingResource::TYPE_PREDEFINED);
@@ -68,8 +69,8 @@ class ProjectSettingsController extends AbstractController
         $selectedCustomMappingResourcesData = $params['selected_custom_mapping_resources'] ?? [];
 
         // Get current mapping resources before changes
-        $currentMappingResourcesData = $this->module->getProjectSetting('mapping-resources') ?? [];
-        $currentCustomMappingResourcesData = $this->module->getProjectSetting('custom-mapping-resources') ?? [];
+        $currentMappingResourcesData = $this->module->getProjectSetting(Constants::SETTING_MAPPING_RESOURCES) ?? [];
+        $currentCustomMappingResourcesData = $this->module->getProjectSetting(Constants::SETTING_CUSTOM_MAPPING_RESOURCES) ?? [];
         
         $currentMappingResources = $this->mappingResourceService->convertToMappingResources($currentMappingResourcesData, MappingResource::TYPE_PREDEFINED);
         $currentCustomMappingResources = $this->mappingResourceService->convertToMappingResources($currentCustomMappingResourcesData, MappingResource::TYPE_CUSTOM);
@@ -87,9 +88,9 @@ class ProjectSettingsController extends AbstractController
         $mappingResourcesData = array_map(fn($resource) => $resource->toArray(), $selectedMappingResources);
         $customMappingResourcesData = array_map(fn($resource) => $resource->toArray(), $selectedCustomMappingResources);
 
-        $this->module->setProjectSetting('fhir-system', $fhirSystem);
-        $this->module->setProjectSetting('mapping-resources', $mappingResourcesData);
-        $this->module->setProjectSetting('custom-mapping-resources', $customMappingResourcesData);
+        $this->module->setProjectSetting(Constants::SETTING_FHIR_SYSTEM, $fhirSystem);
+        $this->module->setProjectSetting(Constants::SETTING_MAPPING_RESOURCES, $mappingResourcesData);
+        $this->module->setProjectSetting(Constants::SETTING_CUSTOM_MAPPING_RESOURCES, $customMappingResourcesData);
 
         // Synchronize mapping resource changes
         $syncResults = $this->synchronizeMappingResourceChanges($changeResults);
