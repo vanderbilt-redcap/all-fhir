@@ -2,6 +2,9 @@ import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import { fileURLToPath, URL } from "node:url";
 import path from "node:path";
+import fs from "fs";
+
+console.log(path.resolve(__dirname, "../../../certs/localhost-key.pem"))
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -38,6 +41,10 @@ export default defineConfig({
   server: {
     watch: {
       usePolling: false,
+    },
+    https: {
+      key: fs.readFileSync(path.resolve(__dirname, "../../../certs/localhost.key")),
+      cert: fs.readFileSync(path.resolve(__dirname, "../../../certs/localhost.crt")),
     },
     // https: true,
     proxy: {

@@ -9,19 +9,27 @@ declare global {
 const module_prefix = "fhir_snapshot";
 const page = "api";
 
+interface REDCapQueryParams {
+  pid: string|null
+  page: string
+  type: string
+  prefix: string
+  redcap_csrf_token?: string|null
+}
+
 const getRedCapQueryParams = () => {
   let params = new URLSearchParams(location.search);
   // get PID from current location
   let pid = params.get("pid");
   
-  let query_params = {
+  let query_params: REDCapQueryParams = {
     pid,
     page,
     // content: "externalModule",
     type: "module",
     prefix: module_prefix,
-    redcap_csrf_token: window.redcap_csrf_token ?? ''
   };
+  if(window.redcap_csrf_token) query_params.redcap_csrf_token = window.redcap_csrf_token
 
   // if(window.redcap_csrf_token) query_params.redcap_csrf_token = window.redcap_csrf_token // csrf token for post requests
   return query_params;
@@ -29,7 +37,7 @@ const getRedCapQueryParams = () => {
 
 export default () => {
   const apiClient: AxiosInstance = axios.create({
-    baseURL: "/api/",
+    baseURL: "/api",
     timeout: 0,
     headers: {
       "Content-Type": "application/json",
