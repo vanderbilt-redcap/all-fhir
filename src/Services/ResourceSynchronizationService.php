@@ -88,6 +88,12 @@ use Vanderbilt\FhirSnapshot\Constants;
  * - cleanupOrphanedInstances($orphaned) - Data cleanup
  * - getProjectSyncStatus() - Overall health reporting
  * 
+ * INTEGRATION WITH MAIN MODULE:
+ * - Used by RepeatedFormResourceManager::performFullSync() for comprehensive synchronization
+ * - Integrates with FhirSnapshot::getAllConfiguredMappingResources() for configuration access
+ * - Enables full project synchronization through centralized configuration management
+ * - Supports test page operations and manual synchronization workflows
+ * 
  * ARCHITECTURAL PATTERNS:
  * - Coordinates between high-level operations and low-level data access
  * - Implements batch operations with individual record error isolation

@@ -55,6 +55,12 @@ use Vanderbilt\FhirSnapshot\Constants;
  * - $manager->retryFailedResource($mrn, $type, $instance) - Retry failed fetch
  * - $manager->getProjectSummary() - Get complete project status overview
  * - $manager->exportResourceData($mrn) - Export all FHIR data for MRN
+ * - $manager->performFullSync($configuredResources) - Synchronize configuration with data
+ * 
+ * CONFIGURATION INTEGRATION:
+ * - Use $module->getAllConfiguredMappingResources() to get configured resources
+ * - Integrates with MappingResourceService for robust data conversion
+ * - Supports legacy format migration and validation through main module helper
  */
 class RepeatedFormResourceManager
 {
@@ -230,6 +236,24 @@ class RepeatedFormResourceManager
 
     /**
      * Perform full synchronization between configured resources and existing data
+     * 
+     * Coordinates comprehensive project synchronization by analyzing configured mapping 
+     * resources against existing data instances, creating missing instances, cleaning up 
+     * orphaned data, and creating background tasks for FHIR data fetching.
+     * 
+     * RECOMMENDED USAGE:
+     * ```php
+     * // Get configured resources using the centralized helper method
+     * $configuredResources = $module->getAllConfiguredMappingResources();
+     * $syncResults = $manager->performFullSync($configuredResources);
+     * ```
+     * 
+     * SYNC OPERATIONS PERFORMED:
+     * - Compares configured vs existing resource instances across all MRNs
+     * - Creates missing resource instances for incomplete patient coverage
+     * - Cleans up orphaned instances from removed mapping configurations
+     * - Creates background tasks for FHIR data fetching when needed
+     * - Provides detailed results for monitoring and reporting
      * 
      * @param MappingResource[] $configuredResources Array of configured mapping resources
      * @return array Sync results with task info, comparison data, and cleanup counts

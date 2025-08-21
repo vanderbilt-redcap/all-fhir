@@ -4,7 +4,94 @@ namespace Vanderbilt\FhirSnapshot;
 use DI\Container;
 use ExternalModules\AbstractExternalModule;
 use Vanderbilt\FhirSnapshot\Queue\QueueProcessor;
+use Vanderbilt\FhirSnapshot\Services\MappingResourceService;
 
+/**
+ * FhirSnapshot
+ * 
+ * Main REDCap External Module class for the FHIR Snapshot system that orchestrates 
+ * automated FHIR data retrieval, storage, and management in REDCap repeated forms.
+ * 
+ * ROLE & RESPONSIBILITIES:
+ * - Module lifecycle management and dependency injection coordination
+ * - Project-level configuration and settings management
+ * - Queue processing coordination via cron jobs and manual triggers
+ * - Public API endpoints for external integrations and automation
+ * - Logging and error handling for system-wide operations
+ * - Bridge between REDCap framework and FHIR business logic
+ * 
+ * CORE FEATURES:
+ * 
+ * DEPENDENCY INJECTION & SERVICE COORDINATION:
+ * - Manages global container instance with service registration
+ * - Provides singleton pattern for consistent module instance access
+ * - Coordinates service dependencies across the entire module ecosystem
+ * - Ensures proper initialization order and lifecycle management
+ * 
+ * CONFIGURATION MANAGEMENT:
+ * - getAllConfiguredMappingResources() - Retrieves all project mapping resources
+ * - Handles both predefined REDCap categories and custom FHIR specifications
+ * - Provides centralized access to project settings with proper type conversion
+ * - Supports legacy data format migration and validation
+ * 
+ * QUEUE PROCESSING ORCHESTRATION:
+ * - processQueue() - Coordinates background FHIR data fetching across projects
+ * - cron_processQueue() - REDCap cron integration for automated processing
+ * - Multi-project support with proper context switching
+ * - Comprehensive error handling and logging for queue operations
+ * 
+ * API INTEGRATION:
+ * - redcap_module_api() - External API endpoints for automation and integration
+ * - Support for MRN management, fetch triggering, and status monitoring
+ * - JSON-based API responses with proper error handling
+ * - Integration points for external systems and workflows
+ * 
+ * LOGGING & MONITORING:
+ * - logToFile() - Centralized logging with timestamp formatting
+ * - Operation tracking and error reporting across all services
+ * - Debug and monitoring capabilities for troubleshooting
+ * - Performance and status logging for queue operations
+ * 
+ * USAGE PATTERNS:
+ * 
+ * CONFIGURATION ACCESS:
+ * ```php
+ * $configuredResources = $module->getAllConfiguredMappingResources();
+ * // Returns array of MappingResource objects for full sync operations
+ * ```
+ * 
+ * SERVICE COORDINATION:
+ * ```php
+ * $container = $module->getContainer();
+ * $service = $container->get(SomeService::class);
+ * // Provides dependency injection for all module services
+ * ```
+ * 
+ * QUEUE PROCESSING:
+ * ```php
+ * $results = $module->processQueue();
+ * // Processes background tasks across all enabled projects
+ * ```
+ * 
+ * ARCHITECTURAL INTEGRATION:
+ * - Extends REDCap's AbstractExternalModule for framework integration
+ * - Coordinates with RepeatedFormResourceManager for high-level operations
+ * - Integrates with ResourceSynchronizationService for data consistency
+ * - Manages QueueProcessor for asynchronous FHIR data operations
+ * - Provides centralized configuration access for all services
+ * 
+ * MULTI-PROJECT SUPPORT:
+ * - Maintains project context during queue processing
+ * - Handles configuration isolation between projects
+ * - Coordinates cross-project operations with proper scoping
+ * - Ensures data integrity across multiple project instances
+ * 
+ * ERROR HANDLING & RECOVERY:
+ * - Comprehensive exception handling with detailed error context
+ * - Graceful degradation when individual operations fail
+ * - Logging and monitoring for troubleshooting and maintenance
+ * - Recovery mechanisms for transient failures and system issues
+ */
 class FhirSnapshot extends AbstractExternalModule {
 
     private static FhirSnapshot $instance;
@@ -105,6 +192,31 @@ class FhirSnapshot extends AbstractExternalModule {
         } catch (\Exception $e) {
             return sprintf("%s - error processing the jobs: %s", $cron_name, $e->getMessage());
         }
+    }
+
+    /**
+     * Get all configured mapping resources for the current project
+     * 
+     * Retrieves both predefined and custom mapping resources from project settings
+     * and converts them to proper MappingResource value objects using the 
+     * MappingResourceService for consistent format handling.
+     * 
+     * @return \Vanderbilt\FhirSnapshot\ValueObjects\MappingResource[] Array of all configured mapping resources
+     */
+    public function getAllConfiguredMappingResources(): array
+    {
+        $mappingResourceService = new MappingResourceService();
+        
+        // Get data from project settings
+        $predefinedData = $this->getProjectSetting('mapping_resources') ?? [];
+        $customData = $this->getProjectSetting('custom_mapping_resources') ?? [];
+        
+        // Use the service to convert to MappingResource objects
+        $predefinedResources = $mappingResourceService->convertToMappingResources($predefinedData, 'predefined');
+        $customResources = $mappingResourceService->convertToMappingResources($customData, 'custom');
+        
+        // Combine both types
+        return array_merge($predefinedResources, $customResources);
     }
 
 

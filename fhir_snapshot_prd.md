@@ -43,12 +43,12 @@ While REDCap’s CDIS tools allow for real-time FHIR integration by storing data
 **FR4**  
 *Requirement:* Fetch FHIR resources in background using queue-based processing  
 *Priority:* High  
-*Notes:* Implemented via cron-based queue processor that manages FHIR fetching tasks for each MRN and resource combination. Resources include Patient, Observation (vital-signs), etc.
+*Notes:* Implemented via cron-based queue processor using generic FHIR fetch tasks that process all pending resources efficiently. Uses intelligent task deduplication to prevent unnecessary duplicate tasks.
 
 **FR5**  
 *Requirement:* Store payloads using REDCap repeated forms with JSON file storage  
 *Priority:* High  
-*Notes:* Use repeated forms with `__all_fhir_` prefixed fields for metadata and file upload fields for JSON payload storage. Files maintain naming convention: `{project_id}-{mrn}/{resource-type}-{optional-pagination-number}.json`
+*Notes:* Use repeated forms with `all_fhir_` prefixed fields for metadata and edoc file storage for JSON payloads. Each resource instance is stored in a separate repeat instance with complete metadata tracking including resource name, specification, mapping type, status, and file references.
 
 **FR6**  
 *Requirement:* Allow packaging of completed payloads into ZIP files for download  
@@ -64,6 +64,21 @@ While REDCap’s CDIS tools allow for real-time FHIR integration by storing data
 *Requirement:* Detect and flag protected resources (e.g., Epic's break-the-glass)  
 *Priority:* Medium  
 *Notes:* Based on OperationOutcome metadata
+
+**FR9**  
+*Requirement:* Automatic synchronization between configured mapping resources and data instances  
+*Priority:* High  
+*Notes:* System maintains consistency between configuration changes and existing data through automated synchronization workflows. Supports resource lifecycle management (created, updated, deleted).
+
+**FR10**  
+*Requirement:* Manual full synchronization capability  
+*Priority:* Medium  
+*Notes:* Provides manual trigger for comprehensive project synchronization that creates missing instances, cleans orphaned data, and ensures complete resource coverage across all MRNs.
+
+**FR11**  
+*Requirement:* Flexible mapping resource configuration  
+*Priority:* High  
+*Notes:* Support for both predefined REDCap FHIR categories and custom FHIR query specifications. Separates display names from technical specifications for better user experience.
 
 
 ---
@@ -114,27 +129,47 @@ The module implements a sophisticated background queue processing system to mana
 
 ### 5.3 FHIR Fetching Workflow
 
-When users trigger FHIR fetching from the Monitor page:
+The module uses an optimized workflow with generic FHIR fetch tasks and intelligent synchronization:
 
-1. **Task Creation:** For each selected MRN and each configured resource type, a `fhir_fetch` task is created with parameters:
+1. **Resource Synchronization:** When mapping resources are added/updated or MRNs are added:
+   - System creates FhirResourceMetadata instances for all applicable MRN/resource combinations
+   - Each instance is stored as a separate repeat instance with "pending" status
+   - Single generic `fhir_fetch` task is created (with deduplication to prevent multiple tasks)
+
+2. **Generic Task Processing:** The cron job processes generic tasks efficiently:
    ```php
+   // Single task processes ALL pending resources across ALL MRNs
    [
-       'mrn' => '123456',
-       'resources' => ['Patient', 'Observation', 'Condition'],
-       'fhir_system' => 'configured_system_id'
+       'trigger' => 'new_mapping_resource', // Context for logging
+       // No specific MRN/resource - processes all pending instances
    ]
    ```
 
-2. **Background Processing:** The cron job processes these tasks:
-   - Connects to configured FHIR system using CDIS tools
-   - Fetches resources for the specified MRN
-   - Handles pagination for large result sets
-   - Stores JSON payloads in structured directories
-   - Updates task status and project data fields accordingly
+3. **Background Processing:** The FhirFetchProcessor:
+   - Scans all MRNs for pending resource instances
+   - Processes resources within memory/time constraints
+   - Connects to FHIR system using CDIS tools
+   - Stores JSON payloads in REDCap edocs
+   - Updates repeat instance status and metadata
+   - Creates continuation tasks if resource limits are approached
 
-3. **Status Tracking:** Each task's progress is tracked and reflected in the Monitor page UI, showing per-resource status for each MRN
+4. **Status Tracking:** Each resource instance tracks its own status independently, providing granular monitoring per MRN per resource type
 
-### 5.4 Queue Processing Features
+### 5.4 Synchronization Architecture
+
+**Automatic Synchronization:** The module maintains data consistency through:
+- **Resource Lifecycle Management:** When mapping resources are created, updated, or deleted, the system automatically synchronizes data instances across all MRNs
+- **Outdated Instance Handling:** When mappings are updated, existing instances are marked as "outdated" and new instances are created
+- **Orphan Cleanup:** When mappings are removed, instances are marked as "deleted" for audit trail preservation
+- **New MRN Integration:** When MRNs are added, instances are automatically created for all active mapping resources
+
+**Manual Full Synchronization:** Comprehensive project-wide synchronization that:
+- Compares configured mapping resources against existing data instances
+- Creates missing instances for incomplete MRN coverage
+- Cleans up orphaned instances from removed mappings
+- Provides detailed reporting on sync operations performed
+
+### 5.5 Queue Processing Features
 
 **Resource Management:**
 - Monitors memory usage (80% threshold) and execution time (30 minutes max)
@@ -166,17 +201,24 @@ When users trigger FHIR fetching from the Monitor page:
 ### REDCap Repeated Forms Structure
 The module uses REDCap repeated forms to store FHIR resource metadata with the following field naming convention:
 
-**Repeated Form Fields (prefixed with `__all_fhir_`):**
-- `all_fhir_resource_type`: The FHIR resource type (Patient, Observation, etc.)
-- `all_fhir_resource_status`: Processing status (Pending, Fetching, Completed, Failed)
-- `all_fhir_file_upload`: REDCap file field storing the JSON payload
+**Repeated Form Fields (prefixed with `all_fhir_`):**
+- `all_fhir_resource_name`: User-friendly display name for the mapping resource
+- `all_fhir_resource_spec`: Technical specification (predefined name OR partial URL)
+- `all_fhir_resource_type`: Mapping type ("predefined" or "custom")
+- `all_fhir_resource_status`: Processing status (pending, fetching, completed, failed, outdated, deleted)
+- `all_fhir_file_upload`: REDCap edoc ID containing the JSON payload
 - `all_fhir_fetch_date`: Timestamp when resource was successfully fetched
 - `all_fhir_error_message`: Error details for failed fetch operations
 - `all_fhir_pagination_info`: JSON metadata for paginated resource collections
 
+**Field Usage Examples:**
+- Resource Name: "Patient Demographics", "Vital Signs", "Social History"
+- Resource Spec: "patient-health", "Observation?category=social-history"
+- Mapping Type: "predefined" (REDCap category) or "custom" (FHIR query)
+
 ### Data & Privacy Considerations
 
-- FHIR resource metadata stored in REDCap repeated forms using `__all_fhir_` field prefix
+- FHIR resource metadata stored in REDCap repeated forms using `all_fhir_` field prefix
 - JSON payloads stored using REDCap's native file upload system in edocs
 - Queue processing tasks stored in REDCap project settings (no PHI in task metadata)
 - Access to ZIP downloads and monitor UI is permission-restricted  

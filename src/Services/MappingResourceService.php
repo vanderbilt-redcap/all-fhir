@@ -77,6 +77,12 @@ use Vanderbilt\FhirSnapshot\ValueObjects\MappingResource;
  * - Typically used by configuration management and resource synchronization services
  * - Integrates with MappingResource value object lifecycle management
  * 
+ * MODULE INTEGRATION:
+ * - Used by FhirSnapshot::getAllConfiguredMappingResources() for centralized access
+ * - Provides consistent conversion logic across the entire module ecosystem
+ * - Enables single source of truth for mapping resource configuration handling
+ * - Supports performFullSync operations through main module helper method
+ * 
  * DATA INTEGRITY FEATURES:
  * - Validates required fields and data structure consistency
  * - Maintains resource type constraints and validation rules

@@ -185,6 +185,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $queueManager->clearQueue();
                 $message = "Cleared all tasks from queue";
                 break;
+                
+            case 'perform_full_sync':
+                // Get all configured mapping resources using the helper method
+                $configuredResources = $module->getAllConfiguredMappingResources();
+                
+                $syncResults = $resourceManager->performFullSync($configuredResources);
+                
+                $createdTasks = count($syncResults['created_tasks']);
+                $cleanedInstances = $syncResults['cleaned_instances'];
+                $missingInstances = count($syncResults['comparison']['missing_instances']);
+                $orphanedInstances = count($syncResults['comparison']['orphaned_instances']);
+                
+                $message = "Full sync completed. Created $missingInstances missing instances, " .
+                          "cleaned $cleanedInstances orphaned instances, " .
+                          "and created $createdTasks background tasks.";
+                break;
         }
     } catch (Exception $e) {
         $error = $e->getMessage();
@@ -526,6 +542,25 @@ $filteredTasks = $statusFilter === 'all' ? $allTasks : $queueManager->getTasksBy
         }
     }
     </script>
+</div>
+
+<div class="test-section">
+    <h3>Perform Full Synchronization</h3>
+    <p><em>This section performs a complete synchronization between configured mapping resources and existing data instances across all MRNs. It identifies missing instances, creates them, cleans up orphaned instances, and creates background tasks for data fetching.</em></p>
+    <form method="post" onsubmit="return confirm('Are you sure you want to perform a full synchronization? This will analyze all MRNs and create missing resource instances.');">
+        <input type="hidden" name="redcap_csrf_token" value="<?= System::getCsrfToken() ?>">
+        <input type="hidden" name="action" value="perform_full_sync">
+        
+        <p><strong>This operation will:</strong></p>
+        <ul>
+            <li>Compare configured mapping resources against existing data instances</li>
+            <li>Create missing resource instances for all MRNs</li>
+            <li>Clean up orphaned instances from removed mappings</li>
+            <li>Create background tasks to fetch FHIR data for new instances</li>
+        </ul>
+        
+        <button type="submit" class="btn btn-primary">Perform Full Sync</button>
+    </form>
 </div>
 
 <div class="test-section">
