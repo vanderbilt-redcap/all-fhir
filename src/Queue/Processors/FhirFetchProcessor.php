@@ -170,7 +170,7 @@ class FhirFetchProcessor extends AbstractTaskProcessor
         
         try {
             // Fetch the resource
-            $resourceType = $resource['metadata']->getResourceType();
+            $resourceType = $resource['metadata']->getResourceName();
             // Get mapping resource information (simplified approach for now)
             $mappingResource = $this->findMappingResourceForType($resourceType);
             

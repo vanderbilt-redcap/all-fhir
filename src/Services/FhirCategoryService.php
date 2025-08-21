@@ -7,35 +7,89 @@ use Vanderbilt\REDCap\Classes\Fhir\FhirCategory;
 /**
  * FhirCategoryService
  * 
- * Service for managing available FHIR mapping categories.
+ * Centralized registry service for managing REDCap's predefined FHIR resource categories.
+ * Provides structured access to FHIR mapping categories supported by the REDCap FHIR infrastructure,
+ * enabling consistent category management across the application.
  * 
  * ROLE & RESPONSIBILITIES:
- * - Provide centralized list of supported FHIR resource categories
- * - Handle category filtering and availability logic
- * - Manage category configuration and customization
- * - Provide category metadata and descriptions
- * - Support future category management features
+ * - Maintains comprehensive catalog of supported REDCap FHIR categories
+ * - Provides unified interface for category discovery and validation
+ * - Manages category metadata including display names and resource specifications
+ * - Supports both current API and legacy compatibility patterns
+ * - Enables category filtering and availability checking
+ * - Centralizes category configuration for easy maintenance
  * 
- * SUPPORTED CATEGORIES:
- * - Core patient demographics and characteristics
- * - Clinical data (conditions, procedures, medications)
- * - Appointments and encounters
- * - Laboratory and vital signs
- * - Device and coverage information
- * - Various specialized resource types
+ * CATEGORY ORGANIZATION:
  * 
- * KEY FEATURES:
- * - Centralized category management
- * - Easy addition/removal of categories
- * - Support for category filtering
- * - Consistent category ordering
+ * PATIENT INFORMATION:
+ * - Demographics: Core patient demographic data
+ * - Core characteristics: Essential patient attributes
+ * - Coverage: Insurance and coverage information
+ * 
+ * CLINICAL DATA:
+ * - Conditions: General condition/diagnosis information with specialized subtypes:
+ *   • Dental findings, genomics, infections, medical history
+ *   • Problems, reason for visit categorizations
+ * - Procedures: Medical procedures and interventions
+ * - Medications: Medication management and history
+ * - Immunizations: Vaccination records and schedules
+ * 
+ * OBSERVATIONS & MEASUREMENTS:
+ * - Laboratory: Lab results and diagnostic testing
+ * - Vital signs: Patient vital sign measurements
+ * - Social history: Social determinants and lifestyle factors
+ * 
+ * HEALTHCARE DELIVERY:
+ * - Appointments: General appointments and scheduled surgeries
+ * - Encounters: Healthcare encounters and visits
+ * - Diagnosis: Diagnostic information and findings
+ * 
+ * DEVICES & EVENTS:
+ * - Device implants: Implanted medical devices
+ * - Adverse events: Adverse drug reactions and safety events
+ * - Allergy intolerance: Allergy and intolerance tracking
+ * 
+ * INTEGRATION WITH REDCAP FHIR:
+ * - Maps to REDCap's FhirCategory constants for technical specifications
+ * - Provides display names suitable for user interfaces
+ * - Supports REDCap's FHIR endpoint factory and request generation
+ * - Maintains compatibility with REDCap's authentication and API patterns
+ * 
+ * USAGE PATTERNS:
+ * - getAvailableCategories() - Get all categories with display names and specs
+ * - isCategoryAvailable($category) - Validate category availability
+ * - getLegacyCategories() - Access raw category constants (deprecated)
+ * 
+ * EXTENSIBILITY:
+ * - Categories can be easily added/removed by updating the category lists
+ * - Supports future category management features and filtering
+ * - Designed for easy integration with dynamic category systems
+ * - Maintains backward compatibility through legacy method support
+ * 
+ * DATA STRUCTURE:
+ * Returns categories as arrays with:
+ * - 'name': Human-readable display name for UI presentation
+ * - 'resourceSpec': Technical FHIR resource specification for API calls
+ * 
+ * MAINTENANCE NOTES:
+ * - Some categories are commented out (Document reference, Practitioner, etc.)
+ * - Legacy method marked deprecated to encourage new API usage
+ * - Category availability can be managed through enable/disable patterns
  */
 class FhirCategoryService
 {
     /**
-     * Get the list of available FHIR mapping categories with their resource specifications
+     * Get comprehensive list of available FHIR mapping categories
      * 
-     * Returns array of category objects with display name and FHIR resourceSpec
+     * Returns structured array of category objects with user-friendly display names
+     * and technical resource specifications for FHIR API integration.
+     * 
+     * Each category includes:
+     * - 'name': Human-readable display name for UI elements
+     * - 'resourceSpec': REDCap FhirCategory constant for API calls
+     * 
+     * Categories are organized by clinical domain and maintain consistent ordering
+     * for predictable user interface presentation.
      * 
      * @return array Array of category objects with 'name' and 'resourceSpec' keys
      */
@@ -73,10 +127,13 @@ class FhirCategoryService
     }
 
     /**
-     * Get legacy category constants for backward compatibility
+     * Get raw FHIR category constants for legacy compatibility
      * 
-     * @return array Array of FhirCategory constants
-     * @deprecated Use getAvailableCategories() for new implementations
+     * Returns array of FhirCategory constant values without display names,
+     * maintained for backward compatibility with existing code.
+     * 
+     * @return array Array of FhirCategory constant values
+     * @deprecated Use getAvailableCategories() for new implementations that need display names
      */
     public function getLegacyCategories(): array
     {
@@ -112,13 +169,22 @@ class FhirCategoryService
     }
 
     /**
-     * Check if a category is available
+     * Validate if a FHIR category is currently available for use
      * 
-     * @param string $category
-     * @return bool
+     * Checks against the current list of available categories to determine
+     * if a given category identifier is supported and active.
+     * 
+     * Note: Current implementation has a logical error - it should check against
+     * resourceSpec values rather than the full category objects.
+     * 
+     * @param string $category FHIR category resourceSpec to validate
+     * @return bool True if category is available, false otherwise
+     * @todo Fix implementation to check resourceSpec values properly
      */
     public function isCategoryAvailable(string $category): bool
     {
-        return in_array($category, $this->getAvailableCategories(), true);
+        // TODO: Fix this implementation - should check resourceSpec values
+        $availableSpecs = array_column($this->getAvailableCategories(), 'resourceSpec');
+        return in_array($category, $availableSpecs, true);
     }
 }

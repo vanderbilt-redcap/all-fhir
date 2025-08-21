@@ -192,7 +192,7 @@ class FhirResourceMetadata implements JsonSerializable
         );
     }
 
-    public function withErrorMessage(string $errorMessage): self
+    public function withErrorMessage(?string $errorMessage): self
     {
         return new self(
             $this->resourceName,

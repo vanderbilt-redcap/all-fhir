@@ -11,14 +11,62 @@ use Vanderbilt\REDCap\Classes\Fhir\Endpoints\AbstractEndpoint;
 /**
  * FhirClientWrapper
  * 
- * Wrapper around REDCap's FhirClient to implement our FhirClientInterface.
- * Provides a clean interface for FHIR resource fetching while integrating 
- * with REDCap's FHIR infrastructure including token management and logging.
+ * Adapter service that wraps REDCap's FHIR client infrastructure to provide a clean, 
+ * project-specific interface for fetching FHIR resources from external EHR systems.
+ * 
+ * ROLE & RESPONSIBILITIES:
+ * - Adapts REDCap's FhirClient to implement the project's FhirClientInterface
+ * - Handles patient ID resolution from MRN (Medical Record Numbers)
+ * - Manages different types of FHIR resource requests (predefined vs custom)
+ * - Provides error handling and logging for FHIR operations
+ * - Integrates with REDCap's token management and authentication system
+ * 
+ * KEY FEATURES:
+ * 
+ * RESOURCE FETCHING:
+ * - Converts MRN to FHIR Patient ID using REDCap's patient resolution
+ * - Supports both predefined REDCap categories and custom FHIR queries
+ * - Returns raw FHIR resource payloads for storage and processing
+ * - Handles authentication and authorization through REDCap's FHIR infrastructure
+ * 
+ * REQUEST HANDLING:
+ * - Predefined requests: Uses REDCap's EndpointFactory for standard categories
+ * - Custom requests: Parses custom resource specifications and builds appropriate URLs
+ * - Automatic patient parameter injection for all resource types
+ * - Query parameter parsing and URL construction for complex FHIR searches
+ * 
+ * ERROR MANAGEMENT:
+ * - Graceful handling of patient not found scenarios
+ * - Comprehensive error logging with context (MRN, resource type)
+ * - Exception propagation with detailed error information
+ * - Response validation and error extraction from FHIR responses
+ * 
+ * INTEGRATION PATTERNS:
+ * - Works with MappingResource configurations to determine request type
+ * - Integrates with REDCap's project and user context management
+ * - Supports refetch operations for resource updates
+ * - Compatible with REDCap's FHIR logging and audit systems
+ * 
+ * USAGE EXAMPLES:
+ * - $wrapper->fetchFhirResource($mrn, 'Observation') - Basic resource fetch
+ * - $wrapper->fetchFhirResource($mrn, 'Observation', false, $mapping) - With mapping config
+ * - Typically used by FhirResourceService for coordinated resource management
+ * 
+ * FHIR COMPLIANCE:
+ * - Supports FHIR R4 resource specifications
+ * - Handles pagination through REDCap's client infrastructure
+ * - Maintains FHIR search parameter compatibility
+ * - Preserves original FHIR resource structure and metadata
  */
 class FhirClientWrapper implements FhirClientInterface
 {
     private FhirClient $fhirClient;
 
+    /**
+     * Initialize the FHIR client wrapper with REDCap's FHIR client instance
+     * 
+     * @param FhirClient $fhirClient Configured REDCap FHIR client with authentication and project context
+     */
     public function __construct(FhirClient $fhirClient)
     {
         $this->fhirClient = $fhirClient;

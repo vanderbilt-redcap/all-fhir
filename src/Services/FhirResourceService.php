@@ -55,6 +55,12 @@ class FhirResourceService
     private RepeatedFormDataAccessor $dataAccessor;
     private FhirClientInterface $fhirClient;
 
+    /**
+     * Initialize the FHIR resource service with data access and client dependencies
+     * 
+     * @param RepeatedFormDataAccessor $dataAccessor Service for managing REDCap repeated form data and metadata
+     * @param FhirClientInterface $fhirClient Interface for fetching FHIR resources from external systems
+     */
     public function __construct(
         RepeatedFormDataAccessor $dataAccessor,
         FhirClientInterface $fhirClient
@@ -96,9 +102,11 @@ class FhirResourceService
             // Get mapping resource from options if provided
             $mappingResource = $options['mapping_resource'] ?? null;
             
+            // Fetch FHIR resource data from external system
             $fhirData = $this->fhirClient->fetchFhirResource($mrn, $resourceType, $isRefetch, $mappingResource);
             
             if ($fhirData === null) {
+                // No data found - update metadata and return failure result
                 return $this->handleFetchFailure(
                     $recordId,
                     $metadata,
@@ -106,13 +114,16 @@ class FhirResourceService
                 );
             }
 
+            // Store FHIR data as REDCap edoc file
             $edocId = $this->storeFhirDataAsFile($fhirData, $mrn, $resourceType);
             
+            // Update metadata with completion status and file reference
             $completedMetadata = $metadata
                 ->withStatus(FhirResourceMetadata::STATUS_COMPLETED)
                 ->withEdocId($edocId)
                 ->withFetchDate(date('Y-m-d H:i:s'));
 
+            // Add pagination metadata if present in FHIR response
             if (isset($fhirData['pagination'])) {
                 $completedMetadata = $completedMetadata->withPaginationInfo($fhirData['pagination']);
             }
@@ -193,7 +204,7 @@ class FhirResourceService
             'message' => $errorMessage,
             'data' => [
                 'record_id' => $recordId,
-                'resource_type' => $metadata->getResourceType(),
+                'resource_type' => $metadata->getResourceName(),
                 'repeat_instance' => $metadata->getRepeatInstance(),
                 'error' => $errorMessage
             ]

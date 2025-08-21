@@ -11,47 +11,95 @@ use Vanderbilt\FhirSnapshot\Constants;
 /**
  * ResourceSynchronizationService
  * 
- * Manages the lifecycle synchronization of FHIR resource mappings with REDCap data instances.
+ * Orchestration service that maintains data consistency between FHIR resource mapping
+ * configurations and their corresponding REDCap repeated form instances. Coordinates
+ * complex multi-record operations and lifecycle management across the entire project.
  * 
  * ROLE & RESPONSIBILITIES:
- * - Orchestrates resource mapping lifecycle events (create, update, delete)
- * - Synchronizes mapping changes across all existing MRNs in the project
- * - Manages queue task creation for FHIR data fetching operations
- * - Handles resource instance state transitions and cleanup
- * - Provides project-wide synchronization status reporting
+ * - Synchronizes resource mapping lifecycle events across all project records
+ * - Orchestrates state transitions for bulk resource instance operations
+ * - Manages queue task creation with intelligent deduplication logic
+ * - Provides data consistency analysis and automated cleanup utilities
+ * - Coordinates between configuration changes and data layer persistence
+ * - Generates comprehensive project synchronization status reports
  * 
- * KEY WORKFLOWS:
+ * CORE SYNCHRONIZATION WORKFLOWS:
  * 
- * MAPPING RESOURCE CREATED:
- * - Creates repeated form instances for all existing MRNs
- * - Enqueues simple generic FHIR fetch task (only if no pending task exists)
- * - Sets initial status to PENDING for all instances
+ * RESOURCE MAPPING CREATED:
+ * - Creates FhirResourceMetadata instances for all existing MRNs in the project
+ * - Initializes status as PENDING for immediate processing readiness
+ * - Creates single generic FHIR fetch task (only if no pending task exists)
+ * - Returns task objects for tracking and monitoring
+ * - Ensures new mappings are immediately available across all patients
  * 
- * MAPPING RESOURCE UPDATED:
- * - Marks existing instances as OUTDATED
+ * RESOURCE MAPPING UPDATED:
+ * - Identifies existing instances by mapping resource name/spec
+ * - Marks current instances as OUTDATED to preserve historical data
  * - Creates new instances with updated mapping configuration
- * - Enqueues simple generic refetch task (only if no pending task exists)
+ * - Enqueues refetch task to update data with new specifications
+ * - Maintains audit trail while transitioning to new configuration
  * 
- * MAPPING RESOURCE DELETED:
- * - Marks instances as DELETED (preserves audit trail)
- * - Removes pending tasks from processing queue
- * - Archives associated JSON payload files
+ * RESOURCE MAPPING DELETED:
+ * - Marks existing instances as DELETED (preserves audit trail)
+ * - Removes related pending tasks from processing queue
+ * - Archives associated JSON payload files through metadata references
+ * - Returns detailed deletion summary for reporting and rollback
+ * - Ensures clean removal without data loss
  * 
- * NEW MRN ADDED:
- * - Creates instances for all active resource mappings
- * - Enqueues simple generic fetch task for new patient (only if no pending task exists)
+ * NEW MRN/PATIENT ADDED:
+ * - Creates resource instances for all currently active mappings
+ * - Ensures new patients have complete resource coverage
+ * - Enqueues targeted fetch task for new patient data
+ * - Integrates seamlessly with existing processing pipeline
  * 
- * SYNCHRONIZATION FEATURES:
- * - Compares configured vs existing resource instances
- * - Identifies missing, outdated, and orphaned instances  
- * - Provides cleanup utilities for data consistency
- * - Generates comprehensive sync status reports
+ * ADVANCED SYNCHRONIZATION FEATURES:
  * 
- * USAGE:
- * - syncMappingResourceCreated($resource, $existingMrns)
- * - syncMappingResourceUpdated($resource, $existingMrns) 
- * - syncMappingResourceDeleted($resource, $existingMrns)
- * - compareConfiguredVsExisting($configuredResources, $existingMrns)
+ * CONFIGURATION COMPARISON:
+ * - Analyzes differences between configured and existing resources
+ * - Identifies missing instances that need creation
+ * - Detects orphaned instances from removed mappings
+ * - Finds outdated instances requiring updates
+ * - Provides comprehensive gap analysis for project health
+ * 
+ * DATA CONSISTENCY MANAGEMENT:
+ * - Automated cleanup of orphaned resource instances
+ * - Status transition validation and error recovery
+ * - Resource instance lifecycle management
+ * - Project-wide data integrity verification
+ * 
+ * QUEUE COORDINATION:
+ * - Intelligent task deduplication to prevent duplicate processing
+ * - Single generic task creation for bulk operations
+ * - Task removal for deleted resources
+ * - Queue status integration with sync reporting
+ * 
+ * STATUS REPORTING:
+ * - Real-time project synchronization status
+ * - Resource status distribution statistics
+ * - Queue health and processing metrics
+ * - MRN coverage and completion tracking
+ * 
+ * USAGE PATTERNS:
+ * - syncMappingResourceCreated($resource, $existingMrns) - New mapping added
+ * - syncMappingResourceUpdated($resource, $existingMrns) - Configuration changed
+ * - syncMappingResourceDeleted($resource, $existingMrns) - Mapping removed
+ * - syncNewMrn($mrn, $activeResources) - Patient added to project
+ * - compareConfiguredVsExisting($configured, $mrns) - Gap analysis
+ * - cleanupOrphanedInstances($orphaned) - Data cleanup
+ * - getProjectSyncStatus() - Overall health reporting
+ * 
+ * ARCHITECTURAL PATTERNS:
+ * - Coordinates between high-level operations and low-level data access
+ * - Implements batch operations with individual record error isolation
+ * - Uses task queue abstraction for asynchronous processing coordination
+ * - Maintains separation between configuration and data concerns
+ * - Provides transactional-style operations with comprehensive results
+ * 
+ * ERROR HANDLING:
+ * - Graceful degradation when individual records fail
+ * - Comprehensive result reporting for partial successes
+ * - Transaction-safe operations with rollback capabilities
+ * - Detailed error context for troubleshooting and recovery
  */
 class ResourceSynchronizationService
 {
@@ -59,6 +107,13 @@ class ResourceSynchronizationService
     private QueueManager $queueManager;
     private string $projectId;
 
+    /**
+     * Initialize the synchronization service with data access and queue management dependencies
+     * 
+     * @param RepeatedFormDataAccessor $dataAccessor Low-level data access for repeated form operations
+     * @param QueueManager $queueManager Queue management for asynchronous task coordination
+     * @param string $projectId REDCap project identifier for scoped operations
+     */
     public function __construct(
         RepeatedFormDataAccessor $dataAccessor,
         QueueManager $queueManager,
@@ -69,6 +124,16 @@ class ResourceSynchronizationService
         $this->projectId = $projectId;
     }
 
+    /**
+     * Synchronize the creation of a new FHIR resource mapping across all existing patients
+     * 
+     * Creates repeated form instances for every MRN in the project, initializes them with
+     * PENDING status, and creates a processing task if none exists.
+     * 
+     * @param MappingResource $resource New mapping resource configuration
+     * @param array $existingMrns Array of MRN strings currently in the project
+     * @return array Array of created tasks (empty if no task needed)
+     */
     public function syncMappingResourceCreated(MappingResource $resource, array $existingMrns): array
     {
         // Create metadata instances for all MRNs
@@ -104,6 +169,16 @@ class ResourceSynchronizationService
         return []; // No new task needed - existing pending task will handle it
     }
 
+    /**
+     * Synchronize updates to an existing FHIR resource mapping configuration
+     * 
+     * Marks existing instances as OUTDATED to preserve historical data, creates new 
+     * instances with updated configuration, and enqueues refetch tasks.
+     * 
+     * @param MappingResource $resource Updated mapping resource configuration
+     * @param array $existingMrns Array of MRN strings currently in the project
+     * @return array Array of created tasks (empty if no task needed)
+     */
     public function syncMappingResourceUpdated(MappingResource $resource, array $existingMrns): array
     {
         // Mark existing instances as outdated and create new instances
@@ -152,6 +227,16 @@ class ResourceSynchronizationService
         return []; // No new task needed - existing pending task will handle it
     }
 
+    /**
+     * Synchronize the deletion of a FHIR resource mapping while preserving audit trail
+     * 
+     * Marks instances as DELETED rather than removing them, preserves historical data,
+     * and removes related pending tasks from the processing queue.
+     * 
+     * @param MappingResource $resource Mapping resource being deleted
+     * @param array $existingMrns Array of MRN strings currently in the project
+     * @return array Array of archived instance details for reporting
+     */
     public function syncMappingResourceDeleted(MappingResource $resource, array $existingMrns): array
     {
         $archivedInstances = [];
@@ -193,6 +278,16 @@ class ResourceSynchronizationService
         return $archivedInstances;
     }
 
+    /**
+     * Synchronize the addition of a new patient/MRN with all active resource mappings
+     * 
+     * Creates resource instances for all currently configured mappings, ensuring the
+     * new patient has complete resource coverage from the start.
+     * 
+     * @param string $mrn Medical Record Number of the newly added patient
+     * @param array $activeResources Array of MappingResource objects currently active
+     * @return array Array of created tasks (empty if no task needed)
+     */
     public function syncNewMrn(string $mrn, array $activeResources): array
     {
         $recordId = $this->dataAccessor->getRecordIdByMrn($mrn);
@@ -228,6 +323,16 @@ class ResourceSynchronizationService
         return []; // No new task needed - existing pending task will handle it
     }
 
+    /**
+     * Compare configured resource mappings against existing data instances
+     * 
+     * Performs comprehensive analysis to identify discrepancies between what should
+     * exist based on configuration and what actually exists in the data layer.
+     * 
+     * @param array $configuredResources Array of MappingResource objects representing current configuration
+     * @param array $existingMrns Array of MRN strings to analyze
+     * @return array Analysis results with missing_instances, outdated_instances, and orphaned_instances
+     */
     public function compareConfiguredVsExisting(array $configuredResources, array $existingMrns): array
     {
         $comparison = [
@@ -245,10 +350,10 @@ class ResourceSynchronizationService
             }
             
             $existingMetadata = $this->dataAccessor->getAllResourceMetadata($recordId);
-            $existingResourceTypes = array_map(fn($metadata) => $metadata->getResourceType(), $existingMetadata);
+            $existingResourceNames = array_map(fn($metadata) => $metadata->getResourceName(), $existingMetadata);
             
             foreach ($configuredResourceTypes as $resourceType) {
-                if (!in_array($resourceType, $existingResourceTypes)) {
+                if (!in_array($resourceType, $existingResourceNames)) {
                     $comparison['missing_instances'][] = [
                         'mrn' => $mrn,
                         'resource_type' => $resourceType
@@ -257,10 +362,10 @@ class ResourceSynchronizationService
             }
             
             foreach ($existingMetadata as $metadata) {
-                if (!in_array($metadata->getResourceType(), $configuredResourceTypes) && !$metadata->isDeleted()) {
+                if (!in_array($metadata->getResourceName(), $configuredResourceTypes) && !$metadata->isDeleted()) {
                     $comparison['orphaned_instances'][] = [
                         'mrn' => $mrn,
-                        'resource_type' => $metadata->getResourceType(),
+                        'resource_type' => $metadata->getResourceName(),
                         'repeat_instance' => $metadata->getRepeatInstance()
                     ];
                 }
@@ -268,7 +373,7 @@ class ResourceSynchronizationService
                 if ($metadata->isOutdated()) {
                     $comparison['outdated_instances'][] = [
                         'mrn' => $mrn,
-                        'resource_type' => $metadata->getResourceType(),
+                        'resource_type' => $metadata->getResourceName(),
                         'repeat_instance' => $metadata->getRepeatInstance()
                     ];
                 }
@@ -278,6 +383,15 @@ class ResourceSynchronizationService
         return $comparison;
     }
 
+    /**
+     * Clean up orphaned resource instances that no longer have corresponding mappings
+     * 
+     * Marks orphaned instances as DELETED to remove them from active processing
+     * while preserving them for audit purposes.
+     * 
+     * @param array $orphanedInstances Array of orphaned instance info from compareConfiguredVsExisting
+     * @return int Number of instances successfully cleaned up
+     */
     public function cleanupOrphanedInstances(array $orphanedInstances): int
     {
         $cleanedCount = 0;
@@ -307,6 +421,9 @@ class ResourceSynchronizationService
     /**
      * Check if there are any pending FHIR fetch tasks in the queue
      * 
+     * Used to prevent creating duplicate tasks when one already exists that can handle
+     * the new work. Implements intelligent task deduplication.
+     * 
      * @return bool True if there is at least one pending FHIR fetch task
      */
     private function hasPendingFhirFetchTask(): bool
@@ -322,6 +439,14 @@ class ResourceSynchronizationService
         return false;
     }
 
+    /**
+     * Generate comprehensive project synchronization status report
+     * 
+     * Aggregates data across all MRNs and provides overview of project health,
+     * queue status, and resource processing statistics.
+     * 
+     * @return array Comprehensive status report with counts, statistics, and timestamps
+     */
     public function getProjectSyncStatus(): array
     {
         $allMrns = $this->dataAccessor->getAllMrns();

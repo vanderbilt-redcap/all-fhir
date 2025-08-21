@@ -60,6 +60,14 @@ class RepeatedFormResourceManager
 {
     private string $projectId;
 
+    /**
+     * Initialize the resource manager with all required service dependencies
+     * 
+     * @param FhirSnapshot $module Main module instance providing project context and configuration
+     * @param RepeatedFormDataAccessor $dataAccessor Low-level data access for REDCap repeated forms
+     * @param ResourceSynchronizationService $syncService Orchestration service for resource lifecycle management
+     * @param QueueManager $queueManager Asynchronous task management for FHIR operations
+     */
     public function __construct(
         private FhirSnapshot $module,
         private RepeatedFormDataAccessor $dataAccessor,
@@ -194,7 +202,7 @@ class RepeatedFormResourceManager
                     continue;
                 }
                 
-                if (!empty($filters['resource_type']) && $metadata->getResourceType() !== $filters['resource_type']) {
+                if (!empty($filters['resource_type']) && $metadata->getResourceName() !== $filters['resource_type']) {
                     continue;
                 }
                 
@@ -220,6 +228,12 @@ class RepeatedFormResourceManager
         return $retriedCount;
     }
 
+    /**
+     * Perform full synchronization between configured resources and existing data
+     * 
+     * @param MappingResource[] $configuredResources Array of configured mapping resources
+     * @return array Sync results with task info, comparison data, and cleanup counts
+     */
     public function performFullSync(array $configuredResources): array
     {
         $existingMrns = $this->dataAccessor->getAllMrns();
@@ -233,11 +247,32 @@ class RepeatedFormResourceManager
         
         $createdInstances = 0;
         
+        // Create a lookup map for configured resources by name
+        /** @var array<string, MappingResource> $resourceLookup */
+        $resourceLookup = [];
+        foreach ($configuredResources as $resource) {
+            $resourceLookup[$resource->getName()] = $resource;
+        }
+        
         // Create missing instances
         foreach ($comparison['missing_instances'] as $missing) {
+            /** @var array{mrn: string, resource_type: string} $missing */
             $recordId = $this->dataAccessor->getRecordIdByMrn($missing['mrn']);
             $nextInstance = $this->dataAccessor->getNextRepeatInstance($recordId);
-            $metadata = FhirResourceMetadata::create($missing['resource_type'], $nextInstance);
+            
+            // Find the corresponding MappingResource to get full details
+            $mappingResource = $resourceLookup[$missing['resource_type']] ?? null;
+            if (!$mappingResource) {
+                // Skip if we can't find the mapping resource (shouldn't happen in normal flow)
+                continue;
+            }
+            
+            $metadata = FhirResourceMetadata::create(
+                $mappingResource->getName(),
+                $mappingResource->getResourceSpec(), 
+                $mappingResource->getType(),
+                $nextInstance
+            );
             
             $this->dataAccessor->saveResourceMetadata($recordId, $metadata);
             $createdInstances++;
@@ -317,7 +352,7 @@ class RepeatedFormResourceManager
         $exportData = [];
         
         foreach ($allMetadata as $metadata) {
-            if (!empty($resourceTypes) && !in_array($metadata->getResourceType(), $resourceTypes)) {
+            if (!empty($resourceTypes) && !in_array($metadata->getResourceName(), $resourceTypes)) {
                 continue;
             }
             
@@ -361,7 +396,7 @@ class RepeatedFormResourceManager
                     continue;
                 }
                 
-                if (!empty($filters['resource_type']) && $metadata->getResourceType() !== $filters['resource_type']) {
+                if (!empty($filters['resource_type']) && $metadata->getResourceName() !== $filters['resource_type']) {
                     continue;
                 }
                 
