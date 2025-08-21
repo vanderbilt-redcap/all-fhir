@@ -10,3 +10,6 @@ composer.phar
 CLAUDE.md
 .phpunit.*
 /todo/*.md
+certs/*.key
+certs/*.crt
+certs/*.pem

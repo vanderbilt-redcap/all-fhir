@@ -52,5 +52,49 @@ export const api = {
   downloadZip(zipId: string) {
     const params = { route: `download-zip`, zip_id: zipId }
     return apiClient.get('', { params, responseType: 'blob' })
+  },
+
+  // Enhanced MRN and resource management
+  getMrnResources(mrn: string) {
+    const params = { route: `mrns/${mrn}/resources` }
+    return apiClient.get('', { params })
+  },
+
+  getProjectSummary() {
+    const params = { route: `project-summary` }
+    return apiClient.get('', { params })
+  },
+
+  triggerFetchMrns(mrns: string[], resources?: string[]) {
+    const params = { route: `trigger-fetch` }
+    const payload: any = { mrns }
+    if (resources && resources.length > 0) {
+      payload.resources = resources
+    }
+    return apiClient.post('', payload, { params })
+  },
+
+  performFullSync() {
+    const params = { route: `perform-full-sync` }
+    return apiClient.post('', {}, { params })
+  },
+
+  retryFailedResource(mrn: string, resourceType: string, repeatInstance: number) {
+    const params = { route: `retry-failed` }
+    return apiClient.post('', {
+      mrn,
+      resource_type: resourceType,
+      repeat_instance: repeatInstance,
+      bulk: false
+    }, { params })
+  },
+
+  bulkRetryFailed(resourceType?: string) {
+    const params = { route: `retry-failed` }
+    const payload: any = { bulk: true }
+    if (resourceType) {
+      payload.resource_type = resourceType
+    }
+    return apiClient.post('', payload, { params })
   }
 }

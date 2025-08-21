@@ -26,8 +26,13 @@ return function (App $app) {
 
     // MrnController routes
     $app->get('/mrns', [MrnController::class, 'listMrns']);
-    $app->post('/mrn', [MrnController::class, 'addMrn']);
-    $app->delete('/mrn/{id}', [MrnController::class, 'removeMrn']);
+    $app->post('/mrns', [MrnController::class, 'addMrn']);
+    $app->delete('/mrns/{id}', [MrnController::class, 'removeMrn']);
+    $app->get('/mrns/{mrn}/resources', [MrnController::class, 'getMrnResources']);
+    $app->post('/trigger-fetch', [MrnController::class, 'triggerFetch']);
+    $app->post('/perform-full-sync', [MrnController::class, 'performFullSync']);
+    $app->post('/retry-failed', [MrnController::class, 'retryFailed']);
+    $app->get('/project-summary', [MrnController::class, 'getProjectSummary']);
 
     // FetchController routes
     $app->post('/fetch-mrn', [FetchController::class, 'fetchMrn']);

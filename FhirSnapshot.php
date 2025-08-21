@@ -3,6 +3,7 @@ namespace Vanderbilt\FhirSnapshot;
 
 use DI\Container;
 use ExternalModules\AbstractExternalModule;
+use Project;
 use Vanderbilt\FhirSnapshot\Queue\QueueProcessor;
 use Vanderbilt\FhirSnapshot\Services\MappingResourceService;
 
@@ -208,8 +209,8 @@ class FhirSnapshot extends AbstractExternalModule {
         $mappingResourceService = new MappingResourceService();
         
         // Get data from project settings
-        $predefinedData = $this->getProjectSetting('mapping_resources') ?? [];
-        $customData = $this->getProjectSetting('custom_mapping_resources') ?? [];
+        $predefinedData = $this->getProjectSetting(Constants::SETTING_MAPPING_RESOURCES) ?? [];
+        $customData = $this->getProjectSetting(Constants::SETTING_CUSTOM_MAPPING_RESOURCES) ?? [];
         
         // Use the service to convert to MappingResource objects
         $predefinedResources = $mappingResourceService->convertToMappingResources($predefinedData, 'predefined');
@@ -217,6 +218,22 @@ class FhirSnapshot extends AbstractExternalModule {
         
         // Combine both types
         return array_merge($predefinedResources, $customResources);
+    }
+
+    /**
+     * Get the REDCap event ID for data operations
+     * 
+     * Retrieves the first event ID from the project configuration, handling
+     * both longitudinal and classic project types. Manages global Project object.
+     * 
+     * @return string REDCap event identifier
+     */
+    public function getEventId(): string
+    {
+        $projectId = $this->getProjectId();
+        $Proj = new Project($projectId);
+        
+        return (string) $Proj->firstEventId;
     }
 
 

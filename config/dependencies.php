@@ -111,7 +111,10 @@ return function (ContainerBuilder $containerBuilder) {
         // Define how to instantiate the controllers.
         ArchiveController::class => fn(Container $c) => new ArchiveController($c->get(FhirSnapshot::class)),
         FetchController::class => fn(Container $c) => new FetchController($c->get(FhirSnapshot::class)),
-        MrnController::class => fn(Container $c) => new MrnController($c->get(FhirSnapshot::class)),
+        MrnController::class => fn(Container $c) => new MrnController(
+            $c->get(FhirSnapshot::class),
+            $c->get(RepeatedFormResourceManager::class)
+        ),
         ProjectSettingsController::class => fn(Container $c) => new ProjectSettingsController(
             $c->get(FhirSnapshot::class),
             $c->get(FhirSystemManager::class),
