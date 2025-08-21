@@ -214,10 +214,10 @@ class RepeatedFormDataAccessor
      * Retrieve all FHIR resource metadata instances matching a specific resource type
      * 
      * Searches all repeat instances for a given record and returns metadata objects
-     * where the resource spec matches the specified resource type.
+     * where the resource name matches the specified parameter.
      * 
      * @param string $recordId REDCap record identifier
-     * @param string $resourceType FHIR resource type/spec to match
+     * @param string $resourceType Resource name to match (e.g., "Demographics", "Vital Signs")
      * @return FhirResourceMetadata[] Array of matching metadata objects
      */
     public function getResourceMetadataByType(string $recordId, string $resourceType): array

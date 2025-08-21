@@ -40,7 +40,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 
                 $nextInstance = $dataAccessor->getNextRepeatInstance($recordId);
-                $metadata = FhirResourceMetadata::create($resourceType, $nextInstance);
+                // Create metadata with proper parameters: resourceName, resourceSpec, mappingType, repeatInstance
+                $metadata = FhirResourceMetadata::create(
+                    $resourceType,          // resourceName (display name)
+                    $resourceType,          // resourceSpec (for testing, use same as name)
+                    'custom',               // mappingType (default to custom for manual testing)
+                    $nextInstance           // repeatInstance
+                );
                 $result = $dataAccessor->saveResourceMetadata($recordId, $metadata);
                 
                 if ($result) {
@@ -433,16 +439,17 @@ $filteredTasks = $statusFilter === 'all' ? $allTasks : $queueManager->getTasksBy
         </div>
         
         <div class="form-group">
-            <label for="resource_type">Resource Type:</label>
+            <label for="resource_type">Resource Name:</label>
             <select name="resource_type" id="resource_type" required>
-                <option value="">Select Resource Type</option>
-                <option value="Patient">Patient</option>
-                <option value="Observation">Observation</option>
-                <option value="Condition">Condition</option>
-                <option value="Medication">Medication</option>
-                <option value="Procedure">Procedure</option>
-                <option value="DiagnosticReport">DiagnosticReport</option>
+                <option value="">Select Resource Name</option>
+                <option value="Patient Demographics">Patient Demographics</option>
+                <option value="Vital Signs">Vital Signs</option>
+                <option value="Lab Results">Lab Results</option>
+                <option value="Medications">Medications</option>
+                <option value="Procedures">Procedures</option>
+                <option value="Diagnostic Reports">Diagnostic Reports</option>
             </select>
+            <small>Display name for the resource (used for identification)</small>
         </div>
         
         <button type="submit" class="btn btn-primary">Create Instance</button>
@@ -538,8 +545,9 @@ $filteredTasks = $statusFilter === 'all' ? $allTasks : $queueManager->getTasksBy
         </div>
         
         <div class="form-group">
-            <label for="retry_resource_type">Resource Type:</label>
-            <input type="text" name="retry_resource_type" id="retry_resource_type" placeholder="e.g., Patient" required>
+            <label for="retry_resource_type">Resource Name:</label>
+            <input type="text" name="retry_resource_type" id="retry_resource_type" placeholder="e.g., Patient Demographics" required>
+            <small>Display name of the resource to retry</small>
         </div>
         
         <div class="form-group">
@@ -576,11 +584,11 @@ $filteredTasks = $statusFilter === 'all' ? $allTasks : $queueManager->getTasksBy
     <p><em>This section displays all background tasks in the queue system, allowing you to monitor task status, filter by status, and view task details including parameters and metadata for testing the queue processing system.</em></p>
     
     <div class="task-filter-buttons">
-        <a href="?status_filter=all" class="filter-btn <?= $statusFilter === 'all' ? 'active' : '' ?>">All (<?= $queueStats['total'] ?>)</a>
-        <a href="?status_filter=pending" class="filter-btn <?= $statusFilter === 'pending' ? 'active' : '' ?>">Pending (<?= $queueStats['pending'] ?>)</a>
-        <a href="?status_filter=processing" class="filter-btn <?= $statusFilter === 'processing' ? 'active' : '' ?>">Processing (<?= $queueStats['processing'] ?>)</a>
-        <a href="?status_filter=completed" class="filter-btn <?= $statusFilter === 'completed' ? 'active' : '' ?>">Completed (<?= $queueStats['completed'] ?>)</a>
-        <a href="?status_filter=failed" class="filter-btn <?= $statusFilter === 'failed' ? 'active' : '' ?>">Failed (<?= $queueStats['failed'] ?>)</a>
+        <a href="<?= APP_PATH_WEBROOT ?>ExternalModules/?prefix=fhir_snapshot&page=pages%2Fproject%2Ftest-repeated-forms&pid=<?= PROJECT_ID ?>&status_filter=all" class="filter-btn <?= $statusFilter === 'all' ? 'active' : '' ?>">All (<?= $queueStats['total'] ?>)</a>
+        <a href="<?= APP_PATH_WEBROOT ?>ExternalModules/?prefix=fhir_snapshot&page=pages%2Fproject%2Ftest-repeated-forms&pid=<?= PROJECT_ID ?>&status_filter=pending" class="filter-btn <?= $statusFilter === 'pending' ? 'active' : '' ?>">Pending (<?= $queueStats['pending'] ?>)</a>
+        <a href="<?= APP_PATH_WEBROOT ?>ExternalModules/?prefix=fhir_snapshot&page=pages%2Fproject%2Ftest-repeated-forms&pid=<?= PROJECT_ID ?>&status_filter=processing" class="filter-btn <?= $statusFilter === 'processing' ? 'active' : '' ?>">Processing (<?= $queueStats['processing'] ?>)</a>
+        <a href="<?= APP_PATH_WEBROOT ?>ExternalModules/?prefix=fhir_snapshot&page=pages%2Fproject%2Ftest-repeated-forms&pid=<?= PROJECT_ID ?>&status_filter=completed" class="filter-btn <?= $statusFilter === 'completed' ? 'active' : '' ?>">Completed (<?= $queueStats['completed'] ?>)</a>
+        <a href="<?= APP_PATH_WEBROOT ?>ExternalModules/?prefix=fhir_snapshot&page=pages%2Fproject%2Ftest-repeated-forms&pid=<?= PROJECT_ID ?>&status_filter=failed" class="filter-btn <?= $statusFilter === 'failed' ? 'active' : '' ?>">Failed (<?= $queueStats['failed'] ?>)</a>
     </div>
     
     <?php if (!empty($filteredTasks)): ?>
@@ -908,7 +916,7 @@ $filteredTasks = $statusFilter === 'all' ? $allTasks : $queueManager->getTasksBy
             ?>
             <div style="margin: 10px 0; padding: 10px; background: white; border: 1px solid #ccc;">
                 <h4>MRN: <?= htmlspecialchars($mrn) ?></h4>
-                <p><strong>Resource Types:</strong> <?= implode(', ', $statusCounts['resource_types']) ?></p>
+                <p><strong>Mapping Types:</strong> <?= implode(', ', $statusCounts['resource_types']) ?></p>
                 <p><strong>Total Resources:</strong> <?= $statusCounts['total_resources'] ?></p>
                 
                 <table class="status-table" style="width: auto;">
@@ -928,7 +936,9 @@ $filteredTasks = $statusFilter === 'all' ? $allTasks : $queueManager->getTasksBy
                         <table class="status-table" style="margin-top: 10px; font-size: 12px;">
                             <thead>
                                 <tr>
-                                    <th>Resource Type</th>
+                                    <th>Resource Name</th>
+                                    <th>Resource Spec</th>
+                                    <th>Mapping Type</th>
                                     <th>Instance</th>
                                     <th>Status</th>
                                     <th>Fetch Date</th>
@@ -938,7 +948,9 @@ $filteredTasks = $statusFilter === 'all' ? $allTasks : $queueManager->getTasksBy
                             <tbody>
                                 <?php foreach ($mrnStatus as $resource): ?>
                                     <tr>
-                                        <td><?= htmlspecialchars($resource['resource_type']) ?></td>
+                                        <td><?= htmlspecialchars($resource['resource_name']) ?></td>
+                                        <td><?= htmlspecialchars($resource['resource_spec']) ?></td>
+                                        <td><?= htmlspecialchars($resource['mapping_type']) ?></td>
                                         <td><?= $resource['repeat_instance'] ?></td>
                                         <td class="status-<?= $resource['status'] ?>"><?= ucfirst($resource['status']) ?></td>
                                         <td><?= $resource['fetch_date'] ? date('M j, Y H:i', strtotime($resource['fetch_date'])) : '-' ?></td>
