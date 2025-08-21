@@ -11,13 +11,10 @@ onMounted(() => {
 </script>
 
 <template>
-<div class="card">
-  <div class="card-body">
-    <p>FHIR Snapshot</p>
-  </div>
+<div>
+  <router-view></router-view>
+  <ErrorsVisualizer />
 </div>
-<router-view></router-view>
-<ErrorsVisualizer />
 </template>
 
 <style scoped>

@@ -47,7 +47,9 @@ use Vanderbilt\FhirSnapshot\Constants\FhirFormFields;
  * - REDCap save: $metadata->toRedCapData($recordId, $eventId, $instrumentName)
  * 
  * FIELD MAPPINGS:
- * - all_fhir_resource_type: FHIR resource type (Patient, Observation, etc.)
+ * - all_fhir_resource_name: Display name for the mapping resource
+ * - all_fhir_resource_spec: Technical specification (predefined key OR custom URL)
+ * - all_fhir_resource_type: Mapping type ("predefined" or "custom")
  * - all_fhir_resource_status: Current status in lifecycle
  * - all_fhir_file_upload: REDCap edoc ID containing JSON payload
  * - all_fhir_fetch_date: Timestamp of successful fetch
@@ -72,16 +74,28 @@ class FhirResourceMetadata implements JsonSerializable
         self::STATUS_DELETED
     ];
 
-    private string $resourceType;
+    private string $resourceName;
+    private string $resourceSpec;
+    private string $mappingType;
     private string $status;
     private ?int $edocId;
     private ?string $fetchDate;
     private ?string $errorMessage;
     private ?array $paginationInfo;
     private int $repeatInstance;
+    
+    public const MAPPING_TYPE_PREDEFINED = 'predefined';
+    public const MAPPING_TYPE_CUSTOM = 'custom';
+    
+    private const VALID_MAPPING_TYPES = [
+        self::MAPPING_TYPE_PREDEFINED,
+        self::MAPPING_TYPE_CUSTOM
+    ];
 
     public function __construct(
-        string $resourceType,
+        string $resourceName,
+        string $resourceSpec,
+        string $mappingType,
         string $status = self::STATUS_PENDING,
         ?int $edocId = null,
         ?string $fetchDate = null,
@@ -89,11 +103,15 @@ class FhirResourceMetadata implements JsonSerializable
         ?array $paginationInfo = null,
         int $repeatInstance = 1
     ) {
-        $this->validateResourceType($resourceType);
+        $this->validateResourceName($resourceName);
+        $this->validateResourceSpec($resourceSpec);
+        $this->validateMappingType($mappingType);
         $this->validateStatus($status);
         $this->validateRepeatInstance($repeatInstance);
 
-        $this->resourceType = $resourceType;
+        $this->resourceName = $resourceName;
+        $this->resourceSpec = $resourceSpec;
+        $this->mappingType = $mappingType;
         $this->status = $status;
         $this->edocId = $edocId;
         $this->fetchDate = $fetchDate;
@@ -102,19 +120,24 @@ class FhirResourceMetadata implements JsonSerializable
         $this->repeatInstance = $repeatInstance;
     }
 
-    public static function create(string $resourceType, int $repeatInstance = 1): self
+    public static function create(string $resourceName, string $resourceSpec, string $mappingType, int $repeatInstance = 1): self
     {
-        return new self($resourceType, self::STATUS_PENDING, null, null, null, null, $repeatInstance);
+        return new self($resourceName, $resourceSpec, $mappingType, self::STATUS_PENDING, null, null, null, null, $repeatInstance);
     }
 
     public static function fromArray(array $data): self
     {
-        if (!isset($data['resource_type'])) {
-            throw new InvalidArgumentException('Missing required field: resource_type');
+        $requiredFields = ['resource_name', 'resource_spec', 'mapping_type'];
+        foreach ($requiredFields as $field) {
+            if (!isset($data[$field])) {
+                throw new InvalidArgumentException("Missing required field: {$field}");
+            }
         }
 
         return new self(
-            $data['resource_type'],
+            $data['resource_name'],
+            $data['resource_spec'],
+            $data['mapping_type'],
             $data['status'] ?? self::STATUS_PENDING,
             $data['edoc_id'] ?? null,
             $data['fetch_date'] ?? null,
@@ -127,7 +150,9 @@ class FhirResourceMetadata implements JsonSerializable
     public function withStatus(string $status): self
     {
         return new self(
-            $this->resourceType,
+            $this->resourceName,
+            $this->resourceSpec,
+            $this->mappingType,
             $status,
             $this->edocId,
             $this->fetchDate,
@@ -140,7 +165,9 @@ class FhirResourceMetadata implements JsonSerializable
     public function withEdocId(int $edocId): self
     {
         return new self(
-            $this->resourceType,
+            $this->resourceName,
+            $this->resourceSpec,
+            $this->mappingType,
             $this->status,
             $edocId,
             $this->fetchDate,
@@ -153,7 +180,9 @@ class FhirResourceMetadata implements JsonSerializable
     public function withFetchDate(string $fetchDate): self
     {
         return new self(
-            $this->resourceType,
+            $this->resourceName,
+            $this->resourceSpec,
+            $this->mappingType,
             $this->status,
             $this->edocId,
             $fetchDate,
@@ -166,7 +195,9 @@ class FhirResourceMetadata implements JsonSerializable
     public function withErrorMessage(string $errorMessage): self
     {
         return new self(
-            $this->resourceType,
+            $this->resourceName,
+            $this->resourceSpec,
+            $this->mappingType,
             $this->status,
             $this->edocId,
             $this->fetchDate,
@@ -179,7 +210,9 @@ class FhirResourceMetadata implements JsonSerializable
     public function withPaginationInfo(array $paginationInfo): self
     {
         return new self(
-            $this->resourceType,
+            $this->resourceName,
+            $this->resourceSpec,
+            $this->mappingType,
             $this->status,
             $this->edocId,
             $this->fetchDate,
@@ -189,9 +222,29 @@ class FhirResourceMetadata implements JsonSerializable
         );
     }
 
-    public function getResourceType(): string
+    public function getResourceName(): string
     {
-        return $this->resourceType;
+        return $this->resourceName;
+    }
+    
+    public function getResourceSpec(): string
+    {
+        return $this->resourceSpec;
+    }
+    
+    public function getMappingType(): string
+    {
+        return $this->mappingType;
+    }
+    
+    public function isPredefined(): bool
+    {
+        return $this->mappingType === self::MAPPING_TYPE_PREDEFINED;
+    }
+    
+    public function isCustom(): bool
+    {
+        return $this->mappingType === self::MAPPING_TYPE_CUSTOM;
     }
 
     public function getStatus(): string
@@ -262,7 +315,9 @@ class FhirResourceMetadata implements JsonSerializable
                     $eventId => [
                         $instrumentName => [
                             $this->repeatInstance => [
-                                FhirFormFields::RESOURCE_TYPE => $this->resourceType,
+                                FhirFormFields::RESOURCE_NAME => $this->resourceName,
+                                FhirFormFields::RESOURCE_SPEC => $this->resourceSpec,
+                                FhirFormFields::RESOURCE_TYPE => $this->mappingType,
                                 FhirFormFields::RESOURCE_STATUS => $this->status,
                                 FhirFormFields::FILE_UPLOAD => $this->edocId,
                                 FhirFormFields::FETCH_DATE => $this->fetchDate,
@@ -279,7 +334,9 @@ class FhirResourceMetadata implements JsonSerializable
     public function toArray(): array
     {
         return [
-            'resource_type' => $this->resourceType,
+            'resource_name' => $this->resourceName,
+            'resource_spec' => $this->resourceSpec,
+            'mapping_type' => $this->mappingType,
             'status' => $this->status,
             'edoc_id' => $this->edocId,
             'fetch_date' => $this->fetchDate,
@@ -294,10 +351,29 @@ class FhirResourceMetadata implements JsonSerializable
         return $this->toArray();
     }
 
-    private function validateResourceType(string $resourceType): void
+    private function validateResourceName(string $resourceName): void
     {
-        if (empty(trim($resourceType))) {
-            throw new InvalidArgumentException('Resource type cannot be empty');
+        if (empty(trim($resourceName))) {
+            throw new InvalidArgumentException('Resource name cannot be empty');
+        }
+    }
+    
+    private function validateResourceSpec(string $resourceSpec): void
+    {
+        if (empty(trim($resourceSpec))) {
+            throw new InvalidArgumentException('Resource spec cannot be empty');
+        }
+    }
+    
+    private function validateMappingType(string $mappingType): void
+    {
+        if (!in_array($mappingType, self::VALID_MAPPING_TYPES, true)) {
+            throw new InvalidArgumentException(
+                sprintf('Invalid mapping type "%s". Valid types: %s', 
+                    $mappingType, 
+                    implode(', ', self::VALID_MAPPING_TYPES)
+                )
+            );
         }
     }
 

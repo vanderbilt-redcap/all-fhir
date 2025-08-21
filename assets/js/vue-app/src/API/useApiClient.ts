@@ -13,28 +13,28 @@ const getRedCapQueryParams = () => {
   let params = new URLSearchParams(location.search);
   // get PID from current location
   let pid = params.get("pid");
-  console.log('pid', pid)
+  
   let query_params = {
     pid,
     page,
     // content: "externalModule",
     type: "module",
     prefix: module_prefix,
+    redcap_csrf_token: window.redcap_csrf_token ?? ''
   };
+
   // if(window.redcap_csrf_token) query_params.redcap_csrf_token = window.redcap_csrf_token // csrf token for post requests
   return query_params;
 };
 
 export default () => {
   const apiClient: AxiosInstance = axios.create({
-    baseURL: "/api",
+    baseURL: "/api/",
     timeout: 0,
     headers: {
       "Content-Type": "application/json",
       "Accept": "application/json",
       "X-Requested-With": "XMLHttpRequest", // set header for REDCap ajax
-
-      // Authorization: `Bearer ${yourToken}`, // optional
     },
   });
 

@@ -169,15 +169,19 @@ class FhirFetchProcessor extends AbstractTaskProcessor
         $this->dataAccessor->saveResourceMetadata($resource['record_id'], $metadata);
         
         try {
-            // Fetch the resource - determine resource spec dynamically
+            // Fetch the resource
+            $resourceType = $resource['metadata']->getResourceType();
+            // Get mapping resource information (simplified approach for now)
+            $mappingResource = $this->findMappingResourceForType($resourceType);
+            
             $result = $this->fhirResourceService->fetchAndStoreResource(
                 $resource['record_id'],
                 $resource['mrn'],
-                $resource['metadata']->getResourceType(),
+                $resourceType,
                 $resource['metadata']->getRepeatInstance(),
                 [
-                    'resource_spec' => $resource['metadata']->getResourceType(), // Default to resource type
-                    'mapping_resource_id' => null // Will be determined by the service
+                    'mapping_resource_id' => null, // Will be determined by the service
+                    'mapping_resource' => $mappingResource // Pass the mapping resource object
                 ]
             );
             
@@ -238,6 +242,35 @@ class FhirFetchProcessor extends AbstractTaskProcessor
             
         } catch (\Exception $e) {
             $this->logError("Failed to create continuation task: " . $e->getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Find mapping resource configuration for a given resource type
+     * 
+     * This is a simplified approach that looks up the current project's mapping resources
+     * and attempts to match by resource type. In the future, this could be enhanced to
+     * store mapping resource IDs directly in the metadata.
+     * 
+     * @param string $resourceType FHIR resource type
+     * @return \Vanderbilt\FhirSnapshot\ValueObjects\MappingResource|null
+     */
+    private function findMappingResourceForType(string $resourceType): ?\Vanderbilt\FhirSnapshot\ValueObjects\MappingResource
+    {
+        try {
+            // Get current mapping resources from project settings
+            $predefinedData = $this->module->getProjectSetting(Constants::SETTING_MAPPING_RESOURCES) ?? [];
+            $customData = $this->module->getProjectSetting(Constants::SETTING_CUSTOM_MAPPING_RESOURCES) ?? [];
+            
+            // Convert to MappingResource objects (would need MappingResourceService here)
+            // For now, return null to allow fallback behavior
+            // TODO: Inject MappingResourceService and properly resolve mapping resources
+            
+            return null;
+            
+        } catch (\Exception $e) {
+            $this->logError("Error finding mapping resource for type {$resourceType}: " . $e->getMessage());
             return null;
         }
     }

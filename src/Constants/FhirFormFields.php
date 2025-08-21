@@ -15,7 +15,9 @@ namespace Vanderbilt\FhirSnapshot\Constants;
  * - Document field purposes and data types
  * 
  * FIELD DESCRIPTIONS:
- * - RESOURCE_TYPE: FHIR resource type (Patient, Observation, etc.)
+ * - RESOURCE_NAME: Display name for the mapping resource (e.g., "Demographics", "Vital Signs")
+ * - RESOURCE_SPEC: Technical specification - predefined key OR custom URL
+ * - RESOURCE_TYPE: Mapping type - "predefined" or "custom"
  * - RESOURCE_STATUS: Processing status (Pending, Fetching, Completed, Failed) 
  * - FILE_UPLOAD: REDCap edoc ID containing JSON payload
  * - FETCH_DATE: Timestamp when resource was successfully fetched
@@ -24,6 +26,8 @@ namespace Vanderbilt\FhirSnapshot\Constants;
  */
 class FhirFormFields
 {
+    public const RESOURCE_NAME = 'all_fhir_resource_name';
+    public const RESOURCE_SPEC = 'all_fhir_resource_spec';
     public const RESOURCE_TYPE = 'all_fhir_resource_type';
     public const RESOURCE_STATUS = 'all_fhir_resource_status';
     public const FILE_UPLOAD = 'all_fhir_file_upload';

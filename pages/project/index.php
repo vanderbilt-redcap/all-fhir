@@ -1,11 +1,13 @@
 <?php
 require_once(dirname(__DIR__, 2). '/vendor/autoload.php');
 
-require_once APP_PATH_DOCROOT . 'ControlCenter/header.php';
+require_once APP_PATH_DOCROOT . 'ProjectGeneral/header.php';
 $module_path = $module->getModulePath();
 ?>
 
-<div id="app"></div>
+<div style="max-width:1000px;">
+    <div id="app"></div>
+</div>
 
 <script type="module">
     import init from '<?= $module->getUrl('assets/js/vue-app/dist/lib.es.js') ?>'

@@ -93,7 +93,10 @@ class FhirResourceService
         $this->dataAccessor->saveResourceMetadata($recordId, $metadata);
 
         try {
-            $fhirData = $this->fhirClient->fetchFhirResource($mrn, $resourceType, $isRefetch);
+            // Get mapping resource from options if provided
+            $mappingResource = $options['mapping_resource'] ?? null;
+            
+            $fhirData = $this->fhirClient->fetchFhirResource($mrn, $resourceType, $isRefetch, $mappingResource);
             
             if ($fhirData === null) {
                 return $this->handleFetchFailure(

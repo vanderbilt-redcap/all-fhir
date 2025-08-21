@@ -108,11 +108,10 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const showSyncResultsToast = (syncResults: any) => {
     const { 
-      resources_added, 
-      resources_modified, 
-      resources_removed, 
-      tasks_created, 
-      instances_updated,
+      resources_added,
+      resources_modified,
+      resources_removed,
+      tasks_created,
       total_mrns,
       error 
     } = syncResults

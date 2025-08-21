@@ -48,7 +48,9 @@ class RepeatedFormDataAccessor
         $this->projectId = $projectId;
         $this->instrumentName = $instrumentName;
         $this->fieldMap = [
-            'resource_type' => FhirFormFields::RESOURCE_TYPE,
+            'resource_name' => FhirFormFields::RESOURCE_NAME,
+            'resource_spec' => FhirFormFields::RESOURCE_SPEC,
+            'mapping_type' => FhirFormFields::RESOURCE_TYPE,
             'status' => FhirFormFields::RESOURCE_STATUS,
             'file_upload' => FhirFormFields::FILE_UPLOAD,
             'fetch_date' => FhirFormFields::FETCH_DATE,
@@ -106,12 +108,13 @@ class RepeatedFormDataAccessor
         
         $instanceData = $data[$recordId]['repeat_instances'][$eventId][$this->instrumentName][$repeatInstance];
         
-        if ($instanceData[$this->fieldMap['resource_type']] !== $resourceType) {
-            return null;
-        }
+        // For now, we'll match against resource spec since that's what identifies the resource
+        // TODO: Consider updating the method signature to be more specific
         
         return new FhirResourceMetadata(
-            $instanceData[$this->fieldMap['resource_type']],
+            $instanceData[$this->fieldMap['resource_name']] ?? '',
+            $instanceData[$this->fieldMap['resource_spec']] ?? '',
+            $instanceData[$this->fieldMap['mapping_type']] ?? FhirResourceMetadata::MAPPING_TYPE_CUSTOM,
             $instanceData[$this->fieldMap['status']] ?? FhirResourceMetadata::STATUS_PENDING,
             !empty($instanceData[$this->fieldMap['file_upload']]) ? (int) $instanceData[$this->fieldMap['file_upload']] : null,
             $instanceData[$this->fieldMap['fetch_date']] ?? null,
@@ -152,11 +155,14 @@ class RepeatedFormDataAccessor
         $repeatInstances = $data[$recordId]['repeat_instances'][$eventId][$this->instrumentName];
         
         foreach ($repeatInstances as $repeatInstance => $instanceData) {
-            if (isset($instanceData[$this->fieldMap['resource_type']]) &&
-                $instanceData[$this->fieldMap['resource_type']] === $resourceType) {
+            // Match against resource spec for backward compatibility
+            if (isset($instanceData[$this->fieldMap['resource_spec']]) &&
+                $instanceData[$this->fieldMap['resource_spec']] === $resourceType) {
                 
                 $metadata[] = new FhirResourceMetadata(
-                    $instanceData[$this->fieldMap['resource_type']],
+                    $instanceData[$this->fieldMap['resource_name']] ?? '',
+                    $instanceData[$this->fieldMap['resource_spec']] ?? '',
+                    $instanceData[$this->fieldMap['mapping_type']] ?? FhirResourceMetadata::MAPPING_TYPE_CUSTOM,
                     $instanceData[$this->fieldMap['status']] ?? FhirResourceMetadata::STATUS_PENDING,
                     !empty($instanceData[$this->fieldMap['file_upload']]) ? (int) $instanceData[$this->fieldMap['file_upload']] : null,
                     $instanceData[$this->fieldMap['fetch_date']] ?? null,
@@ -201,10 +207,12 @@ class RepeatedFormDataAccessor
         $repeatInstances = $data[$recordId]['repeat_instances'][$eventId][$this->instrumentName];
         
         foreach ($repeatInstances as $repeatInstance => $instanceData) {
-            if (isset($instanceData[$this->fieldMap['resource_type']])) {
+            if (isset($instanceData[$this->fieldMap['resource_name']])) {
                 
                 $metadata[] = new FhirResourceMetadata(
-                    $instanceData[$this->fieldMap['resource_type']],
+                    $instanceData[$this->fieldMap['resource_name']] ?? '',
+                    $instanceData[$this->fieldMap['resource_spec']] ?? '',
+                    $instanceData[$this->fieldMap['mapping_type']] ?? FhirResourceMetadata::MAPPING_TYPE_CUSTOM,
                     $instanceData[$this->fieldMap['status']] ?? FhirResourceMetadata::STATUS_PENDING,
                     !empty($instanceData[$this->fieldMap['file_upload']]) ? (int) $instanceData[$this->fieldMap['file_upload']] : null,
                     $instanceData[$this->fieldMap['fetch_date']] ?? null,

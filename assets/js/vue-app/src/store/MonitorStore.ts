@@ -51,7 +51,7 @@ export const useMonitorStore = defineStore('monitor', () => {
 
   const addMrn = async (mrn: string) => {
     try {
-      const response = await api.addMrn(mrn)
+      await api.addMrn(mrn)
       // After adding, refresh the current page to show updated data
       await fetchMrns()
     } catch (err) {

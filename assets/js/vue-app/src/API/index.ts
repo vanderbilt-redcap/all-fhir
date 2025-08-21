@@ -1,7 +1,6 @@
 // /api/settings.ts
 import type { AxiosResponse } from 'axios'
 import useApiClient from './useApiClient'
-import type { FhirSystem, MappingResource } from '@/models/ProjectSettings'
 
 export const apiClient = useApiClient()
 

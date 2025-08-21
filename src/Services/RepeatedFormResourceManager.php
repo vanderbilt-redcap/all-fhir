@@ -286,7 +286,7 @@ class RepeatedFormResourceManager
             $summary['mrn_summaries'][$mrn] = [
                 'status_counts' => $statusCounts,
                 'total_resources' => count($allMetadata),
-                'resource_types' => array_unique(array_map(fn($m) => $m->getResourceType(), $allMetadata))
+                'resource_types' => array_unique(array_map(fn(FhirResourceMetadata $m) => $m->getMappingType(), $allMetadata))
             ];
             
             foreach ($statusCounts as $status => $count) {

@@ -80,7 +80,12 @@ class ResourceSynchronizationService
             }
             
             $nextInstance = $this->dataAccessor->getNextRepeatInstance($recordId);
-            $metadata = FhirResourceMetadata::create($resource->getName(), $nextInstance);
+            $metadata = FhirResourceMetadata::create(
+                $resource->getName(),
+                $resource->getResourceSpec(),
+                $resource->getType(),
+                $nextInstance
+            );
             $this->dataAccessor->saveResourceMetadata($recordId, $metadata);
             $createdInstances++;
         }
@@ -123,7 +128,12 @@ class ResourceSynchronizationService
             
             // Create new instance for updated resource
             $nextInstance = $this->dataAccessor->getNextRepeatInstance($recordId);
-            $newMetadata = FhirResourceMetadata::create($resource->getName(), $nextInstance);
+            $newMetadata = FhirResourceMetadata::create(
+                $resource->getName(),
+                $resource->getResourceSpec(),
+                $resource->getType(),
+                $nextInstance
+            );
             $this->dataAccessor->saveResourceMetadata($recordId, $newMetadata);
             $newInstances++;
         }
@@ -194,7 +204,12 @@ class ResourceSynchronizationService
         $createdInstances = 0;
         foreach ($activeResources as $resource) {
             $nextInstance = $this->dataAccessor->getNextRepeatInstance($recordId);
-            $metadata = FhirResourceMetadata::create($resource->getName(), $nextInstance);
+            $metadata = FhirResourceMetadata::create(
+                $resource->getName(),
+                $resource->getResourceSpec(),
+                $resource->getType(),
+                $nextInstance
+            );
             $this->dataAccessor->saveResourceMetadata($recordId, $metadata);
             $createdInstances++;
         }
