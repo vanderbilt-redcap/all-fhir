@@ -36,7 +36,6 @@
                         :key="item.id"
                         :item="item"
                         :selected="selectedMrns.includes(item.id)"
-                        @toggle-selection="$emit('toggle-selection', item.id)"
                     />
                 </template>
             </tbody>
@@ -57,7 +56,7 @@ const props = defineProps<{
     indeterminate: boolean
 }>()
 
-defineEmits(['toggle-selection', 'toggle-select-all'])
+defineEmits(['toggle-select-all'])
 
 const selectAllCheckbox = ref<HTMLInputElement | null>(null)
 

@@ -5,7 +5,7 @@
                 class="form-check-input"
                 type="checkbox"
                 :checked="selected"
-                @change="$emit('toggle-selection', item.id)"
+                @change="monitorStore.toggleSelection(item.id)"
             />
         </td>
         <td>{{ item.mrn }}</td>
@@ -42,13 +42,6 @@
                 >
                     <i class="bi bi-download"></i>
                 </button>
-                <button 
-                    class="btn btn-sm btn-outline-secondary"
-                    @click="exportMrnData"
-                    title="Export raw JSON data for this MRN"
-                >
-                    <i class="bi bi-file-earmark-code"></i>
-                </button>
             </div>
         </td>
     </tr>
@@ -81,7 +74,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { Mrn, MonitoredResource } from '@/models/Mrn'
+import type { Mrn } from '@/models/Mrn'
 import { FetchStatus } from '@/models/Mrn'
 import MonitorResourceRow from './MonitorResourceRow.vue'
 import { useMonitorStore } from '@/store/MonitorStore'
@@ -93,9 +86,6 @@ const props = defineProps<{
     selected: boolean
 }>()
 
-const emit = defineEmits<{
-    toggleSelection: [id: number]
-}>()
 
 const expanded = ref(false)
 const operationLoading = ref(false)
@@ -153,33 +143,12 @@ const triggerFetchMrn = async () => {
 const downloadMrnData = async () => {
     try {
         // This would typically create a ZIP file with all completed resources
-        await monitorStore.createZipArchive([props.item.mrn])
+        await monitorStore.downloadSelected()
     } catch (error) {
         console.error('Failed to download MRN data:', error)
     }
 }
 
-const exportMrnData = () => {
-    // Export raw JSON data for debugging/analysis
-    const exportData = {
-        mrn: props.item.mrn,
-        status: props.item.status,
-        resources: props.item.resources,
-        status_counts: props.item.status_counts,
-        total_resources: props.item.total_resources,
-        exported_at: new Date().toISOString()
-    }
-    
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `fhir_export_${props.item.mrn}_${new Date().toISOString().split('T')[0]}.json`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-}
 
 // Resource event handlers removed - now handled directly in MonitorResourceRow via stores
 </script>

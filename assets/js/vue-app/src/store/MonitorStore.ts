@@ -11,7 +11,6 @@ export const useMonitorStore = defineStore('monitor', () => {
   const mrns = ref<Mrn[]>([])
   const selectedMrns = ref<number[]>([])
   const projectSummary = ref<ProjectSummary | null>(null)
-  const realTimeUpdates = ref(false)
   const operationLoading = ref(false)
   
   // Pagination state
@@ -245,40 +244,6 @@ export const useMonitorStore = defineStore('monitor', () => {
     }
   }
 
-  // Real-time updates
-  let updateInterval: NodeJS.Timeout | null = null
-
-  const startRealTimeUpdates = (intervalMs: number = 30000) => {
-    if (updateInterval) {
-      stopRealTimeUpdates()
-    }
-    
-    realTimeUpdates.value = true
-    updateInterval = setInterval(async () => {
-      try {
-        // Only refresh if there are pending or fetching resources
-        const hasPendingOrFetching = mrns.value.some(mrn => 
-          mrn.resources.some(resource => 
-            resource.status === 'Pending' || resource.status === 'Fetching'
-          )
-        )
-        
-        if (hasPendingOrFetching) {
-          await fetchMrns()
-        }
-      } catch (err) {
-        console.error('Real-time update failed:', err)
-      }
-    }, intervalMs)
-  }
-
-  const stopRealTimeUpdates = () => {
-    if (updateInterval) {
-      clearInterval(updateInterval)
-      updateInterval = null
-    }
-    realTimeUpdates.value = false
-  }
 
   return {
     // State
@@ -286,7 +251,6 @@ export const useMonitorStore = defineStore('monitor', () => {
     mrns,
     selectedMrns,
     projectSummary,
-    realTimeUpdates,
     operationLoading,
     pagination,
     
@@ -314,8 +278,5 @@ export const useMonitorStore = defineStore('monitor', () => {
     retryFailedResource,
     bulkRetryFailed,
     
-    // Real-time updates
-    startRealTimeUpdates,
-    stopRealTimeUpdates,
   }
 })

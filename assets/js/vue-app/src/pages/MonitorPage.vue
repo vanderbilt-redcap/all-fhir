@@ -5,7 +5,7 @@
 
         <!-- Project Summary Widget (collapsible) -->
         <div v-if="operationsStore.showSummary" class="mb-4">
-            <ProjectSummaryWidget :auto-refresh="monitorStore.realTimeUpdates" />
+            <ProjectSummaryWidget />
         </div>
 
         <!-- Enhanced Monitor Table with Detailed Resource Information -->
@@ -15,7 +15,6 @@
             :selected-mrns="monitorStore.selectedMrns"
             :all-selected="monitorStore.allSelected"
             :indeterminate="monitorStore.indeterminate"
-            @toggle-selection="monitorStore.toggleSelection"
             @toggle-select-all="monitorStore.toggleSelectAll"
         />
 
@@ -128,26 +127,12 @@ onMounted(async () => {
             monitorStore.getProjectSummary()
         ])
         
-        // Start real-time updates if there are pending/fetching resources
-        const hasPendingOrFetching = monitorStore.mrns.some(mrn => 
-            mrn.resources.some(resource => 
-                resource.status === 'Pending' || resource.status === 'Fetching'
-            )
-        )
-        
-        if (hasPendingOrFetching) {
-            monitorStore.startRealTimeUpdates()
-        }
     } catch (error) {
         console.error('Failed to load initial data:', error)
         operationsStore.recordOperation('initial-load', false, 'Failed to load initial data')
     }
 })
 
-onUnmounted(() => {
-    // Clean up real-time updates
-    monitorStore.stopRealTimeUpdates()
-})
 </script>
 
 <style scoped>

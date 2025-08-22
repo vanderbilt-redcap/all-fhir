@@ -149,9 +149,6 @@ import { ref, computed, onMounted } from 'vue'
 import type { ProjectSummary } from '@/models/Mrn'
 import { useMonitorStore } from '@/store/MonitorStore'
 
-const props = defineProps<{
-    autoRefresh?: boolean
-}>()
 
 const monitorStore = useMonitorStore()
 const loading = ref(false)
@@ -222,33 +219,8 @@ const refreshSummary = async () => {
     }
 }
 
-// Auto-refresh if enabled
-let refreshInterval: NodeJS.Timeout | null = null
-
-const startAutoRefresh = () => {
-    if (props.autoRefresh && !refreshInterval) {
-        refreshInterval = setInterval(refreshSummary, 60000) // Refresh every minute
-    }
-}
-
-const stopAutoRefresh = () => {
-    if (refreshInterval) {
-        clearInterval(refreshInterval)
-        refreshInterval = null
-    }
-}
-
 onMounted(() => {
     refreshSummary()
-    if (props.autoRefresh) {
-        startAutoRefresh()
-    }
-})
-
-// Cleanup on unmount
-import { onUnmounted } from 'vue'
-onUnmounted(() => {
-    stopAutoRefresh()
 })
 </script>
 

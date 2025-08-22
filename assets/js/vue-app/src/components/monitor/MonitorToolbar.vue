@@ -3,7 +3,7 @@
         <div class="d-flex flex-wrap gap-2 align-items-center">
             <!-- Primary Actions -->
             <div class="btn-group" role="group">
-                <button class="btn btn-primary" @click="$emit('add-mrn')">
+                <button class="btn btn-primary" @click="$emit('addMrn')">
                     <i class="bi bi-plus-circle"></i> Add MRN
                 </button>
                 <button 
@@ -58,20 +58,6 @@
                 </button>
             </div>
 
-            <!-- Real-time Updates Toggle -->
-            <div class="form-check form-switch">
-                <input 
-                    class="form-check-input"
-                    type="checkbox"
-                    id="realTimeUpdates"
-                    :checked="realTimeUpdates"
-                    @change="toggleRealTimeUpdates"
-                >
-                <label class="form-check-label" for="realTimeUpdates">
-                    <i class="bi bi-arrow-clockwise"></i> Auto-refresh
-                </label>
-            </div>
-
             <!-- Refresh Button -->
             <button 
                 class="btn btn-outline-secondary"
@@ -113,7 +99,7 @@ const monitorStore = useMonitorStore()
 const operationsStore = useOperationsStore()
 
 // Only emit for actions that need to open modals
-const emit = defineEmits<{
+defineEmits<{
     addMrn: []
 }>()
 
@@ -122,7 +108,6 @@ const selectionDisabled = computed(() => monitorStore.selectedMrns.length === 0)
 const selectedCount = computed(() => monitorStore.selectedMrns.length)
 const operationLoading = computed(() => monitorStore.operationLoading)
 const loading = computed(() => monitorStore.loading)
-const realTimeUpdates = computed(() => monitorStore.realTimeUpdates)
 const projectSummary = computed(() => monitorStore.projectSummary)
 
 // Methods
@@ -189,13 +174,6 @@ const downloadSelected = async () => {
     }
 }
 
-const toggleRealTimeUpdates = () => {
-    if (realTimeUpdates.value) {
-        monitorStore.stopRealTimeUpdates()
-    } else {
-        monitorStore.startRealTimeUpdates()
-    }
-}
 
 const refreshData = async () => {
     try {
