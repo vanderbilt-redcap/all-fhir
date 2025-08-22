@@ -619,6 +619,9 @@ class RepeatedFormResourceManager
      * status updates, error handling, and result reporting. This method is designed
      * to be reusable for both force-fetch operations and background processing.
      * 
+     * Uses the existing FhirResourceMetadata object and passes it to FhirResourceService
+     * to ensure consistent metadata handling without recreation.
+     * 
      * @param array $resource Array with keys: record_id, mrn, metadata (FhirResourceMetadata)
      * @return array Result array with success status, timing info, and detailed results
      */
@@ -629,22 +632,20 @@ class RepeatedFormResourceManager
         $mrn = $resource['mrn'];
         $metadata = $resource['metadata'];
         
-        // Mark as fetching
-        $fetchingMetadata = $metadata->withStatus(FhirResourceMetadata::STATUS_FETCHING);
-        $this->dataAccessor->saveResourceMetadata($recordId, $fetchingMetadata);
-        
         try {
             // Get the mapping resource for this resource type
             $resourceType = $metadata->getResourceName();
             $mappingResource = $this->findMappingResourceForType($resourceType);
             
             // Use FhirResourceService to fetch and store the resource
+            // Pass the existing metadata object instead of letting the service recreate it
             $result = $this->fhirResourceService->fetchAndStoreResource(
                 $recordId,
                 $mrn,
                 $resourceType,
                 $metadata->getRepeatInstance(),
                 [
+                    'metadata' => $metadata, // Pass the existing metadata object
                     'mapping_resource_id' => null, // Will be determined by the service
                     'mapping_resource' => $mappingResource, // Pass the mapping resource object
                     'is_refetch' => true // Force fetch is always a refetch
@@ -678,7 +679,8 @@ class RepeatedFormResourceManager
             }
             
         } catch (\Exception $e) {
-            // Mark as failed with exception details
+            // Let FhirResourceService handle the status update, but if it didn't reach the service,
+            // we need to mark as failed manually
             $failedMetadata = $metadata
                 ->withStatus(FhirResourceMetadata::STATUS_FAILED)
                 ->withErrorMessage($e->getMessage());

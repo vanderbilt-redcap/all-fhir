@@ -20,8 +20,8 @@ use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
  * PROCESSING WORKFLOW:
  * 
  * 1. STATUS MANAGEMENT:
+ *    - Requires existing FhirResourceMetadata object (passed via options or retrieved from database)
  *    - Updates resource status to FETCHING before beginning
- *    - Creates resource metadata if not exists
  *    - Tracks progress through REDCap repeated form updates
  * 
  * 2. FHIR DATA RETRIEVAL:
@@ -70,13 +70,13 @@ class FhirResourceService
     }
 
     /**
-     * Fetch and store FHIR resource for a given record
+     * Fetch and store FHIR resource for a given record using existing metadata
      * 
      * @param string $recordId REDCap record identifier
      * @param string $mrn Medical Record Number for FHIR API calls
      * @param string $resourceType FHIR resource type (Patient, Observation, etc.)
      * @param int $repeatInstance REDCap repeated form instance number
-     * @param array $options Additional options (mapping_resource_id, is_refetch, etc.)
+     * @param array $options Additional options (metadata, mapping_resource_id, is_refetch, etc.)
      * @return array Result array with success status, message, and data
      */
     public function fetchAndStoreResource(
@@ -89,12 +89,14 @@ class FhirResourceService
         $mappingResourceId = $options['mapping_resource_id'] ?? null;
         $isRefetch = $options['is_refetch'] ?? false;
 
-        $metadata = $this->dataAccessor->getResourceMetadata($recordId, $resourceType, $repeatInstance);
+        // Use existing metadata from options or fetch from database
+        $metadata = $options['metadata'] ?? $this->dataAccessor->getResourceMetadata($recordId, $resourceType, $repeatInstance);
         
         if (!$metadata) {
-            $metadata = FhirResourceMetadata::create($resourceType, $repeatInstance);
+            throw new \InvalidArgumentException("No metadata provided or found for resource: $resourceType, instance: $repeatInstance");
         }
 
+        // Update status to FETCHING
         $metadata = $metadata->withStatus(FhirResourceMetadata::STATUS_FETCHING);
         $this->dataAccessor->saveResourceMetadata($recordId, $metadata);
 

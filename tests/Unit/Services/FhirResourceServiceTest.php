@@ -35,7 +35,7 @@ class FhirResourceServiceTest extends TestCase
         $repeatInstance = 1;
 
         // Mock metadata
-        $metadata = FhirResourceMetadata::create($resourceType, $repeatInstance);
+        $metadata = FhirResourceMetadata::create($resourceType, $resourceType, 'custom', $repeatInstance);
         
         $this->mockDataAccessor->expects($this->once())
             ->method('getResourceMetadata')
@@ -80,7 +80,7 @@ class FhirResourceServiceTest extends TestCase
         $service = new FhirResourceService($this->mockDataAccessor, $mockFhirClient);
 
         // Mock metadata
-        $metadata = FhirResourceMetadata::create($resourceType, $repeatInstance);
+        $metadata = FhirResourceMetadata::create($resourceType, $resourceType, 'custom', $repeatInstance);
         
         $this->mockDataAccessor->expects($this->once())
             ->method('getResourceMetadata')
@@ -112,7 +112,7 @@ class FhirResourceServiceTest extends TestCase
         $service = new FhirResourceService($this->mockDataAccessor, $mockFhirClient);
 
         // Mock metadata
-        $metadata = FhirResourceMetadata::create($resourceType, $repeatInstance);
+        $metadata = FhirResourceMetadata::create($resourceType, $resourceType, 'custom', $repeatInstance);
         
         $this->mockDataAccessor->expects($this->once())
             ->method('getResourceMetadata')
@@ -137,7 +137,7 @@ class FhirResourceServiceTest extends TestCase
         $options = ['is_refetch' => true];
 
         // Mock metadata
-        $metadata = FhirResourceMetadata::create($resourceType, $repeatInstance);
+        $metadata = FhirResourceMetadata::create($resourceType, $resourceType, 'custom', $repeatInstance);
         
         $this->mockDataAccessor->expects($this->once())
             ->method('getResourceMetadata')

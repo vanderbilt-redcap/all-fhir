@@ -41,7 +41,7 @@ use Vanderbilt\FhirSnapshot\Constants\FhirFormFields;
  * - Compatible with REDCap::saveData operations
  * 
  * USAGE PATTERNS:
- * - Create: FhirResourceMetadata::create($resourceType, $repeatInstance)
+ * - Create: FhirResourceMetadata::create($resourceName, $resourceSpec, $mappingType, $repeatInstance)
  * - Update status: $metadata->withStatus(STATUS_COMPLETED)
  * - Add file: $metadata->withEdocId($edocId)
  * - REDCap save: $metadata->toRedCapData($recordId, $eventId, $instrumentName)
