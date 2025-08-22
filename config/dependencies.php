@@ -57,7 +57,8 @@ return function (ContainerBuilder $containerBuilder) {
                 $c->get(FhirSnapshot::class),
                 $c->get(RepeatedFormDataAccessor::class),
                 $c->get(ResourceSynchronizationService::class),
-                $c->get(QueueManager::class)
+                $c->get(QueueManager::class),
+                $c->get(FhirResourceService::class)
             );
         }),
         // FHIR Client configuration
@@ -103,7 +104,8 @@ return function (ContainerBuilder $containerBuilder) {
         FhirFetchProcessor::class => fn(Container $c) => new FhirFetchProcessor(
             $c->get(FhirSnapshot::class), 
             $c->get(FhirResourceService::class), 
-            $c->get(RepeatedFormDataAccessor::class)
+            $c->get(RepeatedFormDataAccessor::class),
+            $c->get(RepeatedFormResourceManager::class)
         ),
         ArchiveProcessor::class => fn(Container $c) => new ArchiveProcessor($c->get(FhirSnapshot::class)),
         EmailNotificationProcessor::class => fn(Container $c) => new EmailNotificationProcessor($c->get(FhirSnapshot::class)),

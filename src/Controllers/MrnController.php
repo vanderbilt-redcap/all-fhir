@@ -8,6 +8,31 @@ use Vanderbilt\FhirSnapshot\Constants;
 use Vanderbilt\FhirSnapshot\Services\RepeatedFormResourceManager;
 use REDCap;
 
+/**
+ * MrnController
+ * 
+ * REST API controller for managing Medical Record Numbers (MRNs) and their associated
+ * FHIR resource instances within the REDCap project context.
+ * 
+ * CORE OPERATIONS:
+ * - List MRNs with pagination and resource status summaries
+ * - Add new MRNs with automatic resource instance creation
+ * - Remove MRNs and associated data
+ * - Force fetch FHIR resources regardless of current status
+ * - Retry failed resource fetches (single and bulk operations)
+ * - Perform full project synchronization
+ * - Retrieve detailed resource status and project summaries
+ * 
+ * API ENDPOINTS:
+ * - GET /mrns - List MRNs with pagination
+ * - POST /mrns - Add new MRN
+ * - DELETE /mrns/{id} - Remove MRN
+ * - POST /mrns/trigger-fetch - Force fetch resources for specified MRNs
+ * - POST /mrns/retry-failed - Retry failed resources
+ * - POST /mrns/full-sync - Perform full project synchronization
+ * - GET /mrns/{mrn}/resources - Get detailed resource status for MRN
+ * - GET /project/summary - Get project-wide resource summary
+ */
 class MrnController extends AbstractController
 {
     public function __construct(
@@ -268,13 +293,17 @@ class MrnController extends AbstractController
     }
 
     /**
-     * Trigger fetch for specific MRNs and resources
+     * Trigger fetch for specific MRNs and resources regardless of current status
+     * 
+     * Forces all mapped resources for the specified MRNs to be re-fetched, independent 
+     * of their current state in the fhirmetadataresource table. This is useful when 
+     * you need to refresh FHIR data regardless of whether it was previously completed 
+     * or failed.
      */
     public function triggerFetch(Request $request, Response $response): Response
     {
         $params = (array) $request->getParsedBody();
         $mrns = $params['mrns'] ?? [];
-        $resourceTypes = $params['resources'] ?? []; // Optional filter
 
         if (empty($mrns)) {
             $response->getBody()->write(json_encode(['error' => 'At least one MRN is required']));
@@ -282,23 +311,19 @@ class MrnController extends AbstractController
         }
 
         try {
-            // For now, create a generic FHIR fetch task that will process all pending resources
-            // The actual filtering by MRN/resource type will be handled by the task processor
-            $configuredResources = $this->module->getAllConfiguredMappingResources();
-            $tasks = [];
-            
-            foreach ($mrns as $mrn) {
-                // Ensure MRN has resource instances for all configured resources
-                $mrnTasks = $this->resourceManager->addMrn($mrn, $configuredResources);
-                $tasks = array_merge($tasks, $mrnTasks);
-            }
+            // Use the new forceFetchResourcesByMrns method to trigger fetching regardless of current status
+            // Note: metadataFilter parameter is empty, so all resources for the MRNs will be forced to fetch
+            $fetchResults = $this->resourceManager->forceFetchResourcesByMrns($mrns);
 
             $responseData = [
                 'success' => true,
-                'message' => 'Fetch triggered for ' . count($mrns) . ' MRN(s)',
+                'message' => $fetchResults['message'],
                 'mrns' => $mrns,
-                'resource_filter' => $resourceTypes,
-                'tasks_created' => count($tasks)
+                'total_resources' => $fetchResults['total_resources'],
+                'successful_fetches' => $fetchResults['successful_fetches'],
+                'failed_fetches' => $fetchResults['failed_fetches'],
+                'resource_results' => $fetchResults['resource_results'],
+                'timing_summary' => $fetchResults['timing_summary']
             ];
 
             $response->getBody()->write(json_encode($responseData));

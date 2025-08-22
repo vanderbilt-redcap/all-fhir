@@ -7,6 +7,7 @@ use Vanderbilt\FhirSnapshot\ValueObjects\TaskProcessorResult;
 use Vanderbilt\FhirSnapshot\ValueObjects\TaskSummary;
 use Vanderbilt\FhirSnapshot\Services\FhirResourceService;
 use Vanderbilt\FhirSnapshot\Services\RepeatedFormDataAccessor;
+use Vanderbilt\FhirSnapshot\Services\RepeatedFormResourceManager;
 use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
 use Vanderbilt\FhirSnapshot\Constants;
 use Vanderbilt\FhirSnapshot\FhirSnapshot;
@@ -17,7 +18,8 @@ class FhirFetchProcessor extends AbstractTaskProcessor
     public function __construct(
         FhirSnapshot $module, 
         private FhirResourceService $fhirResourceService,
-        private RepeatedFormDataAccessor $dataAccessor
+        private RepeatedFormDataAccessor $dataAccessor,
+        private RepeatedFormResourceManager $resourceManager
     ) {
         parent::__construct($module);
     }
@@ -162,64 +164,17 @@ class FhirFetchProcessor extends AbstractTaskProcessor
     
     private function processSingleResource(array $resource): array
     {
-        $startTime = microtime(true);
+        // Use the extracted logic from RepeatedFormResourceManager
+        $result = $this->resourceManager->fetchSingleResourceRealTime($resource);
         
-        // Mark as fetching
-        $metadata = $resource['metadata']->withStatus(FhirResourceMetadata::STATUS_FETCHING);
-        $this->dataAccessor->saveResourceMetadata($resource['record_id'], $metadata);
-        
-        try {
-            // Fetch the resource
-            $resourceType = $resource['metadata']->getResourceName();
-            // Get mapping resource information (simplified approach for now)
-            $mappingResource = $this->findMappingResourceForType($resourceType);
-            
-            $result = $this->fhirResourceService->fetchAndStoreResource(
-                $resource['record_id'],
-                $resource['mrn'],
-                $resourceType,
-                $resource['metadata']->getRepeatInstance(),
-                [
-                    'mapping_resource_id' => null, // Will be determined by the service
-                    'mapping_resource' => $mappingResource // Pass the mapping resource object
-                ]
-            );
-            
-            $apiTime = (microtime(true) - $startTime) * 1000; // Convert to milliseconds
-            
-            if ($result['success']) {
-                return [
-                    'success' => true,
-                    'api_time' => $apiTime,
-                    'payload_size' => $result['data']['payload_size'] ?? 0,
-                    'message' => $result['message']
-                ];
-            } else {
-                // Mark as failed
-                $failedMetadata = $resource['metadata']
-                    ->withStatus(FhirResourceMetadata::STATUS_FAILED)
-                    ->withErrorMessage($result['message']);
-                $this->dataAccessor->saveResourceMetadata($resource['record_id'], $failedMetadata);
-                
-                return [
-                    'success' => false,
-                    'api_time' => $apiTime,
-                    'error' => $result['message']
-                ];
-            }
-            
-        } catch (\Exception $e) {
-            // Mark as failed with exception
-            $failedMetadata = $resource['metadata']
-                ->withStatus(FhirResourceMetadata::STATUS_FAILED)
-                ->withErrorMessage($e->getMessage());
-            $this->dataAccessor->saveResourceMetadata($resource['record_id'], $failedMetadata);
-            
-            return [
-                'success' => false,
-                'error' => $e->getMessage()
-            ];
-        }
+        // Convert the result format to match what the task processor expects
+        return [
+            'success' => $result['success'],
+            'api_time' => $result['api_time'],
+            'payload_size' => $result['payload_size'] ?? 0,
+            'message' => $result['message'] ?? '',
+            'error' => $result['error'] ?? null
+        ];
     }
     
     private function createContinuationTask(Task $originalTask): ?Task
@@ -246,32 +201,4 @@ class FhirFetchProcessor extends AbstractTaskProcessor
         }
     }
     
-    /**
-     * Find mapping resource configuration for a given resource type
-     * 
-     * This is a simplified approach that looks up the current project's mapping resources
-     * and attempts to match by resource type. In the future, this could be enhanced to
-     * store mapping resource IDs directly in the metadata.
-     * 
-     * @param string $resourceType FHIR resource type
-     * @return \Vanderbilt\FhirSnapshot\ValueObjects\MappingResource|null
-     */
-    private function findMappingResourceForType(string $resourceType): ?\Vanderbilt\FhirSnapshot\ValueObjects\MappingResource
-    {
-        try {
-            // Get current mapping resources from project settings
-            $predefinedData = $this->module->getProjectSetting(Constants::SETTING_MAPPING_RESOURCES) ?? [];
-            $customData = $this->module->getProjectSetting(Constants::SETTING_CUSTOM_MAPPING_RESOURCES) ?? [];
-            
-            // Convert to MappingResource objects (would need MappingResourceService here)
-            // For now, return null to allow fallback behavior
-            // TODO: Inject MappingResourceService and properly resolve mapping resources
-            
-            return null;
-            
-        } catch (\Exception $e) {
-            $this->logError("Error finding mapping resource for type {$resourceType}: " . $e->getMessage());
-            return null;
-        }
-    }
 }
