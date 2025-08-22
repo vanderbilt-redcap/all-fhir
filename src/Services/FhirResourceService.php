@@ -4,6 +4,8 @@ namespace Vanderbilt\FhirSnapshot\Services;
 
 use Vanderbilt\FhirSnapshot\Contracts\FhirClientInterface;
 use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
+use Vanderbilt\FhirSnapshot\ValueObjects\MappingResource;
+use Vanderbilt\REDCap\Classes\Fhir\FhirMetadata\FhirMetadataSource;
 
 /**
  * FhirResourceService
@@ -76,48 +78,46 @@ class FhirResourceService
      * @param string $mrn Medical Record Number for FHIR API calls
      * @param string $resourceType FHIR resource type (Patient, Observation, etc.)
      * @param int $repeatInstance REDCap repeated form instance number
-     * @param array $options Additional options (metadata, mapping_resource_id, is_refetch, etc.)
+     * @param array $options Required options: metadata (FhirResourceMetadata), mapping_resource (MappingResource), is_refetch (bool)
      * @return array Result array with success status, message, and data
      */
     public function fetchAndStoreResource(
         string $recordId,
         string $mrn,
-        string $resourceType,
-        int $repeatInstance,
+        FhirResourceMetadata $metadata,
         array $options = []
     ): array {
-        $mappingResourceId = $options['mapping_resource_id'] ?? null;
         $isRefetch = $options['is_refetch'] ?? false;
+        $resourceName = $metadata->getResourceName();
+        $repeatInstance = $metadata->getRepeatInstance();
 
-        // Use existing metadata from options or fetch from database
-        $metadata = $options['metadata'] ?? $this->dataAccessor->getResourceMetadata($recordId, $resourceType, $repeatInstance);
-        
-        if (!$metadata) {
-            throw new \InvalidArgumentException("No metadata provided or found for resource: $resourceType, instance: $repeatInstance");
-        }
 
         // Update status to FETCHING
         $metadata = $metadata->withStatus(FhirResourceMetadata::STATUS_FETCHING);
         $this->dataAccessor->saveResourceMetadata($recordId, $metadata);
 
         try {
-            // Get mapping resource from options if provided
-            $mappingResource = $options['mapping_resource'] ?? null;
+            $mappingResource = MappingResource::create(
+                $metadata->getResourceName(),
+                $metadata->getResourceSpec(),
+                $metadata->getMappingType()
+            );
+            $mappingResourceId = $mappingResource->getId();
             
             // Fetch FHIR resource data from external system
-            $fhirData = $this->fhirClient->fetchFhirResource($mrn, $resourceType, $isRefetch, $mappingResource);
+            $fhirData = $this->fhirClient->fetchFhirResource($mrn, $mappingResource, $isRefetch);
             
             if ($fhirData === null) {
                 // No data found - update metadata and return failure result
                 return $this->handleFetchFailure(
                     $recordId,
                     $metadata,
-                    "No data found for resource type: $resourceType"
+                    "No data found for resource type: $resourceName"
                 );
             }
 
             // Store FHIR data as REDCap edoc file
-            $edocId = $this->storeFhirDataAsFile($fhirData, $mrn, $resourceType);
+            $edocId = $this->storeFhirDataAsFile($fhirData, $mrn, $resourceName);
             
             // Update metadata with completion status and file reference
             $completedMetadata = $metadata
@@ -134,11 +134,11 @@ class FhirResourceService
 
             return [
                 'success' => true,
-                'message' => "Successfully fetched and stored $resourceType for Record ID: $recordId, MRN: $mrn (Instance: $repeatInstance)",
+                'message' => "Successfully fetched and stored $resourceName for Record ID: $recordId, MRN: $mrn (Instance: $repeatInstance)",
                 'data' => [
                     'record_id' => $recordId,
                     'mrn' => $mrn,
-                    'resource_type' => $resourceType,
+                    'resource_name' => $resourceName,
                     'repeat_instance' => $repeatInstance,
                     'edoc_id' => $edocId,
                     'data_size' => strlen(json_encode($fhirData)),

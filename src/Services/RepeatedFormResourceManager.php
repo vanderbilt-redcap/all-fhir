@@ -633,21 +633,15 @@ class RepeatedFormResourceManager
         $metadata = $resource['metadata'];
         
         try {
-            // Get the mapping resource for this resource type
-            $resourceType = $metadata->getResourceName();
-            $mappingResource = $this->findMappingResourceForType($resourceType);
+            // Create MappingResource directly from metadata properties
             
             // Use FhirResourceService to fetch and store the resource
             // Pass the existing metadata object instead of letting the service recreate it
             $result = $this->fhirResourceService->fetchAndStoreResource(
                 $recordId,
                 $mrn,
-                $resourceType,
-                $metadata->getRepeatInstance(),
+                $metadata,
                 [
-                    'metadata' => $metadata, // Pass the existing metadata object
-                    'mapping_resource_id' => null, // Will be determined by the service
-                    'mapping_resource' => $mappingResource, // Pass the mapping resource object
                     'is_refetch' => true // Force fetch is always a refetch
                 ]
             );
@@ -662,7 +656,7 @@ class RepeatedFormResourceManager
                     'message' => $result['message'],
                     'record_id' => $recordId,
                     'mrn' => $mrn,
-                    'resource_type' => $resourceType,
+                    'resource_type' => $metadata->getResourceName(),
                     'repeat_instance' => $metadata->getRepeatInstance(),
                     'edoc_id' => $result['data']['edoc_id'] ?? null
                 ];
@@ -673,7 +667,7 @@ class RepeatedFormResourceManager
                     'error' => $result['message'],
                     'record_id' => $recordId,
                     'mrn' => $mrn,
-                    'resource_type' => $resourceType,
+                    'resource_type' => $metadata->getResourceName(),
                     'repeat_instance' => $metadata->getRepeatInstance()
                 ];
             }
@@ -697,37 +691,6 @@ class RepeatedFormResourceManager
                 'resource_type' => $metadata->getResourceName(),
                 'repeat_instance' => $metadata->getRepeatInstance()
             ];
-        }
-    }
-
-    /**
-     * Find mapping resource configuration for a given resource type
-     * 
-     * Looks up the current project's mapping resources and attempts to match by resource type.
-     * This is used to provide the correct mapping configuration for FHIR fetching operations.
-     * 
-     * @param string $resourceType FHIR resource type
-     * @return MappingResource|null Matching mapping resource or null if not found
-     */
-    private function findMappingResourceForType(string $resourceType): ?MappingResource
-    {
-        try {
-            // Get all configured mapping resources using the centralized helper method
-            $configuredResources = $this->module->getAllConfiguredMappingResources();
-            
-            // Find the first mapping resource that matches the resource type/name
-            foreach ($configuredResources as $mappingResource) {
-                if ($mappingResource->getName() === $resourceType) {
-                    return $mappingResource;
-                }
-            }
-            
-            return null;
-            
-        } catch (\Exception $e) {
-            // Log error but don't fail the entire operation
-            error_log("Error finding mapping resource for type {$resourceType}: " . $e->getMessage());
-            return null;
         }
     }
 

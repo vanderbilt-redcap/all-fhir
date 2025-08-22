@@ -4,6 +4,7 @@ namespace Vanderbilt\FhirSnapshot\Services;
 
 use Vanderbilt\FhirSnapshot\Contracts\FhirClientInterface;
 use Vanderbilt\FhirSnapshot\ValueObjects\MappingResource;
+use Vanderbilt\FhirSnapshot\Services\FhirSnapshotEndpointVisitor;
 use Vanderbilt\REDCap\Classes\Fhir\FhirClient;
 use Vanderbilt\REDCap\Classes\Fhir\FhirClientResponse;
 use Vanderbilt\REDCap\Classes\Fhir\Endpoints\AbstractEndpoint;
@@ -76,13 +77,12 @@ class FhirClientWrapper implements FhirClientInterface
      * Fetch FHIR resource data from external source using REDCap's FhirClient
      * 
      * @param string $mrn Medical Record Number
-     * @param string $resourceType FHIR resource type
+     * @param MappingResource $mappingResource Mapping resource configuration for advanced request generation
      * @param bool $isRefetch Whether this is a refetch operation
-     * @param MappingResource|null $mappingResource Mapping resource configuration for advanced request generation
      * @return array|null FHIR data array or null if not found
      * @throws \Exception If FHIR client encounters an error
      */
-    public function fetchFhirResource(string $mrn, string $resourceType, bool $isRefetch = false, ?MappingResource $mappingResource = null): ?array
+    public function fetchFhirResource(string $mrn, MappingResource $mappingResource, bool $isRefetch = false): ?array
     {
         try {
             // Convert MRN to Patient ID
@@ -92,7 +92,7 @@ class FhirClientWrapper implements FhirClientInterface
             }
             
             // Create FHIR request based on mapping resource type
-            $fhir_request = $this->createFhirRequest($patientId, $resourceType, $mappingResource);
+            $fhir_request = $this->createFhirRequest($patientId, $mappingResource);
             
             // Create response object with project and user context
             $response = new FhirClientResponse([
@@ -120,7 +120,8 @@ class FhirClientWrapper implements FhirClientInterface
             
         } catch (\Exception $e) {
             // Log the error and re-throw
-            error_log("FHIR fetch error for MRN $mrn, resource $resourceType: " . $e->getMessage());
+            $resourceName = $mappingResource->getName();
+            error_log("FHIR fetch error for MRN $mrn, resource : '$resourceName'" . $e->getMessage());
             throw $e;
         }
     }
@@ -134,14 +135,14 @@ class FhirClientWrapper implements FhirClientInterface
      * @return \Vanderbilt\REDCap\Classes\Fhir\Endpoints\FhirRequest
      * @throws \Exception If request creation fails
      */
-    private function createFhirRequest(string $patientId, string $resourceType, ?MappingResource $mappingResource)
+    private function createFhirRequest(string $patientId, ?MappingResource $mappingResource)
     {
         if ($mappingResource && $mappingResource->isPredefined()) {
             // Use REDCap's EndpointFactory for predefined resources
             return $this->createPredefinedRequest($patientId, $mappingResource);
         } else {
             // Handle custom resources or fallback for missing mapping resource
-            return $this->createCustomRequest($patientId, $resourceType, $mappingResource);
+            return $this->createCustomRequest($patientId, $mappingResource);
         }
     }
 
@@ -161,12 +162,24 @@ class FhirClientWrapper implements FhirClientInterface
         // Use the resource spec as the category for predefined resources
         $category = $mappingResource->getResourceSpec();
         
-        // Create the request using REDCap's endpoint factory
-        $fhir_request = $endpointFactory->make(
-            $category, 
-            $patientId, 
-            AbstractEndpoint::INTERACTION_SEARCH, 
-            []
+        // Create the endpoint using REDCap's endpoint factory
+        $endpoint = $endpointFactory->makeEndpoint($category);
+        if (!$endpoint) {
+            throw new \Exception("Failed to create predefined FHIR endpoint for category: {$category}");
+        }
+        
+        // Create visitor to apply patient ID parameters
+        $visitor = new FhirSnapshotEndpointVisitor($this->fhirClient, $patientId);
+        
+        // Apply visitor to get endpoint-specific options
+        $options = $endpoint->accept($visitor);
+        
+        // Create the request using the endpoint and visitor-generated options
+        $fhir_request = $endpointFactory->makeRequest(
+            $endpoint,
+            $patientId,
+            AbstractEndpoint::INTERACTION_SEARCH,
+            $options
         );
         
         if (!$fhir_request) {
@@ -181,18 +194,14 @@ class FhirClientWrapper implements FhirClientInterface
      * 
      * @param string $patientId FHIR Patient ID
      * @param string $resourceType FHIR resource type
-     * @param MappingResource|null $mappingResource Custom mapping resource or null
+     * @param MappingResource $mappingResource Custom mapping resource or null
      * @return \Vanderbilt\REDCap\Classes\Fhir\Endpoints\FhirRequest
      */
-    private function createCustomRequest(string $patientId, string $resourceType, ?MappingResource $mappingResource)
+    private function createCustomRequest(string $patientId, MappingResource $mappingResource)
     {
-        if ($mappingResource && $mappingResource->isCustom()) {
+        if (!$mappingResource->isCustom()) return;
             // Parse custom resource spec and add patient parameter
-            $relative_url = $this->buildCustomUrl($patientId, $mappingResource->getResourceSpec());
-        } else {
-            // Fallback for missing mapping resource
-            $relative_url = "{$resourceType}?patient={$patientId}";
-        }
+        $relative_url = $this->buildCustomUrl($patientId, $mappingResource->getResourceSpec());
         
         // Create request manually
         return $this->fhirClient->getFhirRequest($relative_url, 'GET', []);
