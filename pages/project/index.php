@@ -9,6 +9,8 @@ $module_path = $module->getModulePath();
     <div id="app"></div>
 </div>
 
+<link rel="stylesheet" type="text/css" media="screen,print" href="<?= $module->getUrl('assets/js/vue-app/dist/style.css') ?>"/>
+
 <script type="module">
     import init from '<?= $module->getUrl('assets/js/vue-app/dist/lib.es.js') ?>'
 

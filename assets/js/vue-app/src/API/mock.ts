@@ -1,5 +1,6 @@
 import type { Mrn } from "@/models/Mrn"
 import { FetchStatus } from "@/models/Mrn"
+import { RESOURCE_TYPE } from '../components/setup/ResourceForm.vue'
 
 const mrns: Mrn[] = [
     {
@@ -7,40 +8,48 @@ const mrns: Mrn[] = [
         mrn: '123456',
         status: FetchStatus.Completed,
         resources: [
-            { name: 'Patient', status: FetchStatus.Completed },
-            { name: 'Observation', status: FetchStatus.Completed },
-            { name: 'MedicationRequest', status: FetchStatus.Completed },
+            { name: 'Patient', resource_spec: 'Demographics', mapping_type: RESOURCE_TYPE.PREDEFINED, repeat_instance: 1, status: FetchStatus.Completed },
+            { name: 'Observation', resource_spec: 'Vitals', mapping_type: RESOURCE_TYPE.PREDEFINED, repeat_instance: 1, status: FetchStatus.Completed },
+            { name: 'MedicationRequest', resource_spec: 'Medications', mapping_type: RESOURCE_TYPE.PREDEFINED, repeat_instance: 1, status: FetchStatus.Completed },
         ],
+        status_counts: { [FetchStatus.Completed]: 3 },
+        total_resources: 3,
     },
     {
         id: 2,
         mrn: '789012',
         status: FetchStatus.Fetching,
         resources: [
-            { name: 'Patient', status: FetchStatus.Completed },
-            { name: 'Observation', status: FetchStatus.Fetching },
-            { name: 'MedicationRequest', status: FetchStatus.Pending },
+            { name: 'Patient', resource_spec: 'Demographics', mapping_type: RESOURCE_TYPE.PREDEFINED, repeat_instance: 1, status: FetchStatus.Completed },
+            { name: 'Observation', resource_spec: 'Vitals', mapping_type: RESOURCE_TYPE.PREDEFINED, repeat_instance: 1, status: FetchStatus.Fetching },
+            { name: 'MedicationRequest', resource_spec: 'Medications', mapping_type: RESOURCE_TYPE.PREDEFINED, repeat_instance: 1, status: FetchStatus.Pending },
         ],
+        status_counts: { [FetchStatus.Completed]: 1, [FetchStatus.Fetching]: 1, [FetchStatus.Pending]: 1 },
+        total_resources: 3,
     },
     {
         id: 3,
         mrn: '345678',
         status: FetchStatus.Failed,
         resources: [
-            { name: 'Patient', status: FetchStatus.Completed },
-            { name: 'Observation', status: FetchStatus.Failed, error: 'OperationOutcome: patient not found' },
-            { name: 'MedicationRequest', status: FetchStatus.Pending },
+            { name: 'Patient', resource_spec: 'Demographics', mapping_type: RESOURCE_TYPE.PREDEFINED, repeat_instance: 1, status: FetchStatus.Completed },
+            { name: 'Observation', resource_spec: 'Vitals', mapping_type: RESOURCE_TYPE.PREDEFINED, repeat_instance: 1, status: FetchStatus.Failed, error_message: 'OperationOutcome: patient not found' },
+            { name: 'MedicationRequest', resource_spec: 'Medications', mapping_type: RESOURCE_TYPE.PREDEFINED, repeat_instance: 1, status: FetchStatus.Pending },
         ],
+        status_counts: { [FetchStatus.Completed]: 1, [FetchStatus.Failed]: 1, [FetchStatus.Pending]: 1 },
+        total_resources: 3,
     },
     {
         id: 4,
         mrn: '901234',
         status: FetchStatus.Pending,
         resources: [
-            { name: 'Patient', status: FetchStatus.Pending },
-            { name: 'Observation', status: FetchStatus.Pending },
-            { name: 'MedicationRequest', status: FetchStatus.Pending },
+            { name: 'Patient', resource_spec: 'Demographics', mapping_type: RESOURCE_TYPE.PREDEFINED, repeat_instance: 1, status: FetchStatus.Pending },
+            { name: 'Observation', resource_spec: 'Vitals', mapping_type: RESOURCE_TYPE.PREDEFINED, repeat_instance: 1, status: FetchStatus.Pending },
+            { name: 'MedicationRequest', resource_spec: 'Medications', mapping_type: RESOURCE_TYPE.PREDEFINED, repeat_instance: 1, status: FetchStatus.Pending },
         ],
+        status_counts: { [FetchStatus.Pending]: 3 },
+        total_resources: 3,
     },
 ]
 
@@ -60,10 +69,12 @@ export const addMrn = async (mrn: string): Promise<Mrn> => {
                 mrn,
                 status: FetchStatus.Pending,
                 resources: [
-                    { name: 'Patient', status: FetchStatus.Pending },
-                    { name: 'Observation', status: FetchStatus.Pending },
-                    { name: 'MedicationRequest', status: FetchStatus.Pending },
+                    { name: 'Patient', resource_spec: 'Demographics', mapping_type: RESOURCE_TYPE.PREDEFINED, repeat_instance: 1, status: FetchStatus.Pending },
+                    { name: 'Observation', resource_spec: 'Vitals', mapping_type: RESOURCE_TYPE.PREDEFINED, repeat_instance: 1, status: FetchStatus.Pending },
+                    { name: 'MedicationRequest', resource_spec: 'Medications', mapping_type: RESOURCE_TYPE.PREDEFINED, repeat_instance: 1, status: FetchStatus.Pending },
                 ],
+                status_counts: { [FetchStatus.Pending]: 3 },
+                total_resources: 3,
             }
             mrns.push(newMrn)
             resolve(newMrn)
@@ -81,6 +92,7 @@ export const fetchMrn = async (id: number): Promise<Mrn> => {
                 setTimeout(() => {
                     mrn.status = FetchStatus.Completed
                     mrn.resources.forEach(r => (r.status = FetchStatus.Completed))
+                    mrn.status_counts = { [FetchStatus.Completed]: mrn.resources.length }
                     resolve(mrn)
                 }, 1000)
             } else {

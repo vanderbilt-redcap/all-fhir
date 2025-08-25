@@ -37,7 +37,7 @@ const getRedCapQueryParams = () => {
 
 export default () => {
   const apiClient: AxiosInstance = axios.create({
-    baseURL: "/api",
+    baseURL: "/api/",
     timeout: 0,
     headers: {
       "Content-Type": "application/json",

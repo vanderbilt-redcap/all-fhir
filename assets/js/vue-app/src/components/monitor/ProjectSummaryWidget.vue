@@ -146,7 +146,6 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import type { ProjectSummary } from '@/models/Mrn'
 import { useMonitorStore } from '@/store/MonitorStore'
 
 

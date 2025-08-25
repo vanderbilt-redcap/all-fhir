@@ -67,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, onUnmounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import MonitorToolbar from '@/components/monitor/MonitorToolbar.vue'
 import MonitorTable from '@/components/monitor/MonitorTable.vue'
 import AddMrnModal from '@/components/monitor/AddMrnModal.vue'
