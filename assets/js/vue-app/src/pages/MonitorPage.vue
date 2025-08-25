@@ -52,7 +52,7 @@
             >
                 <div class="d-flex">
                     <div class="toast-body text-white">
-                        <i :class="operationsStore.lastOperation.success ? 'bi bi-check-circle' : 'bi bi-exclamation-triangle'"></i>
+                        <i :class="operationsStore.lastOperation.success ? 'fas fa-check-circle fa-fw' : 'fas fa-exclamation-triangle fa-fw'"></i>
                         {{ operationsStore.lastOperation.message }}
                     </div>
                     <button 

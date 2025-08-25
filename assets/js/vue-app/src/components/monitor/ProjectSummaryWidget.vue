@@ -2,7 +2,7 @@
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h6 class="mb-0">
-                <i class="bi bi-bar-chart"></i> Project Summary
+                <i class="fas fa-chart-bar fa-fw"></i> Project Summary
             </h6>
             <button 
                 class="btn btn-sm btn-outline-secondary"
@@ -10,7 +10,7 @@
                 :disabled="loading"
                 title="Refresh summary"
             >
-                <i class="bi bi-arrow-clockwise" :class="{ 'fa-spin': loading }"></i>
+                <i class="fas fa-rotate-right fa-fw" :class="{ 'fa-spin': loading }"></i>
             </button>
         </div>
         <div class="card-body">
@@ -61,12 +61,12 @@
                 <div class="col-12">
                     <div class="border rounded p-3">
                         <h6 class="text-muted mb-3">
-                            <i class="bi bi-clock-history"></i> Background Queue Status
+                            <i class="fas fa-clock-rotate-left fa-fw"></i> Background Queue Status
                         </h6>
                         <div class="row g-3">
                             <div class="col-md-4">
                                 <div class="d-flex align-items-center">
-                                    <i class="bi bi-hourglass-split text-warning me-2"></i>
+                                    <i class="fas fa-hourglass-half fa-fw text-warning me-2"></i>
                                     <div>
                                         <div class="fw-bold">{{ projectSummary.sync_status.pending_tasks }}</div>
                                         <small class="text-muted">Pending Tasks</small>
@@ -75,7 +75,7 @@
                             </div>
                             <div class="col-md-4">
                                 <div class="d-flex align-items-center">
-                                    <i class="bi bi-exclamation-triangle text-danger me-2"></i>
+                                    <i class="fas fa-exclamation-triangle fa-fw text-danger me-2"></i>
                                     <div>
                                         <div class="fw-bold">{{ projectSummary.sync_status.failed_tasks }}</div>
                                         <small class="text-muted">Failed Tasks</small>
@@ -84,7 +84,7 @@
                             </div>
                             <div class="col-md-4">
                                 <div class="d-flex align-items-center">
-                                    <i class="bi bi-check-circle text-success me-2"></i>
+                                    <i class="fas fa-check-circle fa-fw text-success me-2"></i>
                                     <div>
                                         <div class="fw-bold">{{ queueHealthStatus }}</div>
                                         <small class="text-muted">Queue Health</small>
@@ -137,7 +137,7 @@
             </div>
             
             <div v-else class="text-center text-muted">
-                <i class="bi bi-info-circle"></i>
+                <i class="fas fa-info-circle fa-fw"></i>
                 No summary data available
             </div>
         </div>

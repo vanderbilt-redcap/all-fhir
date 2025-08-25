@@ -19012,7 +19012,7 @@ const ok = {
             class: "btn btn-primary",
             onClick: h[0] || (h[0] = (m) => p.$emit("addMrn"))
           }, h[2] || (h[2] = [
-            _("i", { class: "bi bi-plus-circle" }, null, -1),
+            _("i", { class: "fas fa-plus-circle fa-fw" }, null, -1),
             je(" Add MRN ")
           ])),
           _("button", {
@@ -19021,7 +19021,7 @@ const ok = {
             disabled: o.value || s.value,
             title: "Trigger fetch for selected MRNs"
           }, [
-            h[4] || (h[4] = _("i", { class: "bi bi-arrow-clockwise" }, null, -1)),
+            h[4] || (h[4] = _("i", { class: "fas fa-rotate-right fa-fw" }, null, -1)),
             s.value ? (L(), K("span", $k, h[3] || (h[3] = [
               _("div", {
                 class: "spinner-border spinner-border-sm",
@@ -19039,7 +19039,7 @@ const ok = {
             disabled: s.value,
             title: "Synchronize all configured resources with existing MRNs"
           }, [
-            h[5] || (h[5] = _("i", { class: "bi bi-arrow-repeat" }, null, -1)),
+            h[5] || (h[5] = _("i", { class: "fas fa-arrows-rotate fa-fw" }, null, -1)),
             s.value ? (L(), K("span", Lk, "Syncing...")) : (L(), K("span", Vk, "Full Sync"))
           ], 8, Pk),
           _("button", {
@@ -19048,7 +19048,7 @@ const ok = {
             disabled: s.value,
             title: "Retry all failed resources"
           }, [
-            h[6] || (h[6] = _("i", { class: "bi bi-exclamation-triangle" }, null, -1)),
+            h[6] || (h[6] = _("i", { class: "fas fa-exclamation-triangle fa-fw" }, null, -1)),
             s.value ? (L(), K("span", Bk, "Retrying...")) : (L(), K("span", Fk, "Retry Failed"))
           ], 8, Mk)
         ]),
@@ -19059,7 +19059,7 @@ const ok = {
             disabled: o.value,
             title: "Download ZIP archive of selected completed MRNs"
           }, h[7] || (h[7] = [
-            _("i", { class: "bi bi-download" }, null, -1),
+            _("i", { class: "fas fa-download fa-fw" }, null, -1),
             je(" Download Selected ")
           ]), 8, jk)
         ]),
@@ -19070,7 +19070,7 @@ const ok = {
           title: "Refresh data"
         }, [
           _("i", {
-            class: Ce(["bi bi-arrow-clockwise", { "fa-spin": i.value }])
+            class: Ce(["fas fa-rotate-right fa-fw", { "fa-spin": i.value }])
           }, null, 2)
         ], 8, Hk),
         _("button", {
@@ -19078,7 +19078,7 @@ const ok = {
           onClick: h[1] || (h[1] = (m) => ve(n).toggleSummary()),
           title: "Toggle project summary"
         }, h[8] || (h[8] = [
-          _("i", { class: "bi bi-bar-chart" }, null, -1),
+          _("i", { class: "fas fa-chart-bar fa-fw" }, null, -1),
           je(" Summary ")
         ]))
       ]),
@@ -19185,13 +19185,13 @@ const ok = {
         ]),
         _("td", null, [
           l.resource.fetch_date ? (L(), K("div", Qk, [
-            c[1] || (c[1] = _("i", { class: "bi bi-check-circle" }, null, -1)),
+            c[1] || (c[1] = _("i", { class: "fas fa-check-circle fa-fw" }, null, -1)),
             je(" " + ue(i(l.resource.fetch_date)), 1)
           ])) : (L(), K("div", Zk, "-"))
         ]),
         _("td", null, [
           l.resource.error_message ? (L(), K("div", e$, [
-            c[2] || (c[2] = _("i", { class: "bi bi-exclamation-triangle" }, null, -1)),
+            c[2] || (c[2] = _("i", { class: "fas fa-exclamation-triangle fa-fw" }, null, -1)),
             _("span", {
               title: l.resource.error_message
             }, ue(a(l.resource.error_message)), 9, t$),
@@ -19202,7 +19202,7 @@ const ok = {
               title: o.value ? "Show less" : "Show more"
             }, [
               _("i", {
-                class: Ce(`bi bi-chevron-${o.value ? "up" : "down"}`)
+                class: Ce(`fas fa-chevron-${o.value ? "up" : "down"} fa-fw`)
               }, null, 2)
             ], 8, n$)) : Je("", !0)
           ])) : (L(), K("div", o$, "-"))
@@ -19216,7 +19216,7 @@ const ok = {
               disabled: r.value,
               title: "Retry this resource"
             }, c[3] || (c[3] = [
-              _("i", { class: "bi bi-arrow-clockwise" }, null, -1)
+              _("i", { class: "fas fa-rotate-right fa-fw" }, null, -1)
             ]), 8, s$)) : Je("", !0),
             l.resource.status === "Completed" ? (L(), K("button", {
               key: 1,
@@ -19224,7 +19224,7 @@ const ok = {
               onClick: f,
               title: "View resource details"
             }, c[4] || (c[4] = [
-              _("i", { class: "bi bi-eye" }, null, -1)
+              _("i", { class: "fas fa-eye fa-fw" }, null, -1)
             ]))) : Je("", !0)
           ])
         ])
@@ -19315,7 +19315,7 @@ const ok = {
             "aria-expanded": o.value
           }, [
             _("i", {
-              class: Ce(`bi bi-chevron-${o.value ? "up" : "down"}`)
+              class: Ce(`fas fa-chevron-${o.value ? "up" : "down"} fa-fw`)
             }, null, 2)
           ], 8, p$)
         ]),
@@ -19327,7 +19327,7 @@ const ok = {
               disabled: r.value,
               title: "Trigger fetch for this MRN"
             }, [
-              c[2] || (c[2] = _("i", { class: "bi bi-arrow-clockwise" }, null, -1)),
+              c[2] || (c[2] = _("i", { class: "fas fa-rotate-right fa-fw" }, null, -1)),
               r.value ? (L(), K("span", g$, c[1] || (c[1] = [
                 _("div", {
                   class: "spinner-border spinner-border-sm",
@@ -19343,7 +19343,7 @@ const ok = {
               onClick: f,
               title: "Download all completed resources for this MRN"
             }, c[3] || (c[3] = [
-              _("i", { class: "bi bi-download" }, null, -1)
+              _("i", { class: "fas fa-download fa-fw" }, null, -1)
             ]), 8, E$)
           ])
         ])
@@ -19376,7 +19376,7 @@ const ok = {
       ])
     ], 64));
   }
-}), O$ = /* @__PURE__ */ $r(w$, [["__scopeId", "data-v-56506083"]]), S$ = {
+}), O$ = /* @__PURE__ */ $r(w$, [["__scopeId", "data-v-bb84324f"]]), S$ = {
   key: 0,
   class: "d-flex justify-content-center"
 }, N$ = {
@@ -19580,7 +19580,7 @@ const ok = {
     }), (c, d) => (L(), K("div", V$, [
       _("div", L$, [
         d[0] || (d[0] = _("h6", { class: "mb-0" }, [
-          _("i", { class: "bi bi-bar-chart" }),
+          _("i", { class: "fas fa-chart-bar fa-fw" }),
           je(" Project Summary ")
         ], -1)),
         _("button", {
@@ -19590,7 +19590,7 @@ const ok = {
           title: "Refresh summary"
         }, [
           _("i", {
-            class: Ce(["bi bi-arrow-clockwise", { "fa-spin": n.value }])
+            class: Ce(["fas fa-rotate-right fa-fw", { "fa-spin": n.value }])
           }, null, 2)
         ], 8, M$)
       ]),
@@ -19643,13 +19643,13 @@ const ok = {
           _("div", nI, [
             _("div", oI, [
               d[12] || (d[12] = _("h6", { class: "text-muted mb-3" }, [
-                _("i", { class: "bi bi-clock-history" }),
+                _("i", { class: "fas fa-clock-rotate-left fa-fw" }),
                 je(" Background Queue Status ")
               ], -1)),
               _("div", rI, [
                 _("div", sI, [
                   _("div", iI, [
-                    d[7] || (d[7] = _("i", { class: "bi bi-hourglass-split text-warning me-2" }, null, -1)),
+                    d[7] || (d[7] = _("i", { class: "fas fa-hourglass-half fa-fw text-warning me-2" }, null, -1)),
                     _("div", null, [
                       _("div", aI, ue(o.value.sync_status.pending_tasks), 1),
                       d[6] || (d[6] = _("small", { class: "text-muted" }, "Pending Tasks", -1))
@@ -19658,7 +19658,7 @@ const ok = {
                 ]),
                 _("div", lI, [
                   _("div", uI, [
-                    d[9] || (d[9] = _("i", { class: "bi bi-exclamation-triangle text-danger me-2" }, null, -1)),
+                    d[9] || (d[9] = _("i", { class: "fas fa-exclamation-triangle fa-fw text-danger me-2" }, null, -1)),
                     _("div", null, [
                       _("div", cI, ue(o.value.sync_status.failed_tasks), 1),
                       d[8] || (d[8] = _("small", { class: "text-muted" }, "Failed Tasks", -1))
@@ -19667,7 +19667,7 @@ const ok = {
                 ]),
                 _("div", fI, [
                   _("div", dI, [
-                    d[11] || (d[11] = _("i", { class: "bi bi-check-circle text-success me-2" }, null, -1)),
+                    d[11] || (d[11] = _("i", { class: "fas fa-check-circle fa-fw text-success me-2" }, null, -1)),
                     _("div", null, [
                       _("div", pI, ue(a.value), 1),
                       d[10] || (d[10] = _("small", { class: "text-muted" }, "Queue Health", -1))
@@ -19715,13 +19715,13 @@ const ok = {
             ])
           ])
         ])) : (L(), K("div", AI, d[16] || (d[16] = [
-          _("i", { class: "bi bi-info-circle" }, null, -1),
+          _("i", { class: "fas fa-info-circle fa-fw" }, null, -1),
           je(" No summary data available ")
         ])))
       ])
     ]));
   }
-}), CI = /* @__PURE__ */ $r(TI, [["__scopeId", "data-v-6e0afe59"]]), DI = { class: "p-3" }, xI = {
+}), CI = /* @__PURE__ */ $r(TI, [["__scopeId", "data-v-b2ae2968"]]), DI = { class: "p-3" }, xI = {
   key: 0,
   class: "mb-4"
 }, RI = {
@@ -19806,7 +19806,7 @@ const ok = {
             _("div", PI, [
               _("div", VI, [
                 _("i", {
-                  class: Ce(ve(n).lastOperation.success ? "bi bi-check-circle" : "bi bi-exclamation-triangle")
+                  class: Ce(ve(n).lastOperation.success ? "fas fa-check-circle fa-fw" : "fas fa-exclamation-triangle fa-fw")
                 }, null, 2),
                 je(" " + ue(ve(n).lastOperation.message), 1)
               ]),

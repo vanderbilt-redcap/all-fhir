@@ -4,7 +4,7 @@
             <!-- Primary Actions -->
             <div class="btn-group" role="group">
                 <button class="btn btn-primary" @click="$emit('addMrn')">
-                    <i class="bi bi-plus-circle"></i> Add MRN
+                    <i class="fas fa-plus-circle fa-fw"></i> Add MRN
                 </button>
                 <button 
                     class="btn btn-outline-primary"
@@ -12,7 +12,7 @@
                     :disabled="selectionDisabled || operationLoading"
                     title="Trigger fetch for selected MRNs"
                 >
-                    <i class="bi bi-arrow-clockwise"></i>
+                    <i class="fas fa-rotate-right fa-fw"></i>
                     <span v-if="!operationLoading">Fetch Selected</span>
                     <span v-else>
                         <div class="spinner-border spinner-border-sm" role="status">
@@ -30,7 +30,7 @@
                     :disabled="operationLoading"
                     title="Synchronize all configured resources with existing MRNs"
                 >
-                    <i class="bi bi-arrow-repeat"></i>
+                    <i class="fas fa-arrows-rotate fa-fw"></i>
                     <span v-if="!operationLoading">Full Sync</span>
                     <span v-else>Syncing...</span>
                 </button>
@@ -40,7 +40,7 @@
                     :disabled="operationLoading"
                     title="Retry all failed resources"
                 >
-                    <i class="bi bi-exclamation-triangle"></i>
+                    <i class="fas fa-exclamation-triangle fa-fw"></i>
                     <span v-if="!operationLoading">Retry Failed</span>
                     <span v-else>Retrying...</span>
                 </button>
@@ -54,7 +54,7 @@
                     :disabled="selectionDisabled"
                     title="Download ZIP archive of selected completed MRNs"
                 >
-                    <i class="bi bi-download"></i> Download Selected
+                    <i class="fas fa-download fa-fw"></i> Download Selected
                 </button>
             </div>
 
@@ -65,7 +65,7 @@
                 :disabled="loading"
                 title="Refresh data"
             >
-                <i class="bi bi-arrow-clockwise" :class="{ 'fa-spin': loading }"></i>
+                <i class="fas fa-rotate-right fa-fw" :class="{ 'fa-spin': loading }"></i>
             </button>
 
             <!-- Project Summary Toggle -->
@@ -74,7 +74,7 @@
                 @click="operationsStore.toggleSummary()"
                 title="Toggle project summary"
             >
-                <i class="bi bi-bar-chart"></i> Summary
+                <i class="fas fa-chart-bar fa-fw"></i> Summary
             </button>
         </div>
         

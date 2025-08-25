@@ -15,7 +15,7 @@
         <td>
             <span>{{ resourceSummary }}</span>
             <button class="btn btn-sm btn-light ms-2" @click="toggleExpand" :aria-expanded="expanded">
-                <i :class="`bi bi-chevron-${expanded ? 'up' : 'down'}`"></i>
+                <i :class="`fas fa-chevron-${expanded ? 'up' : 'down'} fa-fw`"></i>
             </button>
         </td>
         <td>
@@ -26,7 +26,7 @@
                     :disabled="operationLoading"
                     title="Trigger fetch for this MRN"
                 >
-                    <i class="bi bi-arrow-clockwise"></i>
+                    <i class="fas fa-rotate-right fa-fw"></i>
                     <span v-if="!operationLoading">Fetch</span>
                     <span v-else>
                         <div class="spinner-border spinner-border-sm" role="status">
@@ -40,7 +40,7 @@
                     @click="downloadMrnData"
                     title="Download all completed resources for this MRN"
                 >
-                    <i class="bi bi-download"></i>
+                    <i class="fas fa-download fa-fw"></i>
                 </button>
             </div>
         </td>

@@ -16,14 +16,14 @@
         </td>
         <td>
             <div v-if="resource.fetch_date" class="text-success">
-                <i class="bi bi-check-circle"></i>
+                <i class="fas fa-check-circle fa-fw"></i>
                 {{ formatDate(resource.fetch_date) }}
             </div>
             <div v-else class="text-muted">-</div>
         </td>
         <td>
             <div v-if="resource.error_message" class="text-danger">
-                <i class="bi bi-exclamation-triangle"></i>
+                <i class="fas fa-exclamation-triangle fa-fw"></i>
                 <span :title="resource.error_message">
                     {{ truncateError(resource.error_message) }}
                 </span>
@@ -33,7 +33,7 @@
                     @click="showFullError = !showFullError"
                     :title="showFullError ? 'Show less' : 'Show more'"
                 >
-                    <i :class="`bi bi-chevron-${showFullError ? 'up' : 'down'}`"></i>
+                    <i :class="`fas fa-chevron-${showFullError ? 'up' : 'down'} fa-fw`"></i>
                 </button>
             </div>
             <div v-else class="text-muted">-</div>
@@ -47,7 +47,7 @@
                     :disabled="loading"
                     title="Retry this resource"
                 >
-                    <i class="bi bi-arrow-clockwise"></i>
+                    <i class="fas fa-rotate-right fa-fw"></i>
                 </button>
                 <button 
                     v-if="resource.status === 'Completed'"
@@ -55,7 +55,7 @@
                     @click="viewDetails"
                     title="View resource details"
                 >
-                    <i class="bi bi-eye"></i>
+                    <i class="fas fa-eye fa-fw"></i>
                 </button>
             </div>
         </td>
