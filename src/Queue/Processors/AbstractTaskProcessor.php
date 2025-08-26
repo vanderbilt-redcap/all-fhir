@@ -128,6 +128,11 @@ abstract class AbstractTaskProcessor implements TaskProcessorInterface
         $this->module->log("[QUEUE][INFO] $message", []);
     }
 
+    protected function logWarning(string $message): void
+    {
+        $this->module->log("[QUEUE][WRNING] $message", []);
+    }
+
     protected function logError(string $message): void
     {
         $this->module->log("[QUEUE][ERROR] $message", []);

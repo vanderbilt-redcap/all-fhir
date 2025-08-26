@@ -1,9 +1,12 @@
 <?php
 require_once(dirname(__DIR__, 2) . '/vendor/autoload.php');
 
+use Vanderbilt\FhirSnapshot\FhirSnapshot;
 use Vanderbilt\FhirSnapshot\Services\RepeatedFormDataAccessor;
 use Vanderbilt\FhirSnapshot\Services\RepeatedFormResourceManager;
 use Vanderbilt\FhirSnapshot\Services\ResourceSynchronizationService;
+use Vanderbilt\FhirSnapshot\Services\ResourceArchiveService;
+use Vanderbilt\FhirSnapshot\Services\ArchivePackager;
 use Vanderbilt\FhirSnapshot\Services\FhirCategoryService;
 use Vanderbilt\FhirSnapshot\Queue\QueueManager;
 use Vanderbilt\FhirSnapshot\ValueObjects\MappingResource;
@@ -11,12 +14,18 @@ use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
 
 require_once APP_PATH_DOCROOT . 'ProjectGeneral/header.php';
 
+$module = FhirSnapshot::getInstance();
+$container = $module->getContainer();
+
 $projectId = PROJECT_ID;
-$dataAccessor = new RepeatedFormDataAccessor($projectId);
-$queueManager = new QueueManager($module);
-$syncService = new ResourceSynchronizationService($dataAccessor, $queueManager, $projectId);
-$resourceManager = new RepeatedFormResourceManager($module, $dataAccessor, $syncService, $queueManager);
-$fhirCategoryService = new FhirCategoryService();
+$dataAccessor = $container->get(RepeatedFormDataAccessor::class);
+$queueManager = $container->get(QueueManager::class);
+$syncService = $container->get(ResourceSynchronizationService::class);
+$resourceManager = $container->get(RepeatedFormResourceManager::class);
+$archivePackager = $container->get(ArchivePackager::class);
+$archiveService = $container->get(ResourceArchiveService::class);
+$fhirCategoryService = $container->get(FhirCategoryService::class);
+
 $availableCategories = $fhirCategoryService->getAvailableCategories();
 
 $action = $_POST['action'] ?? $_GET['action'] ?? 'view';
@@ -200,6 +209,102 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $message = "Full sync completed. Created $missingInstances missing instances, " .
                           "cleaned $cleanedInstances orphaned instances, " .
                           "and created $createdTasks background tasks.";
+                break;
+                
+            case 'create_archive':
+                $selectedMrns = $_POST['archive_mrns'] ?? [];
+                $archiveMode = $_POST['archive_mode'] ?? 'selected';
+                $resourceTypeFilter = $_POST['archive_resource_types'] ?? [];
+                $archiveName = $_POST['archive_name'] ?? '';
+                $backgroundMode = isset($_POST['background_mode']) && $_POST['background_mode'] === '1';
+                
+                if ($archiveMode === 'selected' && empty($selectedMrns)) {
+                    throw new Exception('Please select at least one MRN for archive creation');
+                }
+                
+                $archiveOptions = [
+                    'background' => $backgroundMode
+                ];
+                
+                if (!empty($resourceTypeFilter)) {
+                    $archiveOptions['resource_types'] = $resourceTypeFilter;
+                }
+                
+                if (!empty($archiveName)) {
+                    $archiveOptions['archive_name'] = $archiveName;
+                }
+                
+                if ($archiveMode === 'all_completed') {
+                    $result = $archiveService->createArchiveForAllCompleted($archiveOptions);
+                } else {
+                    $result = $archiveService->createArchiveForMrns($selectedMrns, $archiveOptions);
+                }
+                
+                if ($result['success']) {
+                    $processingMode = $result['processing_mode'];
+                    $totalResources = $result['total_resources'];
+                    
+                    if ($processingMode === 'background') {
+                        $message = "Archive task created successfully with ID: {$result['archive_id']}. " .
+                                  "Processing {$totalResources} resources in background.";
+                    } else {
+                        $archiveId = $result['archive_id'];
+                        $fileSize = number_format($result['file_size'] / 1024, 1);
+                        $message = "Archive created successfully: {$totalResources} resources, {$fileSize} KB. " .
+                                  "Archive ID: {$archiveId}";
+                    }
+                } else {
+                    $error = "Archive creation failed: " . $result['message'];
+                }
+                break;
+                
+            case 'download_archive':
+                $archiveId = $_POST['download_archive_id'] ?? '';
+                
+                if (empty($archiveId)) {
+                    throw new Exception('Archive ID is required for download');
+                }
+                
+                $filePath = $archiveService->downloadArchive($archiveId);
+                
+                if ($filePath) {
+                    // Provide download link or initiate download
+                    $fileName = basename($filePath);
+                    $message = "Archive ready for download: {$fileName}";
+                    
+                    // In a real implementation, you might redirect to a download handler
+                    // header('Content-Type: application/zip');
+                    // header('Content-Disposition: attachment; filename="' . $fileName . '"');
+                    // readfile($filePath);
+                    // exit;
+                } else {
+                    $error = "Archive not found or not ready for download";
+                }
+                break;
+                
+            case 'get_archive_status':
+                $archiveId = $_POST['status_archive_id'] ?? '';
+                
+                if (empty($archiveId)) {
+                    throw new Exception('Archive ID is required for status check');
+                }
+                
+                $status = $archiveService->getArchiveStatus($archiveId);
+                
+                if ($status) {
+                    $statusText = ucfirst($status['status']);
+                    $createdAt = date('M j, Y H:i', strtotime($status['created_at']));
+                    
+                    $message = "Archive Status: {$statusText}, Created: {$createdAt}";
+                    
+                    if ($status['status'] === 'completed') {
+                        $totalResources = $status['total_resources'] ?? 0;
+                        $fileSize = isset($status['file_size']) ? number_format($status['file_size'] / 1024, 1) . ' KB' : 'Unknown';
+                        $message .= ", Resources: {$totalResources}, Size: {$fileSize}";
+                    }
+                } else {
+                    $error = "Archive not found or invalid archive ID";
+                }
                 break;
         }
     } catch (Exception $e) {
@@ -612,6 +717,205 @@ $filteredTasks = $statusFilter === 'all' ? $allTasks : $queueManager->getTasksBy
         
         <button type="submit" class="btn btn-primary">Export Data (JSON)</button>
     </form>
+</div>
+
+<div class="test-section">
+    <h3>Create FHIR Resource Archive</h3>
+    <p><em>This section creates ZIP archives of completed FHIR resources organized by project/record/MRN structure. Archives can be created for selected MRNs or all completed resources in the project, with optional filtering by resource types.</em></p>
+    
+    <form method="post" id="archive-form">
+        <input type="hidden" name="redcap_csrf_token" value="<?= System::getCsrfToken() ?>">
+        <input type="hidden" name="action" value="create_archive">
+        
+        <div class="form-group">
+            <label for="archive_name">Archive Name (optional):</label>
+            <input type="text" name="archive_name" id="archive_name" placeholder="e.g., patient_data_backup_<?= date('Y-m-d') ?>">
+            <small>Custom name for the archive file (without .zip extension)</small>
+        </div>
+        
+        <div class="form-group">
+            <label>Archive Mode:</label>
+            <div>
+                <input type="radio" name="archive_mode" id="mode_selected" value="selected" checked onchange="toggleMrnSelection()">
+                <label for="mode_selected">Selected MRNs</label>
+                
+                <input type="radio" name="archive_mode" id="mode_all" value="all_completed" onchange="toggleMrnSelection()">
+                <label for="mode_all">All Completed Resources</label>
+            </div>
+        </div>
+        
+        <div class="form-group" id="mrn-selection-group">
+            <label>Select MRNs:</label>
+            <div style="max-height: 150px; overflow-y: auto; border: 1px solid #ddd; padding: 8px;">
+                <?php foreach ($allMrns as $mrn): ?>
+                    <div>
+                        <input type="checkbox" name="archive_mrns[]" id="mrn_<?= htmlspecialchars($mrn) ?>" value="<?= htmlspecialchars($mrn) ?>">
+                        <label for="mrn_<?= htmlspecialchars($mrn) ?>"><?= htmlspecialchars($mrn) ?></label>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+            <small>
+                <a href="#" onclick="selectAllMrns(); return false;">Select All</a> |
+                <a href="#" onclick="selectNoMrns(); return false;">Select None</a>
+            </small>
+        </div>
+        
+        <div class="form-group">
+            <label>Resource Type Filter (optional):</label>
+            <div style="max-height: 100px; overflow-y: auto; border: 1px solid #ddd; padding: 8px;">
+                <div>
+                    <input type="checkbox" name="archive_resource_types[]" id="res_patient" value="Patient Demographics">
+                    <label for="res_patient">Patient Demographics</label>
+                </div>
+                <div>
+                    <input type="checkbox" name="archive_resource_types[]" id="res_vitals" value="Vital Signs">
+                    <label for="res_vitals">Vital Signs</label>
+                </div>
+                <div>
+                    <input type="checkbox" name="archive_resource_types[]" id="res_labs" value="Lab Results">
+                    <label for="res_labs">Lab Results</label>
+                </div>
+                <div>
+                    <input type="checkbox" name="archive_resource_types[]" id="res_meds" value="Medications">
+                    <label for="res_meds">Medications</label>
+                </div>
+                <div>
+                    <input type="checkbox" name="archive_resource_types[]" id="res_procedures" value="Procedures">
+                    <label for="res_procedures">Procedures</label>
+                </div>
+            </div>
+            <small>Leave empty to include all resource types</small>
+        </div>
+        
+        <div class="form-group">
+            <input type="checkbox" name="background_mode" id="background_mode" value="1">
+            <label for="background_mode">Force background processing</label>
+            <small>Process large archives in background queue (recommended for >50 resources)</small>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Create Archive</button>
+    </form>
+    
+    <script>
+    function toggleMrnSelection() {
+        const selectedMode = document.querySelector('input[name="archive_mode"]:checked').value;
+        const mrnGroup = document.getElementById('mrn-selection-group');
+        
+        if (selectedMode === 'selected') {
+            mrnGroup.style.display = 'block';
+        } else {
+            mrnGroup.style.display = 'none';
+        }
+    }
+    
+    function selectAllMrns() {
+        const checkboxes = document.querySelectorAll('input[name="archive_mrns[]"]');
+        checkboxes.forEach(cb => cb.checked = true);
+    }
+    
+    function selectNoMrns() {
+        const checkboxes = document.querySelectorAll('input[name="archive_mrns[]"]');
+        checkboxes.forEach(cb => cb.checked = false);
+    }
+    </script>
+</div>
+
+<div class="test-section">
+    <h3>Archive Status & Download</h3>
+    <p><em>This section allows you to check the status of archive tasks and download completed archives.</em></p>
+    
+    <div style="margin: 15px 0;">
+        <h4>Check Archive Status</h4>
+        <form method="post" style="display: inline-block; margin-right: 20px;">
+            <input type="hidden" name="redcap_csrf_token" value="<?= System::getCsrfToken() ?>">
+            <input type="hidden" name="action" value="get_archive_status">
+            <input type="text" name="status_archive_id" placeholder="Enter Archive ID" required style="width: 200px;">
+            <button type="submit" class="btn btn-primary">Check Status</button>
+        </form>
+    </div>
+    
+    <div style="margin: 15px 0;">
+        <h4>Download Archive</h4>
+        <form method="post" style="display: inline-block;">
+            <input type="hidden" name="redcap_csrf_token" value="<?= System::getCsrfToken() ?>">
+            <input type="hidden" name="action" value="download_archive">
+            <input type="text" name="download_archive_id" placeholder="Enter Archive ID" required style="width: 200px;">
+            <button type="submit" class="btn btn-success">Download Archive</button>
+        </form>
+    </div>
+    
+    <div style="margin-top: 20px;">
+        <h4>Recent Archive Tasks</h4>
+        <?php 
+        $archiveTasks = array_filter($allTasks, function($task) {
+            return $task->getKey() === \Vanderbilt\FhirSnapshot\Constants::TASK_FHIR_ARCHIVE;
+        });
+        $archiveTasks = array_slice(array_reverse($archiveTasks), 0, 5); // Show last 5
+        ?>
+        
+        <?php if (!empty($archiveTasks)): ?>
+            <table class="status-table">
+                <thead>
+                    <tr>
+                        <th>Archive ID</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Resources</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($archiveTasks as $task): ?>
+                        <?php 
+                        $metadata = $task->getMetadata();
+                        $params = $task->getParams();
+                        $resourceCount = $params['resource_count'] ?? 0;
+                        ?>
+                        <tr>
+                            <td class="task-id"><?= htmlspecialchars(substr($task->getId(), 0, 15)) ?>...</td>
+                            <td class="status-<?= $task->getStatus() ?>"><?= ucfirst($task->getStatus()) ?></td>
+                            <td><?= date('M j, Y H:i', strtotime($task->getCreatedAt())) ?></td>
+                            <td><?= $resourceCount ?></td>
+                            <td>
+                                <button onclick="checkArchiveStatus('<?= htmlspecialchars($task->getId()) ?>')" class="btn btn-primary" style="padding: 2px 8px; font-size: 11px;">Status</button>
+                                <?php if ($task->getStatus() === 'completed'): ?>
+                                    <button onclick="downloadArchive('<?= htmlspecialchars($task->getId()) ?>')" class="btn btn-success" style="padding: 2px 8px; font-size: 11px;">Download</button>
+                                <?php endif; ?>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php else: ?>
+            <p>No archive tasks found.</p>
+        <?php endif; ?>
+    </div>
+    
+    <script>
+    function checkArchiveStatus(archiveId) {
+        const form = document.createElement('form');
+        form.method = 'post';
+        form.innerHTML = `
+            <input type="hidden" name="redcap_csrf_token" value="<?= System::getCsrfToken() ?>">
+            <input type="hidden" name="action" value="get_archive_status">
+            <input type="hidden" name="status_archive_id" value="${archiveId}">
+        `;
+        document.body.appendChild(form);
+        form.submit();
+    }
+    
+    function downloadArchive(archiveId) {
+        const form = document.createElement('form');
+        form.method = 'post';
+        form.innerHTML = `
+            <input type="hidden" name="redcap_csrf_token" value="<?= System::getCsrfToken() ?>">
+            <input type="hidden" name="action" value="download_archive">
+            <input type="hidden" name="download_archive_id" value="${archiveId}">
+        `;
+        document.body.appendChild(form);
+        form.submit();
+    }
+    </script>
 </div>
 
 <div class="test-section">

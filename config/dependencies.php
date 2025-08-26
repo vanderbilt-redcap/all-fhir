@@ -16,10 +16,13 @@ use Vanderbilt\FhirSnapshot\Services\RepeatedFormDataAccessor;
 use Vanderbilt\FhirSnapshot\Contracts\FhirClientInterface;
 use Vanderbilt\FhirSnapshot\Services\RepeatedFormResourceManager;
 use Vanderbilt\FhirSnapshot\Services\ResourceSynchronizationService;
+use Vanderbilt\FhirSnapshot\Services\ResourceArchiveService;
+use Vanderbilt\FhirSnapshot\Services\ArchivePackager;
 use Vanderbilt\FhirSnapshot\Queue\QueueManager;
 use Vanderbilt\FhirSnapshot\Queue\QueueProcessor;
 use Vanderbilt\FhirSnapshot\Queue\Processors\FhirFetchProcessor;
 use Vanderbilt\FhirSnapshot\Queue\Processors\ArchiveProcessor;
+use Vanderbilt\FhirSnapshot\Queue\Processors\FhirArchiveProcessor;
 use Vanderbilt\FhirSnapshot\Queue\Processors\EmailNotificationProcessor;
 use Vanderbilt\FhirSnapshot\Settings\Settings;
 use Vanderbilt\FhirSnapshot\Constants;
@@ -52,15 +55,13 @@ return function (ContainerBuilder $containerBuilder) {
                 $module->getProjectId()
             );
         }),
-        RepeatedFormResourceManager::class => factory(function(Container $c) {
-            return new RepeatedFormResourceManager(
+        RepeatedFormResourceManager::class => fn(Container $c) => new RepeatedFormResourceManager(
                 $c->get(FhirSnapshot::class),
                 $c->get(RepeatedFormDataAccessor::class),
                 $c->get(ResourceSynchronizationService::class),
                 $c->get(QueueManager::class),
                 $c->get(FhirResourceService::class)
-            );
-        }),
+        ),
         // FHIR Client configuration
         FhirClient::class => factory(function(Container $c) {
             $module = $c->get(FhirSnapshot::class);
@@ -71,13 +72,20 @@ return function (ContainerBuilder $containerBuilder) {
             return FhirClientFacade::getInstance($ehrIdentifier, $projectId, $userId);
         }),
         
-        FhirClientInterface::class => factory(function(Container $c) {
-            return new FhirClientWrapper($c->get(FhirClient::class));
-        }),
+        FhirClientInterface::class => fn(Container $c) => new FhirClientWrapper($c->get(FhirClient::class)),
         
         FhirResourceService::class => fn(Container $c) => new FhirResourceService(
             $c->get(RepeatedFormDataAccessor::class),
             $c->get(FhirClientInterface::class)
+        ),
+        
+        // Archive services
+        ArchivePackager::class => fn() => new ArchivePackager(),
+        ResourceArchiveService::class => fn(Container $c) => new ResourceArchiveService(
+            $c->get(FhirSnapshot::class),
+            $c->get(RepeatedFormDataAccessor::class),
+            $c->get(ArchivePackager::class),
+            $c->get(QueueManager::class)
         ),
 
         // Define how to instantiate queue components
@@ -89,6 +97,7 @@ return function (ContainerBuilder $containerBuilder) {
             $processorFactories = [
                 Constants::TASK_FHIR_FETCH => fn() => $c->get(FhirFetchProcessor::class),
                 Constants::TASK_ARCHIVE => fn() => $c->get(ArchiveProcessor::class),
+                Constants::TASK_FHIR_ARCHIVE => fn() => $c->get(FhirArchiveProcessor::class),
                 Constants::TASK_EMAIL_NOTIFICATION => fn() => $c->get(EmailNotificationProcessor::class),
             ];
             
@@ -108,6 +117,7 @@ return function (ContainerBuilder $containerBuilder) {
             $c->get(RepeatedFormResourceManager::class)
         ),
         ArchiveProcessor::class => fn(Container $c) => new ArchiveProcessor($c->get(FhirSnapshot::class)),
+        FhirArchiveProcessor::class => fn(Container $c) => new FhirArchiveProcessor($c->get(FhirSnapshot::class)),
         EmailNotificationProcessor::class => fn(Container $c) => new EmailNotificationProcessor($c->get(FhirSnapshot::class)),
 
         // Define how to instantiate the controllers.
