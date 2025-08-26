@@ -18,11 +18,10 @@ use Vanderbilt\FhirSnapshot\Services\RepeatedFormResourceManager;
 use Vanderbilt\FhirSnapshot\Services\ResourceSynchronizationService;
 use Vanderbilt\FhirSnapshot\Services\ResourceArchiveService;
 use Vanderbilt\FhirSnapshot\Services\ArchivePackager;
+use Vanderbilt\FhirSnapshot\Services\PendingResourceFetcher;
 use Vanderbilt\FhirSnapshot\Queue\QueueManager;
 use Vanderbilt\FhirSnapshot\Queue\QueueProcessor;
-use Vanderbilt\FhirSnapshot\Queue\Processors\FhirFetchProcessor;
 use Vanderbilt\FhirSnapshot\Queue\Processors\ArchiveProcessor;
-use Vanderbilt\FhirSnapshot\Queue\Processors\FhirArchiveProcessor;
 use Vanderbilt\FhirSnapshot\Queue\Processors\EmailNotificationProcessor;
 use Vanderbilt\FhirSnapshot\Settings\Settings;
 use Vanderbilt\FhirSnapshot\Constants;
@@ -67,6 +66,14 @@ return function (ContainerBuilder $containerBuilder) {
             $c->get(RepeatedFormDataAccessor::class),
             $c->get(FhirClientInterface::class)
         ),
+
+        // Pending resource fetcher service
+        PendingResourceFetcher::class => fn(Container $c) => new PendingResourceFetcher(
+            $c->get(FhirSnapshot::class),
+            $c->get(RepeatedFormDataAccessor::class),
+            $c->get(RepeatedFormResourceManager::class),
+            $c->get(ResourceMonitor::class)
+        ),
         
         // Archive services
         ArchivePackager::class => fn() => new ArchivePackager(),
@@ -84,9 +91,7 @@ return function (ContainerBuilder $containerBuilder) {
         ResourceMonitor::class => fn(Container $c) => new ResourceMonitor($c->get(MemoryMonitor::class), $c->get(TimeMonitor::class)),
         QueueProcessor::class => factory(function(Container $c) {
             $processorFactories = [
-                Constants::TASK_FHIR_FETCH => fn() => $c->get(FhirFetchProcessor::class),
                 Constants::TASK_ARCHIVE => fn() => $c->get(ArchiveProcessor::class),
-                Constants::TASK_FHIR_ARCHIVE => fn() => $c->get(FhirArchiveProcessor::class),
                 Constants::TASK_EMAIL_NOTIFICATION => fn() => $c->get(EmailNotificationProcessor::class),
             ];
             
@@ -98,15 +103,7 @@ return function (ContainerBuilder $containerBuilder) {
             );
         }),
         
-        // Define how to instantiate processors
-        FhirFetchProcessor::class => fn(Container $c) => new FhirFetchProcessor(
-            $c->get(FhirSnapshot::class), 
-            $c->get(FhirResourceService::class), 
-            $c->get(RepeatedFormDataAccessor::class),
-            $c->get(RepeatedFormResourceManager::class)
-        ),
         ArchiveProcessor::class => fn(Container $c) => new ArchiveProcessor($c->get(FhirSnapshot::class)),
-        FhirArchiveProcessor::class => fn(Container $c) => new FhirArchiveProcessor($c->get(FhirSnapshot::class)),
         EmailNotificationProcessor::class => fn(Container $c) => new EmailNotificationProcessor($c->get(FhirSnapshot::class)),
 
         // Define how to instantiate the controllers.

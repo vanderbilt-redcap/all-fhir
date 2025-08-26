@@ -6,9 +6,6 @@ use Vanderbilt\FhirSnapshot\FhirSnapshot;
 use Vanderbilt\FhirSnapshot\ValueObjects\Task;
 use Vanderbilt\FhirSnapshot\Queue\Processors\TaskProcessorInterface;
 use Vanderbilt\FhirSnapshot\ValueObjects\TaskProcessorResult;
-use Vanderbilt\FhirSnapshot\Queue\Processors\FhirFetchProcessor;
-use Vanderbilt\FhirSnapshot\Queue\Processors\ArchiveProcessor;
-use Vanderbilt\FhirSnapshot\Queue\Processors\EmailNotificationProcessor;
 use Vanderbilt\REDCap\Classes\SystemMonitors\ResourceMonitor;
 use Exception;
 
@@ -54,7 +51,6 @@ use Exception;
  * - Provides fallback handling for unknown task types
  * 
  * TASK ROUTING BY KEY:
- * - 'fhir_fetch' → FhirFetchProcessor (handles both batch and enhanced functionality)
  * - 'archive' → ArchiveProcessor  
  * - 'email_notification' → EmailNotificationProcessor
  * - Custom task keys → Custom processor implementations

@@ -8,6 +8,7 @@ use Vanderbilt\FhirSnapshot\Services\ResourceSynchronizationService;
 use Vanderbilt\FhirSnapshot\Services\ResourceArchiveService;
 use Vanderbilt\FhirSnapshot\Services\ArchivePackager;
 use Vanderbilt\FhirSnapshot\Services\FhirCategoryService;
+use Vanderbilt\FhirSnapshot\Services\PendingResourceFetcher;
 use Vanderbilt\FhirSnapshot\Queue\QueueManager;
 use Vanderbilt\FhirSnapshot\ValueObjects\MappingResource;
 use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
@@ -25,6 +26,7 @@ $resourceManager = $container->get(RepeatedFormResourceManager::class);
 $archivePackager = $container->get(ArchivePackager::class);
 $archiveService = $container->get(ResourceArchiveService::class);
 $fhirCategoryService = $container->get(FhirCategoryService::class);
+$pendingFetcher = $container->get(PendingResourceFetcher::class);
 
 $availableCategories = $fhirCategoryService->getAvailableCategories();
 
@@ -304,6 +306,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 } else {
                     $error = "Archive not found or invalid archive ID";
+                }
+                break;
+                
+            case 'fetch_pending':
+                // Test the new PendingResourceFetcher
+                $result = $pendingFetcher->processPendingResources();
+                
+                $processedCount = $result->getProcessedCount();
+                $successCount = $result->getSuccessCount();
+                $failCount = $result->getFailCount();
+                $processingTime = round($result->getProcessingTime(), 2);
+                $avgProcessingTime = round($result->getAverageProcessingTime(), 3);
+                
+                $message = "Pending resource processing completed: " .
+                          "Processed {$processedCount} resources, " .
+                          "Success: {$successCount}, Failed: {$failCount}, " .
+                          "Processing time: {$processingTime}s, " .
+                          "Avg per resource: {$avgProcessingTime}s";
+                
+                if ($result->wasStoppedDueToResources()) {
+                    $message .= " (Stopped due to resource constraints)";
+                }
+                
+                if ($failCount > 0) {
+                    $failures = $result->getFailures();
+                    $failureDetails = array_slice($failures, 0, 3); // Show first 3 failures
+                    $message .= ". Sample failures: ";
+                    foreach ($failureDetails as $failure) {
+                        $message .= $failure['mrn'] . " (" . substr($failure['error'], 0, 50) . "), ";
+                    }
+                    $message = rtrim($message, ', ');
                 }
                 break;
         }
@@ -665,6 +698,40 @@ $filteredTasks = $statusFilter === 'all' ? $allTasks : $queueManager->getTasksBy
         </ul>
         
         <button type="submit" class="btn btn-primary">Perform Full Sync</button>
+    </form>
+</div>
+
+<div class="test-section">
+    <h3>Fetch Pending Resources</h3>
+    <p><em>This section tests the new PendingResourceFetcher service that processes all pending FHIR resources in the current project without using the task queue. It monitors system resources (memory, CPU, time) and provides detailed processing statistics including success/failure counts, timing metrics, and error reporting.</em></p>
+    <form method="post" onsubmit="return confirm('Are you sure you want to process all pending resources? This will immediately fetch FHIR data for all pending resource instances.');">
+        <input type="hidden" name="redcap_csrf_token" value="<?= System::getCsrfToken() ?>">
+        <input type="hidden" name="action" value="fetch_pending">
+        
+        <p><strong>This operation will:</strong></p>
+        <ul>
+            <li>Find all pending FHIR resource instances across all MRNs</li>
+            <li>Process each resource individually with real-time fetching</li>
+            <li>Monitor system resources (memory, CPU, execution time)</li>
+            <li>Stop gracefully if resource limits are approached</li>
+            <li>Provide comprehensive statistics and error reporting</li>
+            <li>Update resource metadata with fetch results</li>
+        </ul>
+        
+        <p><strong>Key differences from task queue processing:</strong></p>
+        <ul>
+            <li><strong>Immediate processing</strong>: No task queue, direct resource fetching</li>
+            <li><strong>Resource monitoring</strong>: Built-in memory and execution time limits</li>
+            <li><strong>Detailed statistics</strong>: Processing times, success rates, failure analysis</li>
+            <li><strong>Graceful stopping</strong>: Stops safely when limits are reached</li>
+        </ul>
+        
+        <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 3px; margin: 10px 0;">
+            <strong>⚠️ Note:</strong> This operation processes resources immediately and may take time depending on the number of pending resources. 
+            It will respect system resource limits and stop gracefully if needed.
+        </div>
+        
+        <button type="submit" class="btn btn-success">Process Pending Resources</button>
     </form>
 </div>
 
@@ -1142,7 +1209,6 @@ $filteredTasks = $statusFilter === 'all' ? $allTasks : $queueManager->getTasksBy
             <label for="task_key">Task Key:</label>
             <select name="task_key" id="task_key" required>
                 <option value="">Select Task Type</option>
-                <option value="fhir_fetch">fhir_fetch</option>
                 <option value="archive">archive</option>
                 <option value="cleanup">cleanup</option>
                 <option value="notification">notification</option>

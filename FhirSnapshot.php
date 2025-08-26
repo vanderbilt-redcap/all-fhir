@@ -6,6 +6,7 @@ use ExternalModules\AbstractExternalModule;
 use Project;
 use Vanderbilt\FhirSnapshot\Queue\QueueProcessor;
 use Vanderbilt\FhirSnapshot\Services\MappingResourceService;
+use Vanderbilt\FhirSnapshot\Services\PendingResourceFetcher;
 
 /**
  * FhirSnapshot
@@ -192,6 +193,60 @@ class FhirSnapshot extends AbstractExternalModule {
             return sprintf("%s - all jobs have been processed", $cron_name);
         } catch (\Exception $e) {
             return sprintf("%s - error processing the jobs: %s", $cron_name, $e->getMessage());
+        }
+    }
+
+    /**
+     * Process pending FHIR resources across all enabled projects
+     * 
+     * Iterates through all projects with the module enabled and processes pending
+     * FHIR resources using the specialized PendingResourceFetcher service.
+     * 
+     * @return array Array of PendingResourceFetcherResult objects, one per project
+     */
+    function fetchPending() {
+        try {
+            $results = [];
+            $c = $this->getContainer();
+            if(!$c) {
+                return $results;
+            }
+            
+            foreach($this->getProjectsWithModuleEnabled() as $localProjectId){
+                $this->setProjectId($localProjectId);
+
+                $pendingFetcher = $c->get(PendingResourceFetcher::class);
+                // Process pending resources
+                $result = $pendingFetcher->processPendingResources();
+                // Log processing summary
+                $this->log("Pending resource processing completed: ", ['result' => json_encode($result->toArray())]);
+                $results[] = $result;
+            }
+            return $results;
+        } catch (\Exception $e) {
+            $this->log("Error in fetchPending: ", ['message' => $e->getMessage()]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Cron job integration for automated pending resource processing
+     * 
+     * REDCap cron job method that processes pending FHIR resources across all
+     * enabled projects using the fetchPending() method.
+     * 
+     * @param array $cronInfo Cron configuration array [cron_name, cron_description, method, cron_frequency, cron_max_run_time]
+     * @return string Cron execution status message
+     */
+    function cron_fetchPending($cronInfo)
+    {
+        require_once __DIR__ . '/vendor/autoload.php';
+        $cron_name = $cronInfo['cron_name'] ?? 'FHIR Pending Resource Fetcher';
+        try {
+            $this->fetchPending();
+            return sprintf("%s - all pending resources have been processed", $cron_name);
+        } catch (\Exception $e) {
+            return sprintf("%s - error processing pending resources: %s", $cron_name, $e->getMessage());
         }
     }
 

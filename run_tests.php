@@ -75,7 +75,6 @@ echo "Test files created:\n";
 echo "  - tests/Unit/Queue/TaskTest.php\n";
 echo "  - tests/Unit/Queue/QueueManagerTest.php\n";
 echo "  - tests/Unit/Queue/QueueProcessorTest.php\n";
-echo "  - tests/Unit/Queue/Processors/FhirFetchProcessorTest.php\n\n";
 
 echo "Implementation files created:\n";
 echo "  - src/Queue/Task.php (Value object)\n";
