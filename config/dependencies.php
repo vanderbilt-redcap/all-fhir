@@ -107,7 +107,10 @@ return function (ContainerBuilder $containerBuilder) {
         EmailNotificationProcessor::class => fn(Container $c) => new EmailNotificationProcessor($c->get(FhirSnapshot::class)),
 
         // Define how to instantiate the controllers.
-        ArchiveController::class => fn(Container $c) => new ArchiveController($c->get(FhirSnapshot::class)),
+        ArchiveController::class => fn(Container $c) => new ArchiveController(
+            $c->get(FhirSnapshot::class),
+            $c->get(ResourceArchiveService::class)
+        ),
         FetchController::class => fn(Container $c) => new FetchController($c->get(FhirSnapshot::class)),
         MrnController::class => fn(Container $c) => new MrnController(
             $c->get(FhirSnapshot::class),

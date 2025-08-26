@@ -127,8 +127,9 @@ class ArchivePackager
         $includeMetadata = $options['include_metadata'] ?? true;
         $tempDir = $options['temp_dir'] ?? $this->tempDir;
 
-        // Generate unique archive ID and file path
-        $archiveId = uniqid('archive_', true);
+        // Generate unique archive ID that complies with PathSecurityValidator rules
+        // Using timestamp + random to avoid dots from uniqid(..., true)
+        $archiveId = 'archive_' . date('YmdHis') . '_' . bin2hex(random_bytes(8));
         $zipFileName = $archiveName . '.zip';
         $zipFilePath = $tempDir . DIRECTORY_SEPARATOR . $zipFileName;
 

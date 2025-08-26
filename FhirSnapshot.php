@@ -219,7 +219,6 @@ class FhirSnapshot extends AbstractExternalModule {
                 
                 // PRE-CHECK: Only process if there are pending resources
                 if (!$resourceFetcher->hasPendingResources()) {
-                    $this->log("No pending resources found for project {$localProjectId}", []);
                     continue; // Skip to next project
                 }
                 

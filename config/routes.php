@@ -40,8 +40,9 @@ return function (App $app) {
     $app->get('/fetch-status', [FetchController::class, 'getFetchStatus']);
 
     // ArchiveController routes
-    $app->post('/download-selected', [ArchiveController::class, 'downloadSelected']);
-    $app->get('/download-zip', [ArchiveController::class, 'downloadZip']);
+    $app->post('/archive/selected', [ArchiveController::class, 'archiveSelected']);
+    $app->post('/archive/all', [ArchiveController::class, 'archiveAll']);
+    $app->get('/archive/{archive_id}/download', [ArchiveController::class, 'downloadArchive']);
 
     // // Dynamic route
     // $app->get('/user/{id}', function (Request $request, Response $response, array $args) {
