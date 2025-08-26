@@ -10,7 +10,7 @@ use Vanderbilt\FhirSnapshot\Controllers\ProjectSettingsController;
 use Vanderbilt\FhirSnapshot\Services\FhirCategoryService;
 use Vanderbilt\FhirSnapshot\Services\FhirMetadataService;
 use Vanderbilt\FhirSnapshot\Services\FhirResourceService;
-use Vanderbilt\FhirSnapshot\Services\FhirClientWrapper;
+use Vanderbilt\FhirSnapshot\Services\LazyFhirClientWrapper;
 use Vanderbilt\FhirSnapshot\Services\MappingResourceService;
 use Vanderbilt\FhirSnapshot\Services\RepeatedFormDataAccessor;
 use Vanderbilt\FhirSnapshot\Contracts\FhirClientInterface;
@@ -27,8 +27,6 @@ use Vanderbilt\FhirSnapshot\Queue\Processors\EmailNotificationProcessor;
 use Vanderbilt\FhirSnapshot\Settings\Settings;
 use Vanderbilt\FhirSnapshot\Constants;
 use Vanderbilt\REDCap\Classes\Fhir\FhirSystem\FhirSystemManager;
-use Vanderbilt\REDCap\Classes\Fhir\Facades\FhirClientFacade;
-use Vanderbilt\REDCap\Classes\Fhir\FhirClient;
 use Vanderbilt\REDCap\Classes\SystemMonitors\MemoryMonitor;
 use Vanderbilt\REDCap\Classes\SystemMonitors\ResourceMonitor;
 use Vanderbilt\REDCap\Classes\SystemMonitors\TimeMonitor;
@@ -62,17 +60,8 @@ return function (ContainerBuilder $containerBuilder) {
                 $c->get(QueueManager::class),
                 $c->get(FhirResourceService::class)
         ),
-        // FHIR Client configuration
-        FhirClient::class => factory(function(Container $c) {
-            $module = $c->get(FhirSnapshot::class);
-            $ehrIdentifier = $module->getProjectSetting(Constants::SETTING_FHIR_SYSTEM);
-            $projectId = $module->getProjectId();
-            $userId = null; // Can be set later if needed
-            
-            return FhirClientFacade::getInstance($ehrIdentifier, $projectId, $userId);
-        }),
-        
-        FhirClientInterface::class => fn(Container $c) => new FhirClientWrapper($c->get(FhirClient::class)),
+        // FHIR Client configuration - using lazy initialization to handle unconfigured state
+        FhirClientInterface::class => fn(Container $c) => new LazyFhirClientWrapper($c->get(FhirSnapshot::class)),
         
         FhirResourceService::class => fn(Container $c) => new FhirResourceService(
             $c->get(RepeatedFormDataAccessor::class),
