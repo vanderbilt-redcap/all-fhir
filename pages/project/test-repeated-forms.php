@@ -8,7 +8,7 @@ use Vanderbilt\FhirSnapshot\Services\ResourceSynchronizationService;
 use Vanderbilt\FhirSnapshot\Services\ResourceArchiveService;
 use Vanderbilt\FhirSnapshot\Services\ArchivePackager;
 use Vanderbilt\FhirSnapshot\Services\FhirCategoryService;
-use Vanderbilt\FhirSnapshot\Services\PendingResourceFetcher;
+use Vanderbilt\FhirSnapshot\Services\ResourceFetcher;
 use Vanderbilt\FhirSnapshot\Queue\QueueManager;
 use Vanderbilt\FhirSnapshot\ValueObjects\MappingResource;
 use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
@@ -26,7 +26,7 @@ $resourceManager = $container->get(RepeatedFormResourceManager::class);
 $archivePackager = $container->get(ArchivePackager::class);
 $archiveService = $container->get(ResourceArchiveService::class);
 $fhirCategoryService = $container->get(FhirCategoryService::class);
-$pendingFetcher = $container->get(PendingResourceFetcher::class);
+$resourceFetcher = $container->get(ResourceFetcher::class);
 
 $availableCategories = $fhirCategoryService->getAvailableCategories();
 
@@ -310,8 +310,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 break;
                 
             case 'fetch_pending':
-                // Test the new PendingResourceFetcher
-                $result = $pendingFetcher->processPendingResources();
+                // Test the new ResourceFetcher with pending resources
+                $result = $resourceFetcher->processPendingResources();
                 
                 $processedCount = $result->getProcessedCount();
                 $successCount = $result->getSuccessCount();
@@ -703,7 +703,7 @@ $filteredTasks = $statusFilter === 'all' ? $allTasks : $queueManager->getTasksBy
 
 <div class="test-section">
     <h3>Fetch Pending Resources</h3>
-    <p><em>This section tests the new PendingResourceFetcher service that processes all pending FHIR resources in the current project without using the task queue. It monitors system resources (memory, CPU, time) and provides detailed processing statistics including success/failure counts, timing metrics, and error reporting.</em></p>
+    <p><em>This section tests the new ResourceFetcher service that processes all pending FHIR resources in the current project without using the task queue. It monitors system resources (memory, CPU, time) and provides detailed processing statistics including success/failure counts, timing metrics, and error reporting.</em></p>
     <form method="post" onsubmit="return confirm('Are you sure you want to process all pending resources? This will immediately fetch FHIR data for all pending resource instances.');">
         <input type="hidden" name="redcap_csrf_token" value="<?= System::getCsrfToken() ?>">
         <input type="hidden" name="action" value="fetch_pending">

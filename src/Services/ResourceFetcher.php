@@ -7,13 +7,13 @@ use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
 use Vanderbilt\REDCap\Classes\SystemMonitors\ResourceMonitor;
 
 /**
- * PendingResourceFetcher
+ * ResourceFetcher
  * 
- * Specialized service for continuously processing pending FHIR resources while monitoring 
+ * Flexible service for processing FHIR resources with configurable status filtering while monitoring 
  * system resources and providing detailed processing statistics.
  * 
  * ROLE & RESPONSIBILITIES:
- * - Processes all pending FHIR resources in the current project context
+ * - Processes FHIR resources in the current project context with flexible status filtering
  * - Monitors system resources (memory, CPU, time) to prevent system overload
  * - Provides comprehensive processing statistics and error reporting
  * - Handles graceful stopping when resource limits are approached
@@ -22,11 +22,11 @@ use Vanderbilt\REDCap\Classes\SystemMonitors\ResourceMonitor;
  * 
  * CORE FEATURES:
  * 
- * RESOURCE DISCOVERY & PROCESSING:
- * - Discovers all pending FhirResourceMetadata across project MRNs
- * - Processes resources individually using proven fetching logic
- * - Tracks success/failure rates and processing times
- * - Maintains detailed statistics for monitoring and debugging
+ * FLEXIBLE RESOURCE DISCOVERY:
+ * - Generic getResources() method with include/exclude status filters
+ * - Convenience methods for common operations (getPendingResources, etc.)
+ * - Fast pre-check methods (hasPendingResources) for optimization
+ * - Support for all FhirResourceMetadata statuses with validation
  * 
  * RESOURCE MONITORING & LIMITS:
  * - Uses ResourceMonitor to check memory, CPU, and execution time
@@ -48,21 +48,32 @@ use Vanderbilt\REDCap\Classes\SystemMonitors\ResourceMonitor;
  * 
  * USAGE PATTERNS:
  * 
- * STANDARD PROCESSING:
+ * FLEXIBLE RESOURCE DISCOVERY:
  * ```php
- * $fetcher = $container->get(PendingResourceFetcher::class);
- * $result = $fetcher->processPendingResources();
- * // Returns PendingResourceFetcherResult with comprehensive statistics
+ * $fetcher = $container->get(ResourceFetcher::class);
+ * $allResources = $fetcher->getResources(); // Get all resources
+ * $pendingOnly = $fetcher->getResources(['pending']); // Get only pending
+ * $pendingAndFailed = $fetcher->getResources(['pending', 'failed']); // Multiple statuses
+ * $allButCompleted = $fetcher->getResources(null, ['completed']); // Exclude completed
+ * $pendingConvenience = $fetcher->getPendingResources(); // Convenience method
  * ```
  * 
- * CRON INTEGRATION:
+ * PRE-CHECK OPTIMIZATION:
  * ```php
- * $result = $fetcher->processPendingResources();
- * $this->log("Pending resource processing: " . json_encode($result->toArray()));
+ * if ($fetcher->hasPendingResources()) {
+ *     $pendingResources = $fetcher->getPendingResources();
+ *     $result = $fetcher->processResources($pendingResources);
+ * }
+ * ```
+ * 
+ * PROCESSING WITH CUSTOM FILTERS:
+ * ```php
+ * $failedResources = $fetcher->getResources(['failed']);
+ * $result = $fetcher->processResources($failedResources);
  * ```
  * 
  * INTEGRATION POINTS:
- * - RepeatedFormDataAccessor: For discovering pending resources
+ * - RepeatedFormDataAccessor: For discovering resources by status
  * - RepeatedFormResourceManager: For actual resource fetching
  * - ResourceMonitor: For system resource monitoring
  * - FhirSnapshot: For logging and project context
@@ -73,10 +84,10 @@ use Vanderbilt\REDCap\Classes\SystemMonitors\ResourceMonitor;
  * - Graceful degradation when system limits are reached
  * - Detailed error reporting in processing results
  */
-class PendingResourceFetcher
+class ResourceFetcher
 {
     /**
-     * Initialize the pending resource fetcher with required dependencies
+     * Initialize the resource fetcher with required dependencies
      * 
      * @param FhirSnapshot $module Main module instance for logging and project context
      * @param RepeatedFormDataAccessor $dataAccessor Service for accessing REDCap repeated form data
@@ -92,33 +103,109 @@ class PendingResourceFetcher
     }
 
     /**
-     * Process all pending FHIR resources in the current project
+     * Generic method to get FHIR resources with flexible status filtering
      * 
-     * Discovers pending resources across all MRNs in the project and processes them
-     * individually while monitoring system resources to prevent overload.
-     * 
-     * @return PendingResourceFetcherResult Comprehensive processing results and statistics
+     * @param array|null $includeStatuses Array of statuses to include (null = all statuses)
+     * @param array|null $excludeStatuses Array of statuses to exclude (ignored if includeStatuses is provided)
+     * @return array Array of resource arrays with keys: mrn, record_id, metadata
+     * @throws \InvalidArgumentException If invalid statuses are provided
      */
-    public function processPendingResources(): PendingResourceFetcherResult
+    public function getResources(?array $includeStatuses = null, ?array $excludeStatuses = null): array
+    {
+        // Validate status parameters
+        if ($includeStatuses !== null) {
+            $this->validateStatuses($includeStatuses, 'includeStatuses');
+        }
+        if ($excludeStatuses !== null) {
+            $this->validateStatuses($excludeStatuses, 'excludeStatuses');
+        }
+        
+        $resources = [];
+        $allMrns = $this->dataAccessor->getAllMrns();
+        
+        foreach ($allMrns as $mrn) {
+            $recordId = $this->dataAccessor->getRecordIdByMrn($mrn);
+            if (!$recordId) continue;
+            
+            $allMetadata = $this->dataAccessor->getAllResourceMetadata($recordId);
+            /** @var FhirResourceMetadata $meta */
+            foreach ($allMetadata as $meta) {
+                if ($this->shouldIncludeResource($meta, $includeStatuses, $excludeStatuses)) {
+                    $resources[] = [
+                        'mrn' => $mrn,
+                        'record_id' => $recordId,
+                        'metadata' => $meta
+                    ];
+                }
+            }
+        }
+        
+        return $resources;
+    }
+
+    /**
+     * Convenience method to get only pending FHIR resources
+     * 
+     * @return array Array of pending resource arrays
+     */
+    public function getPendingResources(): array
+    {
+        return $this->getResources([FhirResourceMetadata::STATUS_PENDING]);
+    }
+
+    /**
+     * Fast pre-check method to determine if any pending resources exist
+     * 
+     * Optimized method that stops at the first pending resource found,
+     * useful for avoiding unnecessary processing when no pending resources exist.
+     * 
+     * @return bool True if at least one pending resource exists
+     */
+    public function hasPendingResources(): bool
+    {
+        $allMrns = $this->dataAccessor->getAllMrns();
+        
+        foreach ($allMrns as $mrn) {
+            $recordId = $this->dataAccessor->getRecordIdByMrn($mrn);
+            if (!$recordId) continue;
+            
+            $allMetadata = $this->dataAccessor->getAllResourceMetadata($recordId);
+            /** @var FhirResourceMetadata $meta */
+            foreach ($allMetadata as $meta) {
+                if ($meta->isPending()) {
+                    return true; // Found at least one pending resource
+                }
+            }
+        }
+        
+        return false; // No pending resources found
+    }
+
+    /**
+     * Process a pre-filtered list of FHIR resources
+     * 
+     * Processes the provided resources individually while monitoring system resources
+     * to prevent overload. This method accepts pre-filtered resources, allowing for
+     * flexible processing workflows.
+     * 
+     * @param array $resources Pre-filtered array of resources to process
+     * @return ResourceFetcherResult Comprehensive processing results and statistics
+     */
+    public function processResources(array $resources): ResourceFetcherResult
     {
         $startTime = microtime(true);
-        $result = new PendingResourceFetcherResult();
+        $result = new ResourceFetcherResult();
         
-        $this->logInfo("Starting pending resource processing");
+        $this->logInfo("Starting resource processing for " . count($resources) . " resources");
         
         try {
-            // Get all pending resources
-            $pendingResources = $this->getPendingResources();
-            
-            if (empty($pendingResources)) {
-                $this->logInfo("No pending resources found for processing");
+            if (empty($resources)) {
+                $this->logInfo("No resources provided for processing");
                 return $result->finalize($startTime, $this->getResourceStatus());
             }
             
-            $this->logInfo("Found " . count($pendingResources) . " pending resources to process");
-            
             // Process each resource while monitoring system resources
-            foreach ($pendingResources as $resource) {
+            foreach ($resources as $resource) {
                 $resourceStartTime = microtime(true);
                 
                 // Check resource limits before processing each resource
@@ -158,7 +245,7 @@ class PendingResourceFetcher
             }
             
         } catch (\Exception $e) {
-            $this->logError("Exception during pending resource processing: " . $e->getMessage());
+            $this->logError("Exception during resource processing: " . $e->getMessage());
             $result->setException($e);
         }
         
@@ -169,36 +256,71 @@ class PendingResourceFetcher
     }
 
     /**
-     * Discover all pending FHIR resources in the current project
+     * Backward compatibility method for processing pending resources
      * 
-     * Iterates through all MRNs and their associated resource metadata to find
-     * resources with pending status that need processing.
-     * 
-     * @return array Array of resource arrays with keys: mrn, record_id, metadata
+     * @return ResourceFetcherResult Comprehensive processing results and statistics
      */
-    private function getPendingResources(): array
+    public function processPendingResources(): ResourceFetcherResult
     {
-        $pendingResources = [];
-        $allMrns = $this->dataAccessor->getAllMrns();
+        $pendingResources = $this->getPendingResources();
+        return $this->processResources($pendingResources);
+    }
+
+    /**
+     * Validate that provided statuses are valid FhirResourceMetadata statuses
+     * 
+     * @param array $statuses Array of status strings to validate
+     * @param string $parameterName Name of the parameter for error messaging
+     * @throws \InvalidArgumentException If any status is invalid
+     */
+    private function validateStatuses(array $statuses, string $parameterName): void
+    {
+        $validStatuses = [
+            FhirResourceMetadata::STATUS_PENDING,
+            FhirResourceMetadata::STATUS_FETCHING,
+            FhirResourceMetadata::STATUS_COMPLETED,
+            FhirResourceMetadata::STATUS_FAILED,
+            FhirResourceMetadata::STATUS_OUTDATED,
+            FhirResourceMetadata::STATUS_DELETED
+        ];
         
-        foreach ($allMrns as $mrn) {
-            $recordId = $this->dataAccessor->getRecordIdByMrn($mrn);
-            if (!$recordId) continue;
-            
-            $allMetadata = $this->dataAccessor->getAllResourceMetadata($recordId);
-            /** @var FhirResourceMetadata $meta */
-            foreach ($allMetadata as $meta) {
-                if ($meta->isPending()) {
-                    $pendingResources[] = [
-                        'mrn' => $mrn,
-                        'record_id' => $recordId,
-                        'metadata' => $meta
-                    ];
-                }
+        foreach ($statuses as $status) {
+            if (!in_array($status, $validStatuses, true)) {
+                throw new \InvalidArgumentException(
+                    "Invalid status '{$status}' in {$parameterName}. Valid statuses: " . 
+                    implode(', ', $validStatuses)
+                );
             }
         }
+    }
+
+    /**
+     * Determine if a resource should be included based on status filters
+     * 
+     * @param FhirResourceMetadata $metadata Resource metadata to check
+     * @param array|null $includeStatuses Statuses to include (takes precedence)
+     * @param array|null $excludeStatuses Statuses to exclude
+     * @return bool True if resource should be included
+     */
+    private function shouldIncludeResource(
+        FhirResourceMetadata $metadata, 
+        ?array $includeStatuses, 
+        ?array $excludeStatuses
+    ): bool {
+        $resourceStatus = $metadata->getStatus();
         
-        return $pendingResources;
+        // If includeStatuses is provided, only include resources with those statuses
+        if ($includeStatuses !== null) {
+            return in_array($resourceStatus, $includeStatuses, true);
+        }
+        
+        // If excludeStatuses is provided, exclude resources with those statuses
+        if ($excludeStatuses !== null) {
+            return !in_array($resourceStatus, $excludeStatuses, true);
+        }
+        
+        // If no filters, include all resources
+        return true;
     }
 
     /**
@@ -214,9 +336,9 @@ class PendingResourceFetcher
     /**
      * Log comprehensive processing summary
      * 
-     * @param PendingResourceFetcherResult $result Processing results to log
+     * @param ResourceFetcherResult $result Processing results to log
      */
-    private function logProcessingSummary(PendingResourceFetcherResult $result): void
+    private function logProcessingSummary(ResourceFetcherResult $result): void
     {
         $summary = [
             'total_processed' => $result->getProcessedCount(),
@@ -229,7 +351,7 @@ class PendingResourceFetcher
             'time_status' => $this->resourceMonitor->getTimeMonitor()->withinThreshold() ? 'within_threshold' : 'exceeded'
         ];
 
-        $this->logInfo("Pending resource processing completed: " . json_encode($summary));
+        $this->logInfo("Resource processing completed: " . json_encode($summary));
         
         if (!empty($result->getFailures())) {
             $this->logInfo("Failed resources: " . json_encode($result->getFailures()));
@@ -243,7 +365,7 @@ class PendingResourceFetcher
      */
     private function logInfo(string $message): void
     {
-        $this->module->log("[PENDING_FETCHER][INFO] $message", []);
+        $this->module->log("[RESOURCE_FETCHER][INFO] $message", []);
     }
 
     /**
@@ -253,18 +375,18 @@ class PendingResourceFetcher
      */
     private function logError(string $message): void
     {
-        $this->module->log("[PENDING_FETCHER][ERROR] $message", []);
+        $this->module->log("[RESOURCE_FETCHER][ERROR] $message", []);
     }
 }
 
 /**
- * PendingResourceFetcherResult
+ * ResourceFetcherResult
  * 
- * Value object that encapsulates the results and statistics from pending resource processing.
+ * Value object that encapsulates the results and statistics from resource processing.
  * Provides comprehensive information about the processing operation including success/failure
  * counts, timing information, resource status, and error details.
  */
-class PendingResourceFetcherResult
+class ResourceFetcherResult
 {
     private int $processedCount = 0;
     private int $successCount = 0;

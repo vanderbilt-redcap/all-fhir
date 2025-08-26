@@ -18,7 +18,7 @@ use Vanderbilt\FhirSnapshot\Services\RepeatedFormResourceManager;
 use Vanderbilt\FhirSnapshot\Services\ResourceSynchronizationService;
 use Vanderbilt\FhirSnapshot\Services\ResourceArchiveService;
 use Vanderbilt\FhirSnapshot\Services\ArchivePackager;
-use Vanderbilt\FhirSnapshot\Services\PendingResourceFetcher;
+use Vanderbilt\FhirSnapshot\Services\ResourceFetcher;
 use Vanderbilt\FhirSnapshot\Queue\QueueManager;
 use Vanderbilt\FhirSnapshot\Queue\QueueProcessor;
 use Vanderbilt\FhirSnapshot\Queue\Processors\ArchiveProcessor;
@@ -67,8 +67,8 @@ return function (ContainerBuilder $containerBuilder) {
             $c->get(FhirClientInterface::class)
         ),
 
-        // Pending resource fetcher service
-        PendingResourceFetcher::class => fn(Container $c) => new PendingResourceFetcher(
+        // Resource fetcher service (generic FHIR resource processing)
+        ResourceFetcher::class => fn(Container $c) => new ResourceFetcher(
             $c->get(FhirSnapshot::class),
             $c->get(RepeatedFormDataAccessor::class),
             $c->get(RepeatedFormResourceManager::class),

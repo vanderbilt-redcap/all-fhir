@@ -6,7 +6,7 @@ use ExternalModules\AbstractExternalModule;
 use Project;
 use Vanderbilt\FhirSnapshot\Queue\QueueProcessor;
 use Vanderbilt\FhirSnapshot\Services\MappingResourceService;
-use Vanderbilt\FhirSnapshot\Services\PendingResourceFetcher;
+use Vanderbilt\FhirSnapshot\Services\ResourceFetcher;
 
 /**
  * FhirSnapshot
@@ -200,9 +200,9 @@ class FhirSnapshot extends AbstractExternalModule {
      * Process pending FHIR resources across all enabled projects
      * 
      * Iterates through all projects with the module enabled and processes pending
-     * FHIR resources using the specialized PendingResourceFetcher service.
+     * FHIR resources using the specialized ResourceFetcher service with pre-check optimization.
      * 
-     * @return array Array of PendingResourceFetcherResult objects, one per project
+     * @return array Array of ResourceFetcherResult objects, one per project
      */
     function fetchPending() {
         try {
@@ -215,9 +215,18 @@ class FhirSnapshot extends AbstractExternalModule {
             foreach($this->getProjectsWithModuleEnabled() as $localProjectId){
                 $this->setProjectId($localProjectId);
 
-                $pendingFetcher = $c->get(PendingResourceFetcher::class);
-                // Process pending resources
-                $result = $pendingFetcher->processPendingResources();
+                $resourceFetcher = $c->get(ResourceFetcher::class);
+                
+                // PRE-CHECK: Only process if there are pending resources
+                if (!$resourceFetcher->hasPendingResources()) {
+                    $this->log("No pending resources found for project {$localProjectId}", []);
+                    continue; // Skip to next project
+                }
+                
+                // Get pending resources and process them
+                $pendingResources = $resourceFetcher->getPendingResources();
+                $result = $resourceFetcher->processResources($pendingResources);
+                
                 // Log processing summary
                 $this->log("Pending resource processing completed: ", ['result' => json_encode($result->toArray())]);
                 $results[] = $result;
