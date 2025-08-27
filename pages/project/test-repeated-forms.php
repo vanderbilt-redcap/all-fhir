@@ -85,13 +85,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 // Create MappingResource with separate name and resourceSpec
                 $mappingResource = MappingResource::create($resourceName, $resourceSpec, $mappingType);
-                $tasks = $resourceManager->addMappingResource($mappingResource);
+                $resourceManager->addMappingResource($mappingResource);
                 
-                if (count($tasks) === 1) {
-                    $message = "Added mapping resource: $resourceName ($resourceSpec) as $mappingType. Created 1 generic FHIR fetch task.";
-                } else {
-                    $message = "Added mapping resource: $resourceName ($resourceSpec) as $mappingType. Created " . count($tasks) . " fetch tasks.";
-                }
+                $message = "Added mapping resource: $resourceName ($resourceSpec) as $mappingType.";
+
                 break;
                 
             case 'retry_failed':
@@ -291,18 +288,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     throw new Exception('Archive ID is required for status check');
                 }
                 
-                $status = $archiveService->getArchiveStatus($archiveId);
+                $archiveStatus = $archiveService->getArchiveStatus($archiveId);
                 
-                if ($status) {
-                    $statusText = ucfirst($status['status']);
-                    $createdAt = date('M j, Y H:i', strtotime($status['created_at']));
+                if ($archiveStatus) {
+                    $statusText = ucfirst($status = $archiveStatus->getStatus());
+                    $createdAt = date('M j, Y H:i', strtotime($archiveStatus->getCreatedAt()));
                     
                     $message = "Archive Status: {$statusText}, Created: {$createdAt}";
                     
-                    if ($status['status'] === 'completed') {
-                        $totalResources = $status['total_resources'] ?? 0;
-                        $fileSize = isset($status['file_size']) ? number_format($status['file_size'] / 1024, 1) . ' KB' : 'Unknown';
-                        $message .= ", Resources: {$totalResources}, Size: {$fileSize}";
+                    if ($status === 'completed') {
+                        $totalResources = $archiveStatus->getTotalResources() ?? 0;
+                        $fileSize = $archiveStatus->getFileSize();
+                        $fileSizeText = $fileSize == 0 ? '0 KB' : number_format($fileSize / 1024, 1) . ' KB';
+                        $url = $archiveStatus->getDownloadUrl();
+                        $message .= <<<EOL
+                        , Resources: {$totalResources}, Size: {$fileSizeText}
+                        <div>
+                            <a href="$url" >Download</a>
+                        </div>
+                        EOL;
                     }
                 } else {
                     $error = "Archive not found or invalid archive ID";
@@ -539,7 +543,7 @@ $filteredTasks = $statusFilter === 'all' ? $allTasks : $queueManager->getTasksBy
 </div>
 
 <?php if ($message): ?>
-    <div class="message success"><?= htmlspecialchars($message) ?></div>
+    <div class="message success"><?= $message ?></div>
 <?php endif; ?>
 
 <?php if ($error): ?>
@@ -915,7 +919,7 @@ $filteredTasks = $statusFilter === 'all' ? $allTasks : $queueManager->getTasksBy
         <h4>Recent Archive Tasks</h4>
         <?php 
         $archiveTasks = array_filter($allTasks, function($task) {
-            return $task->getKey() === \Vanderbilt\FhirSnapshot\Constants::TASK_FHIR_ARCHIVE;
+            return $task->getKey() === \Vanderbilt\FhirSnapshot\Constants::TASK_ARCHIVE;
         });
         $archiveTasks = array_slice(array_reverse($archiveTasks), 0, 5); // Show last 5
         ?>

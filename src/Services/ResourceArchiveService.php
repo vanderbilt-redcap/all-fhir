@@ -195,7 +195,7 @@ class ResourceArchiveService
         // First, try to get status from queue (background-processed archives)
         $task = $this->queueManager->getTaskById($archiveId);
         
-        if ($task && $task->getKey() === Constants::TASK_FHIR_ARCHIVE) {
+        if ($task && $task->getKey() === Constants::TASK_ARCHIVE) {
             $archiveStatus = ArchiveStatus::fromTask($task);
             
             // Add download URL if completed
@@ -262,8 +262,8 @@ class ResourceArchiveService
         // First, try to get status from queue (for background-processed archives)
         $status = $this->getArchiveStatus($archiveId);
         
-        if ($status && $status['status'] === 'completed') {
-            $filePath = $status['file_path'] ?? null;
+        if ($status && $status->getStatus() === 'completed') {
+            $filePath = $status->getFilePath() ?? null;
             
             // MANDATORY: Validate file path with strict security checks
             if ($filePath && $this->securityValidator->validatePath($filePath)) {
@@ -299,7 +299,7 @@ class ResourceArchiveService
         $completedTasks = $this->queueManager->getTasksByStatus('completed');
         
         foreach ($completedTasks as $task) {
-            if ($task->getKey() !== Constants::TASK_FHIR_ARCHIVE) {
+            if ($task->getKey() !== Constants::TASK_ARCHIVE) {
                 continue;
             }
 
@@ -475,7 +475,7 @@ class ResourceArchiveService
         ];
 
         $task = \Vanderbilt\FhirSnapshot\ValueObjects\Task::create(
-            Constants::TASK_FHIR_ARCHIVE, 
+            Constants::TASK_ARCHIVE, 
             $taskParams, 
             $taskMetadata
         );

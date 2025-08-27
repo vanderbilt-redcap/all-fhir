@@ -4,9 +4,7 @@ namespace Vanderbilt\FhirSnapshot\Services;
 
 use Vanderbilt\FhirSnapshot\ValueObjects\MappingResource;
 use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
-use Vanderbilt\FhirSnapshot\ValueObjects\Task;
 use Vanderbilt\FhirSnapshot\Queue\QueueManager;
-use Vanderbilt\FhirSnapshot\Constants;
 
 /**
  * ResourceSynchronizationService
@@ -27,16 +25,14 @@ use Vanderbilt\FhirSnapshot\Constants;
  * 
  * RESOURCE MAPPING CREATED:
  * - Creates FhirResourceMetadata instances for all existing MRNs in the project
- * - Initializes status as PENDING for immediate processing readiness
- * - Creates single generic FHIR fetch task (only if no pending task exists)
- * - Returns task objects for tracking and monitoring
+ * - Initializes status as PENDING for automatic processing by cron job
  * - Ensures new mappings are immediately available across all patients
  * 
  * RESOURCE MAPPING UPDATED:
  * - Identifies existing instances by mapping resource name/spec
  * - Marks current instances as OUTDATED to preserve historical data
  * - Creates new instances with updated mapping configuration
- * - Enqueues refetch task to update data with new specifications
+ * - Resources will be automatically fetched by cron job
  * - Maintains audit trail while transitioning to new configuration
  * 
  * RESOURCE MAPPING DELETED:
@@ -49,8 +45,7 @@ use Vanderbilt\FhirSnapshot\Constants;
  * NEW MRN/PATIENT ADDED:
  * - Creates resource instances for all currently active mappings
  * - Ensures new patients have complete resource coverage
- * - Enqueues targeted fetch task for new patient data
- * - Integrates seamlessly with existing processing pipeline
+ * - Resources will be automatically fetched by cron job
  * 
  * ADVANCED SYNCHRONIZATION FEATURES:
  * 
@@ -68,8 +63,6 @@ use Vanderbilt\FhirSnapshot\Constants;
  * - Project-wide data integrity verification
  * 
  * QUEUE COORDINATION:
- * - Intelligent task deduplication to prevent duplicate processing
- * - Single generic task creation for bulk operations
  * - Task removal for deleted resources
  * - Queue status integration with sync reporting
  * 
@@ -80,10 +73,10 @@ use Vanderbilt\FhirSnapshot\Constants;
  * - MRN coverage and completion tracking
  * 
  * USAGE PATTERNS:
- * - syncMappingResourceCreated($resource, $existingMrns) - New mapping added
- * - syncMappingResourceUpdated($resource, $existingMrns) - Configuration changed
- * - syncMappingResourceDeleted($resource, $existingMrns) - Mapping removed
- * - syncNewMrn($mrn, $activeResources) - Patient added to project
+ * - syncMappingResourceCreated($resource, $existingMrns) - New mapping added (no return value)
+ * - syncMappingResourceUpdated($resource, $existingMrns) - Configuration changed (no return value)
+ * - syncMappingResourceDeleted($resource, $existingMrns) - Mapping removed (returns archived instances)
+ * - syncNewMrn($mrn, $activeResources) - Patient added to project (no return value)
  * - compareConfiguredVsExisting($configured, $mrns) - Gap analysis
  * - cleanupOrphanedInstances($orphaned) - Data cleanup
  * - getProjectSyncStatus() - Overall health reporting
@@ -134,13 +127,12 @@ class ResourceSynchronizationService
      * Synchronize the creation of a new FHIR resource mapping across all existing patients
      * 
      * Creates repeated form instances for every MRN in the project, initializes them with
-     * PENDING status, and creates a processing task if none exists.
+     * PENDING status. Resources will be automatically fetched by the cron job.
      * 
      * @param MappingResource $resource New mapping resource configuration
      * @param array $existingMrns Array of MRN strings currently in the project
-     * @return array Array of created tasks (empty if no task needed)
      */
-    public function syncMappingResourceCreated(MappingResource $resource, array $existingMrns): array
+    public function syncMappingResourceCreated(MappingResource $resource, array $existingMrns): void
     {
         // Create metadata instances for all MRNs
         $createdInstances = 0;
@@ -161,31 +153,19 @@ class ResourceSynchronizationService
             $createdInstances++;
         }
         
-        // Create simple generic FHIR fetch task only if none pending
-        if (!$this->hasPendingFhirFetchTask()) {
-            $task = Task::create(Constants::TASK_FHIR_FETCH, [
-                'trigger' => 'new_mapping_resource' // Optional context for logging
-            ]);
-            
-            $this->queueManager->addTask($task->getKey(), $task->getParams(), $task->getMetadata());
-            
-            return [$task];
-        }
-        
-        return []; // No new task needed - existing pending task will handle it
+        // Resources are now automatically fetched by cron job
     }
 
     /**
      * Synchronize updates to an existing FHIR resource mapping configuration
      * 
      * Marks existing instances as OUTDATED to preserve historical data, creates new 
-     * instances with updated configuration, and enqueues refetch tasks.
+     * instances with updated configuration. Resources will be automatically fetched by the cron job.
      * 
      * @param MappingResource $resource Updated mapping resource configuration
      * @param array $existingMrns Array of MRN strings currently in the project
-     * @return array Array of created tasks (empty if no task needed)
      */
-    public function syncMappingResourceUpdated(MappingResource $resource, array $existingMrns): array
+    public function syncMappingResourceUpdated(MappingResource $resource, array $existingMrns): void
     {
         // Mark existing instances as outdated and create new instances
         $updatedInstances = 0;
@@ -219,18 +199,7 @@ class ResourceSynchronizationService
             $newInstances++;
         }
         
-        // Create simple generic FHIR fetch task for refetch only if none pending
-        if (!$this->hasPendingFhirFetchTask()) {
-            $task = Task::create(Constants::TASK_FHIR_FETCH, [
-                'trigger' => 'updated_mapping_resource' // Optional context for logging
-            ]);
-            
-            $this->queueManager->addTask($task->getKey(), $task->getParams(), $task->getMetadata());
-            
-            return [$task];
-        }
-        
-        return []; // No new task needed - existing pending task will handle it
+        // Resources are now automatically fetched by cron job
     }
 
     /**
@@ -288,17 +257,17 @@ class ResourceSynchronizationService
      * Synchronize the addition of a new patient/MRN with all active resource mappings
      * 
      * Creates resource instances for all currently configured mappings, ensuring the
-     * new patient has complete resource coverage from the start.
+     * new patient has complete resource coverage from the start. Resources will be
+     * automatically fetched by the cron job.
      * 
      * @param string $mrn Medical Record Number of the newly added patient
      * @param array $activeResources Array of MappingResource objects currently active
-     * @return array Array of created tasks (empty if no task needed)
      */
-    public function syncNewMrn(string $mrn, array $activeResources): array
+    public function syncNewMrn(string $mrn, array $activeResources): void
     {
         $recordId = $this->dataAccessor->getRecordIdByMrn($mrn);
         if (!$recordId) {
-            return [];
+            return;
         }
         
         // Create metadata instances for all active resources for this MRN
@@ -315,18 +284,7 @@ class ResourceSynchronizationService
             $createdInstances++;
         }
         
-        // Create simple generic FHIR fetch task for new MRN only if none pending
-        if (!$this->hasPendingFhirFetchTask()) {
-            $task = Task::create(Constants::TASK_FHIR_FETCH, [
-                'trigger' => 'new_mrn' // Optional context for logging
-            ]);
-            
-            $this->queueManager->addTask($task->getKey(), $task->getParams(), $task->getMetadata());
-            
-            return [$task];
-        }
-        
-        return []; // No new task needed - existing pending task will handle it
+        // Resources are now automatically fetched by cron job
     }
 
     /**
@@ -424,26 +382,6 @@ class ResourceSynchronizationService
         return $cleanedCount;
     }
 
-    /**
-     * Check if there are any pending FHIR fetch tasks in the queue
-     * 
-     * Used to prevent creating duplicate tasks when one already exists that can handle
-     * the new work. Implements intelligent task deduplication.
-     * 
-     * @return bool True if there is at least one pending FHIR fetch task
-     */
-    private function hasPendingFhirFetchTask(): bool
-    {
-        $pendingTasks = $this->queueManager->getTasksByStatus('pending');
-        
-        foreach ($pendingTasks as $task) {
-            if ($task->getKey() === Constants::TASK_FHIR_FETCH) {
-                return true;
-            }
-        }
-        
-        return false;
-    }
 
     /**
      * Generate comprehensive project synchronization status report

@@ -171,12 +171,9 @@ class ArchiveController extends AbstractController
      * @param Response $response HTTP response object for file streaming
      * @return Response File download response or JSON error response
      */
-    public function downloadArchive(Request $request, Response $response): Response
+    public function downloadArchive(Request $request, Response $response, $archiveId): Response
     {
         try {
-            // Extract archive ID from request path
-            $archiveId = $request->getAttribute('archive_id');
-            
             if (empty($archiveId)) {
                 return $this->jsonResponse($response, [
                     'success' => false,
@@ -198,10 +195,8 @@ class ArchiveController extends AbstractController
             $status = $this->archiveService->getArchiveStatus($archiveId);
             $fileName = basename($filePath);
             
-            // If we have stored file name from status, use that instead
-            if ($status && !empty($status['file_name'])) {
-                $fileName = $status['file_name'];
-            }
+            // check if there is nother name in the info
+            $fileName = ($status && ($info = $status->getArchiveInfo())) ? $info->getFileName() : $fileName;
 
             // Stream the file with appropriate headers
             return $this->streamFile($response, $filePath, $fileName);

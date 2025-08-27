@@ -82,6 +82,7 @@ return function (ContainerBuilder $containerBuilder) {
             $c->get(FhirSnapshot::class),
             $c->get(ArchiveUrlService::class)
         ),
+        ArchiveProcessor::class => fn(Container $c) => new ArchiveProcessor($c->get(ArchivePackager::class)),
         ResourceArchiveService::class => fn(Container $c) => new ResourceArchiveService(
             $c->get(FhirSnapshot::class),
             $c->get(RepeatedFormDataAccessor::class),

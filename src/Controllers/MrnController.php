@@ -193,7 +193,7 @@ class MrnController extends AbstractController
 
             // Use resource manager to handle MRN addition with configured resources
             $configuredResources = $this->module->getAllConfiguredMappingResources();
-            $tasks = $this->resourceManager->addMrn($mrn, $configuredResources);
+            $this->resourceManager->addMrn($mrn, $configuredResources);
 
             // Get the newly created resource status
             $resourceStatus = $this->resourceManager->getResourceStatus($mrn);
@@ -217,7 +217,6 @@ class MrnController extends AbstractController
                 'resources' => $resources,
                 'status_counts' => ['pending' => count($resources)],
                 'total_resources' => count($resources),
-                'tasks_created' => count($tasks)
             ];
 
             $response->getBody()->write(json_encode($newMrn));

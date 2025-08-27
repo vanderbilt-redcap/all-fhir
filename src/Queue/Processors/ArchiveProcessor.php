@@ -70,9 +70,12 @@ use Vanderbilt\FhirSnapshot\Services\ArchivePackager;
  */
 class ArchiveProcessor extends AbstractTaskProcessor
 {
+
+    function __construct(private ArchivePackager $archivePackager) {}
+
     public function getTaskKey(): string
     {
-        return Constants::TASK_FHIR_ARCHIVE;
+        return Constants::TASK_ARCHIVE;
     }
 
     protected function doProcess(Task $task): TaskProcessorResult
@@ -108,8 +111,6 @@ class ArchiveProcessor extends AbstractTaskProcessor
         $startMemory = memory_get_usage(true);
 
         try {
-            // Create archive packager instance
-            $archivePackager = new ArchivePackager();
 
             // Package the resources into ZIP archive
             $packagingOptions = array_merge($options, [
@@ -118,7 +119,7 @@ class ArchiveProcessor extends AbstractTaskProcessor
                 'include_metadata' => true
             ]);
 
-            $archiveInfo = $archivePackager->packageResources($resources, $packagingOptions);
+            $archiveInfo = $this->archivePackager->packageResources($resources, $packagingOptions);
 
             $endTime = microtime(true);
             $endMemory = memory_get_usage(true);

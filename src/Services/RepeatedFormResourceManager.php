@@ -7,7 +7,6 @@ use Vanderbilt\FhirSnapshot\ValueObjects\MappingResource;
 use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
 use Vanderbilt\FhirSnapshot\Queue\QueueManager;
 use Vanderbilt\FhirSnapshot\Services\FhirResourceService;
-use Vanderbilt\FhirSnapshot\Constants;
 
 /**
  * RepeatedFormResourceManager
@@ -28,6 +27,7 @@ use Vanderbilt\FhirSnapshot\Constants;
  * - Add/update/remove mapping resources with automatic synchronization
  * - Handles MRN addition with automatic resource instance creation
  * - Manages the complete lifecycle of resource mappings
+ * - Resources are automatically fetched by cron job (no task creation)
  * 
  * RESOURCE STATUS & MONITORING:
  * - Provides resource status by MRN and resource type
@@ -53,7 +53,9 @@ use Vanderbilt\FhirSnapshot\Constants;
  * - Provides detailed error handling and status reporting
  * 
  * USAGE EXAMPLES:
- * - $manager->addMappingResource($resource) - Add new FHIR resource mapping
+ * - $manager->addMappingResource($resource) - Add new FHIR resource mapping (void return)
+ * - $manager->updateMappingResource($resource) - Update existing mapping (void return)
+ * - $manager->addMrn($mrn, $resources) - Add new MRN to project (void return)
  * - $manager->getResourceStatus($mrn) - Get all resources for an MRN
  * - $manager->retryFailedResource($mrn, $type, $instance) - Retry failed fetch
  * - $manager->forceFetchResourcesByMrns($mrns, $metadataFilter) - Real-time force fetch (MRN-based)
@@ -101,27 +103,60 @@ class RepeatedFormResourceManager
         return $this->dataAccessor->getAllMrns();
     }
 
-    public function addMappingResource(MappingResource $resource): array
+    /**
+     * Add a new FHIR resource mapping to the project
+     * 
+     * Creates resource instances for all existing MRNs in the project. Resources will be
+     * automatically fetched by the cron job.
+     * 
+     * @param MappingResource $resource New mapping resource configuration
+     */
+    public function addMappingResource(MappingResource $resource): void
     {
         $existingMrns = $this->dataAccessor->getAllMrns();
-        return $this->syncService->syncMappingResourceCreated($resource, $existingMrns);
+        $this->syncService->syncMappingResourceCreated($resource, $existingMrns);
     }
 
-    public function updateMappingResource(MappingResource $resource): array
+    /**
+     * Update an existing FHIR resource mapping configuration
+     * 
+     * Marks existing instances as outdated and creates new instances with updated configuration.
+     * Resources will be automatically fetched by the cron job.
+     * 
+     * @param MappingResource $resource Updated mapping resource configuration
+     */
+    public function updateMappingResource(MappingResource $resource): void
     {
         $existingMrns = $this->dataAccessor->getAllMrns();
-        return $this->syncService->syncMappingResourceUpdated($resource, $existingMrns);
+        $this->syncService->syncMappingResourceUpdated($resource, $existingMrns);
     }
 
+    /**
+     * Remove a FHIR resource mapping from the project
+     * 
+     * Marks existing instances as deleted while preserving historical data.
+     * 
+     * @param MappingResource $resource Mapping resource to be deleted
+     * @return array Array of archived instance details for reporting
+     */
     public function removeMappingResource(MappingResource $resource): array
     {
         $existingMrns = $this->dataAccessor->getAllMrns();
         return $this->syncService->syncMappingResourceDeleted($resource, $existingMrns);
     }
 
-    public function addMrn(string $mrn, array $activeResources): array
+    /**
+     * Add a new patient/MRN to the project
+     * 
+     * Creates resource instances for all currently active mappings. Resources will be
+     * automatically fetched by the cron job.
+     * 
+     * @param string $mrn Medical Record Number of the newly added patient
+     * @param array $activeResources Array of MappingResource objects currently active
+     */
+    public function addMrn(string $mrn, array $activeResources): void
     {
-        return $this->syncService->syncNewMrn($mrn, $activeResources);
+        $this->syncService->syncNewMrn($mrn, $activeResources);
     }
 
     public function getResourceStatus(string $mrn, ?string $resourceType = null): array
@@ -187,12 +222,11 @@ class RepeatedFormResourceManager
             return false;
         }
         
-        // Use extracted logic to mark as pending and create task
+        // Mark as pending for automatic processing by cron job
         $resources = [['record_id' => $recordId, 'metadata' => $metadata]];
         $this->markResourcesAsPending($resources);
-        $this->ensureFetchTaskCreated('retry_single_resource');
         
-        return true; // Retry marked as pending, will be processed by existing or new task
+        return true; // Resource marked as pending, will be processed by cron job
     }
 
     /**
@@ -228,12 +262,8 @@ class RepeatedFormResourceManager
             }
         }
         
-        // Use extracted logic to mark resources as pending and create task
+        // Mark resources as pending for automatic processing by cron job
         $retriedCount = $this->markResourcesAsPending($resourcesToRetry);
-        
-        if ($retriedCount > 0) {
-            $this->ensureFetchTaskCreated('bulk_retry_failed');
-        }
         
         return $retriedCount;
     }
@@ -242,8 +272,8 @@ class RepeatedFormResourceManager
      * Perform full synchronization between configured resources and existing data
      * 
      * Coordinates comprehensive project synchronization by analyzing configured mapping 
-     * resources against existing data instances, creating missing instances, cleaning up 
-     * orphaned data, and creating background tasks for FHIR data fetching.
+     * resources against existing data instances, creating missing instances, and cleaning up 
+     * orphaned data. Resources will be automatically fetched by the cron job.
      * 
      * RECOMMENDED USAGE:
      * ```php
@@ -256,11 +286,10 @@ class RepeatedFormResourceManager
      * - Compares configured vs existing resource instances across all MRNs
      * - Creates missing resource instances for incomplete patient coverage
      * - Cleans up orphaned instances from removed mapping configurations
-     * - Creates background tasks for FHIR data fetching when needed
      * - Provides detailed results for monitoring and reporting
      * 
      * @param MappingResource[] $configuredResources Array of configured mapping resources
-     * @return array Sync results with task info, comparison data, and cleanup counts
+     * @return array Sync results with comparison data and cleanup counts
      */
     public function performFullSync(array $configuredResources): array
     {
@@ -268,7 +297,6 @@ class RepeatedFormResourceManager
         $comparison = $this->syncService->compareConfiguredVsExisting($configuredResources, $existingMrns);
         
         $syncResults = [
-            'created_tasks' => [],
             'cleaned_instances' => 0,
             'comparison' => $comparison
         ];
@@ -306,16 +334,7 @@ class RepeatedFormResourceManager
             $createdInstances++;
         }
         
-        // Create simple generic sync task if there are missing instances and no pending task
-        if ($createdInstances > 0) {
-            $taskCreated = $this->ensureFetchTaskCreated('full_sync');
-            if ($taskCreated) {
-                $task = \Vanderbilt\FhirSnapshot\ValueObjects\Task::create(Constants::TASK_FHIR_FETCH, [
-                    'trigger' => 'full_sync'
-                ]);
-                $syncResults['created_tasks'][] = $task->toArray();
-            }
-        }
+        // Resources will be automatically fetched by cron job
         
         $syncResults['cleaned_instances'] = $this->syncService->cleanupOrphanedInstances($comparison['orphaned_instances']);
         
@@ -695,24 +714,6 @@ class RepeatedFormResourceManager
     }
 
     /**
-     * Check if there are any pending FHIR fetch tasks in the queue
-     * 
-     * @return bool True if there is at least one pending FHIR fetch task
-     */
-    private function hasPendingFhirFetchTask(): bool
-    {
-        $pendingTasks = $this->queueManager->getTasksByStatus('pending');
-        
-        foreach ($pendingTasks as $task) {
-            if ($task->getKey() === Constants::TASK_FHIR_FETCH) {
-                return true;
-            }
-        }
-        
-        return false;
-    }
-
-    /**
      * Mark multiple resources as pending and clear any error messages
      * 
      * @param array $resources Array of arrays with keys: record_id, metadata (FhirResourceMetadata)
@@ -735,26 +736,6 @@ class RepeatedFormResourceManager
         }
         
         return $markedCount;
-    }
-
-    /**
-     * Create FHIR fetch task if none are currently pending
-     * 
-     * @param string $trigger Description of what triggered this fetch operation
-     * @return bool True if a new task was created, false if one already exists
-     */
-    private function ensureFetchTaskCreated(string $trigger): bool
-    {
-        if ($this->hasPendingFhirFetchTask()) {
-            return false;
-        }
-        
-        $task = \Vanderbilt\FhirSnapshot\ValueObjects\Task::create(Constants::TASK_FHIR_FETCH, [
-            'trigger' => $trigger
-        ]);
-        
-        $this->queueManager->addTask($task->getKey(), $task->getParams(), $task->getMetadata());
-        return true;
     }
 
 }

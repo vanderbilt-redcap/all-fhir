@@ -31,7 +31,7 @@ class ExtractRouteMiddleware implements MiddlewareInterface
             $uri = $request->getUri()->withPath($route);
 
             // Replace the URI in the request
-            $request = $request->withUri($uri);
+            $request = $request->withUri($uri)->withQueryParams($queryParams);
         }
 
         // Process the request with the next middleware or route

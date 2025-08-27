@@ -324,11 +324,16 @@ class FhirSnapshot extends AbstractExternalModule {
             'page' => 'api',
             'type' => 'module', 
             'prefix' => self::PREFIX,
-            'route' => $route,
+            // 'route' => $route,
             'redcap_csrf_token' => \System::getCsrfToken()
         ];
         
         $baseUrl = APP_PATH_WEBROOT . 'api/';
-        return $baseUrl . '?' . http_build_query($params);
+
+        // build query string without route
+        $query = http_build_query($params);
+
+        // append route manually, raw (slashes preserved)
+        return $baseUrl . '?' . $query . '&route=' . $route;
     }
 }
