@@ -18,6 +18,7 @@ use Vanderbilt\FhirSnapshot\Services\RepeatedFormResourceManager;
 use Vanderbilt\FhirSnapshot\Services\ResourceSynchronizationService;
 use Vanderbilt\FhirSnapshot\Services\ResourceArchiveService;
 use Vanderbilt\FhirSnapshot\Services\ArchivePackager;
+use Vanderbilt\FhirSnapshot\Services\ArchiveUrlService;
 use Vanderbilt\FhirSnapshot\Services\ResourceFetcher;
 use Vanderbilt\FhirSnapshot\Queue\QueueManager;
 use Vanderbilt\FhirSnapshot\Queue\QueueProcessor;
@@ -76,12 +77,17 @@ return function (ContainerBuilder $containerBuilder) {
         ),
         
         // Archive services
-        ArchivePackager::class => fn() => new ArchivePackager(),
+        ArchiveUrlService::class => fn(Container $c) => new ArchiveUrlService($c->get(FhirSnapshot::class)),
+        ArchivePackager::class => fn(Container $c) => new ArchivePackager(
+            $c->get(FhirSnapshot::class),
+            $c->get(ArchiveUrlService::class)
+        ),
         ResourceArchiveService::class => fn(Container $c) => new ResourceArchiveService(
             $c->get(FhirSnapshot::class),
             $c->get(RepeatedFormDataAccessor::class),
             $c->get(ArchivePackager::class),
-            $c->get(QueueManager::class)
+            $c->get(QueueManager::class),
+            $c->get(ArchiveUrlService::class)
         ),
 
         // Define how to instantiate queue components

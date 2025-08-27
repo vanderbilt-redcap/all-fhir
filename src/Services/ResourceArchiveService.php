@@ -6,6 +6,8 @@ use Vanderbilt\FhirSnapshot\FhirSnapshot;
 use Vanderbilt\FhirSnapshot\Queue\QueueManager;
 use Vanderbilt\FhirSnapshot\Constants;
 use Vanderbilt\FhirSnapshot\Security\PathSecurityValidator;
+use Vanderbilt\FhirSnapshot\ValueObjects\ArchiveInfo;
+use Vanderbilt\FhirSnapshot\ValueObjects\ArchiveStatus;
 
 /**
  * ResourceArchiveService
@@ -72,12 +74,14 @@ class ResourceArchiveService
      * @param RepeatedFormDataAccessor $dataAccessor Data access for FHIR resource metadata
      * @param ArchivePackager $archivePackager Low-level ZIP creation and file management
      * @param QueueManager $queueManager Background task management
+     * @param ArchiveUrlService $urlService URL generation service for download links
      */
     public function __construct(
         private FhirSnapshot $module,
         private RepeatedFormDataAccessor $dataAccessor,
         private ArchivePackager $archivePackager,
         private QueueManager $queueManager,
+        private ArchiveUrlService $urlService,
     ) {
         $this->projectId = $module->getProjectId();
         $this->securityValidator = new PathSecurityValidator(
@@ -181,61 +185,57 @@ class ResourceArchiveService
      * Get status information for a specific archive task
      * 
      * Handles both background-processed archives (queue tasks) and immediate archives.
-     * For immediate archives, returns status as 'completed' since they are created synchronously.
+     * Returns ArchiveStatus value object with proper download URLs generated.
      * 
      * @param string $archiveId The archive task identifier
-     * @return array|null Archive status information or null if not found
+     * @return ArchiveStatus|null Archive status information or null if not found
      */
-    public function getArchiveStatus(string $archiveId): ?array
+    public function getArchiveStatus(string $archiveId): ?ArchiveStatus
     {
         // First, try to get status from queue (background-processed archives)
         $task = $this->queueManager->getTaskById($archiveId);
         
         if ($task && $task->getKey() === Constants::TASK_FHIR_ARCHIVE) {
-            $status = [
-                'archive_id' => $archiveId,
-                'status' => $task->getStatus(),
-                'created_at' => $task->getCreatedAt(),
-                'updated_at' => $task->getUpdatedAt(),
-                'metadata' => $task->getMetadata(),
-                'processing_mode' => 'background'
-            ];
-
-            // Add download info if completed
-            if ($task->getStatus() === 'completed') {
-                $metadata = $task->getMetadata();
-                $status['download_url'] = $metadata['download_url'] ?? null;
-                $status['file_path'] = $metadata['file_path'] ?? null;
-                $status['file_size'] = $metadata['file_size'] ?? null;
-                $status['total_resources'] = $metadata['total_resources'] ?? 0;
+            $archiveStatus = ArchiveStatus::fromTask($task);
+            
+            // Add download URL if completed
+            if ($task->getStatus() === ArchiveStatus::STATUS_COMPLETED) {
+                $downloadUrl = $this->urlService->generateDownloadUrl($archiveId);
+                $archiveStatus = $archiveStatus->withDownloadUrl($downloadUrl);
             }
 
-            return $status;
+            return $archiveStatus;
         }
 
         // If not found in queue, check immediate archives
         $immediateArchives = $this->module->getProjectSetting('immediate_archives') ?? [];
         
         if (isset($immediateArchives[$archiveId])) {
-            $archiveInfo = $immediateArchives[$archiveId];
+            $archiveStatus = ArchiveStatus::fromImmediateArchive($archiveId, $immediateArchives[$archiveId]);
             
-            return [
-                'archive_id' => $archiveId,
-                'status' => 'completed', // Immediate archives are always completed
-                'created_at' => $archiveInfo['created_at'],
-                'updated_at' => $archiveInfo['created_at'], // Same as created for immediate
-                'processing_mode' => 'immediate',
-                'file_path' => $archiveInfo['file_path'],
-                'file_name' => $archiveInfo['file_name'],
-                'file_size' => $archiveInfo['file_size'],
-                'total_resources' => $archiveInfo['total_resources'],
-                'successful_files' => $archiveInfo['successful_files'],
-                'failed_files' => $archiveInfo['failed_files'],
-                'download_url' => null // Can be added if needed
-            ];
+            // Add download URL for immediate archives
+            $downloadUrl = $this->urlService->generateDownloadUrl($archiveId);
+            $archiveStatus = $archiveStatus->withDownloadUrl($downloadUrl);
+            
+            return $archiveStatus;
         }
 
         return null;
+    }
+
+    /**
+     * Get archive metadata information for a specific archive
+     * 
+     * Returns only the ArchiveInfo portion without full status details.
+     * Useful when only file information is needed without processing status.
+     * 
+     * @param string $archiveId The archive identifier
+     * @return ArchiveInfo|null Archive metadata or null if not found
+     */
+    public function getArchiveInfo(string $archiveId): ?ArchiveInfo
+    {
+        $status = $this->getArchiveStatus($archiveId);
+        return $status?->getArchiveInfo();
     }
 
     /**
@@ -518,17 +518,17 @@ class ResourceArchiveService
             ]);
 
             // Store immediate archive info for download capability
-            $this->storeImmediateArchiveInfo($archiveInfo['archive_id'], $archiveInfo);
+            $this->storeImmediateArchiveInfo($archiveInfo->getArchiveId(), $archiveInfo->toArray());
 
             return [
                 'success' => true,
                 'message' => 'Archive created successfully',
-                'archive_id' => $archiveInfo['archive_id'],
+                'archive_id' => $archiveInfo->getArchiveId(),
                 'total_resources' => count($resources),
                 'processing_mode' => 'immediate',
-                'file_path' => $archiveInfo['file_path'],
-                'file_size' => $archiveInfo['file_size'],
-                'download_url' => $archiveInfo['download_url'] ?? null
+                'file_path' => $archiveInfo->getFilePath(),
+                'file_size' => $archiveInfo->getFileSize(),
+                'download_url' => $archiveInfo->getDownloadUrl()
             ];
 
         } catch (\Exception $e) {

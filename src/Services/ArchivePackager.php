@@ -2,7 +2,10 @@
 
 namespace Vanderbilt\FhirSnapshot\Services;
 
+use Vanderbilt\FhirSnapshot\FhirSnapshot;
+use Vanderbilt\FhirSnapshot\Services\ArchiveUrlService;
 use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
+use Vanderbilt\FhirSnapshot\ValueObjects\ArchiveInfo;
 use ZipArchive;
 use Exception;
 
@@ -77,6 +80,7 @@ use Exception;
  * - REDCap edocs system: File retrieval through REDCap::getFile()
  * - File system: ZIP creation and temporary file management
  * - FhirResourceMetadata: Resource information and file references
+ * - FhirSnapshot module: URL building for download links
  * - Archive storage: Organized file structure and metadata
  */
 class ArchivePackager
@@ -85,10 +89,15 @@ class ArchivePackager
     private array $createdFiles = [];
 
     /**
-     * Initialize the archive packager with temporary directory setup
+     * Initialize the archive packager with dependencies
+     * 
+     * @param FhirSnapshot $fhirSnapshot FhirSnapshot module instance for project context
+     * @param ArchiveUrlService $urlService URL generation service for download links
      */
-    public function __construct()
-    {
+    public function __construct(
+        private FhirSnapshot $fhirSnapshot,
+        private ArchiveUrlService $urlService
+    ) {
         $this->tempDir = sys_get_temp_dir();
     }
 
@@ -113,10 +122,10 @@ class ArchivePackager
      *   - 'project_id': Project identifier for folder structure
      *   - 'include_metadata': Boolean to include archive_metadata.json
      *   - 'temp_dir': Custom temporary directory path
-     * @return array Archive information with file path, size, and metadata
+     * @return ArchiveInfo Archive information with file path, size, and metadata
      * @throws Exception If ZIP creation fails or resources are invalid
      */
-    public function packageResources(array $resources, array $options = []): array
+    public function packageResources(array $resources, array $options = []): ArchiveInfo
     {
         if (empty($resources)) {
             throw new Exception('No resources provided for packaging');
@@ -165,18 +174,21 @@ class ArchivePackager
             // Get final file size
             $fileSize = file_exists($zipFilePath) ? filesize($zipFilePath) : 0;
 
-            return [
-                'archive_id' => $archiveId,
-                'file_path' => $zipFilePath,
-                'file_name' => $zipFileName,
-                'file_size' => $fileSize,
-                'total_resources' => $archiveStats['total_resources'],
-                'successful_files' => $archiveStats['successful_files'],
-                'failed_files' => $archiveStats['failed_files'],
-                'archive_stats' => $archiveStats,
-                'download_url' => $this->generateDownloadUrl($archiveId),
-                'created_at' => date('c')
-            ];
+            // Generate download URL
+            $downloadUrl = $this->urlService->generateDownloadUrl($archiveId);
+
+            // Create ArchiveInfo object
+            return new ArchiveInfo(
+                archiveId: $archiveId,
+                filePath: $zipFilePath,
+                fileName: $zipFileName,
+                fileSize: $fileSize,
+                totalResources: $archiveStats['total_resources'],
+                successfulFiles: $archiveStats['successful_files'],
+                failedFiles: $archiveStats['failed_files'],
+                downloadUrl: $downloadUrl,
+                createdAt: date('c')
+            );
 
         } catch (Exception $e) {
             $zip->close();
@@ -389,18 +401,6 @@ class ArchivePackager
         return trim($sanitized, '_');
     }
 
-    /**
-     * Generate download URL for archive (implementation depends on REDCap setup)
-     * 
-     * @param string $archiveId Archive identifier
-     * @return string|null Download URL or null if not implemented
-     */
-    private function generateDownloadUrl(string $archiveId): ?string
-    {
-        // This would need to be implemented based on how downloads are handled
-        // in the specific REDCap environment
-        return null;
-    }
 
     /**
      * Get human-readable error message for ZIP creation errors

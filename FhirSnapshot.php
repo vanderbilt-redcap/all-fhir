@@ -44,6 +44,7 @@ use Vanderbilt\FhirSnapshot\Services\ResourceFetcher;
  * 
  * API INTEGRATION:
  * - redcap_module_api() - External API endpoints for automation and integration
+ * - buildApiUrl() - Convenience method for generating proper API URLs with authentication
  * - Support for MRN management, fetch triggering, and status monitoring
  * - JSON-based API responses with proper error handling
  * - Integration points for external systems and workflows
@@ -75,6 +76,12 @@ use Vanderbilt\FhirSnapshot\Services\ResourceFetcher;
  * // Processes background tasks across all enabled projects
  * ```
  * 
+ * API URL BUILDING:
+ * ```php
+ * $downloadUrl = $module->buildApiUrl('archive/12345/download');
+ * // Generates: https://redcap.test/api/?route=archive/12345/download&pid=123&...
+ * ```
+ * 
  * ARCHITECTURAL INTEGRATION:
  * - Extends REDCap's AbstractExternalModule for framework integration
  * - Coordinates with RepeatedFormResourceManager for high-level operations
@@ -95,6 +102,8 @@ use Vanderbilt\FhirSnapshot\Services\ResourceFetcher;
  * - Recovery mechanisms for transient failures and system issues
  */
 class FhirSnapshot extends AbstractExternalModule {
+
+    const PREFIX = 'fhir_snapshot';
 
     private static FhirSnapshot $instance;
     private static ?Container $globalContainer = null;
@@ -299,5 +308,27 @@ class FhirSnapshot extends AbstractExternalModule {
         return (string) $Proj->firstEventId;
     }
 
-
+    /**
+     * Build API URL for the specified route
+     * 
+     * Creates a complete API URL following the REDCap External Module API pattern
+     * with proper authentication parameters and route specification.
+     * 
+     * @param string $route The API route to build URL for
+     * @return string Complete API URL with all required parameters
+     */
+    public function buildApiUrl(string $route): string
+    {
+        $params = [
+            'pid' => $this->getProjectId(),
+            'page' => 'api',
+            'type' => 'module', 
+            'prefix' => self::PREFIX,
+            'route' => $route,
+            'redcap_csrf_token' => \System::getCsrfToken()
+        ];
+        
+        $baseUrl = APP_PATH_WEBROOT . 'api/';
+        return $baseUrl . '?' . http_build_query($params);
+    }
 }
