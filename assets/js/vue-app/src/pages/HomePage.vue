@@ -14,18 +14,24 @@
           <div class="bg-light p-4 rounded">
             <div class="row text-center">
               <div class="col-md-4">
-                <i class="fas fa-cloud-download-alt fa-2x text-success mb-2"></i>
-                <h6>Background Processing</h6>
+                <div class="d-flex gap-2 align-items-start">
+                  <i class="fas fa-cloud-download-alt fa-2x text-success mb-2"></i>
+                  <h6>Background Processing</h6>
+                </div>
                 <small class="text-muted">Reliable queue-based fetching</small>
               </div>
               <div class="col-md-4">
-                <i class="fas fa-shield-alt fa-2x text-info mb-2"></i>
-                <h6>Secure Storage</h6>
+                <div class="d-flex gap-2 align-items-start">
+                  <i class="fas fa-shield-alt fa-2x text-info mb-2"></i>
+                  <h6>Secure Storage</h6>
+                </div>
                 <small class="text-muted">REDCap-native data security</small>
               </div>
               <div class="col-md-4">
-                <i class="fas fa-file-archive fa-2x text-warning mb-2"></i>
-                <h6>Easy Downloads</h6>
+                <div class="d-flex gap-2 align-items-start">
+                  <i class="fas fa-file-archive fa-2x text-warning mb-2"></i>
+                  <h6>Easy Downloads</h6>
+                </div>
                 <small class="text-muted">ZIP archives for research</small>
               </div>
             </div>
@@ -40,7 +46,7 @@
       <div class="row g-4">
         <div class="col-md-6 col-lg-3">
           <div class="card h-100 border-0 shadow-sm">
-            <div class="card-body text-center">
+            <div class="card-body text-center d-flex flex-column">
               <div class="feature-icon mb-3">
                 <i class="fas fa-cogs fa-3x text-primary"></i>
               </div>
@@ -48,7 +54,7 @@
               <p class="card-text text-muted">
                 Select your FHIR system and configure which resource types to fetch from predefined options or custom queries.
               </p>
-              <router-link to="/setup" class="btn btn-outline-primary btn-sm">
+              <router-link to="/setup" class="btn btn-outline-primary btn-sm mt-auto">
                 <i class="fas fa-arrow-right me-1"></i>
                 Configure
               </router-link>
@@ -58,7 +64,7 @@
 
         <div class="col-md-6 col-lg-3">
           <div class="card h-100 border-0 shadow-sm">
-            <div class="card-body text-center">
+            <div class="card-body text-center d-flex flex-column">
               <div class="feature-icon mb-3">
                 <i class="fas fa-search fa-3x text-success"></i>
               </div>
@@ -66,7 +72,7 @@
               <p class="card-text text-muted">
                 Add MRNs, trigger fetches, and monitor real-time status per resource with detailed progress tracking.
               </p>
-              <router-link to="/monitor" class="btn btn-outline-success btn-sm">
+              <router-link to="/monitor" class="btn btn-outline-success btn-sm mt-auto">
                 <i class="fas fa-arrow-right me-1"></i>
                 Monitor
               </router-link>
@@ -76,7 +82,7 @@
 
         <div class="col-md-6 col-lg-3">
           <div class="card h-100 border-0 shadow-sm">
-            <div class="card-body text-center">
+            <div class="card-body text-center d-flex flex-column">
               <div class="feature-icon mb-3">
                 <i class="fas fa-archive fa-3x text-warning"></i>
               </div>
@@ -84,7 +90,7 @@
               <p class="card-text text-muted">
                 Create ZIP archives of completed FHIR resources with flexible filtering and background processing options.
               </p>
-              <router-link to="/archives" class="btn btn-outline-warning btn-sm">
+              <router-link to="/archives" class="btn btn-outline-warning btn-sm mt-auto">
                 <i class="fas fa-arrow-right me-1"></i>
                 Archives
               </router-link>
@@ -94,7 +100,7 @@
 
         <div class="col-md-6 col-lg-3">
           <div class="card h-100 border-0 shadow-sm">
-            <div class="card-body text-center">
+            <div class="card-body text-center d-flex flex-column">
               <div class="feature-icon mb-3">
                 <i class="fas fa-tasks fa-3x text-info"></i>
               </div>
@@ -102,8 +108,8 @@
               <p class="card-text text-muted">
                 Robust queue-based system handles large-scale FHIR fetching with automatic retry and resource management.
               </p>
-              <div class="text-muted small">
-                <i class="fas fa-info-circle me-1"></i>
+              <div class="text-muted small ">
+                <i class="fas fa-info-circle me-1 "></i>
                 Automatic Operation
               </div>
             </div>
@@ -280,15 +286,22 @@
 import { onMounted, computed } from 'vue'
 import { useSettingsStore } from '@/store/SettingsStore'
 import { useMonitorStore } from '@/store/MonitorStore'
+import { storeToRefs } from 'pinia'
 
 const settingsStore = useSettingsStore()
 const monitorStore = useMonitorStore()
+
+const {
+  selectedFhirSystem,
+  selectedMappingResources,
+  selectedCustomMappingResources
+} = storeToRefs(settingsStore)
 
 onMounted(async () => {
   // Load initial data for dashboard
   try {
     await Promise.all([
-      settingsStore.fetchSettings(),
+      settingsStore.fetchProjectSettings(),
       monitorStore.getProjectSummary()
     ])
   } catch (error) {
@@ -296,11 +309,12 @@ onMounted(async () => {
   }
 })
 
+
 // Computed properties for dashboard stats
 const isConfigured = computed(() => {
-  return settingsStore.settings?.selectedFhirSystem && 
-         (settingsStore.settings?.selectedMappingResources?.length > 0 || 
-          settingsStore.settings?.selectedCustomMappingResources?.length > 0)
+  return selectedFhirSystem.value && 
+         (selectedMappingResources.value?.length > 0 || 
+          selectedCustomMappingResources.value?.length > 0)
 })
 
 const showProjectStatus = computed(() => {
@@ -312,8 +326,8 @@ const totalMrns = computed(() => {
 })
 
 const totalResourceTypes = computed(() => {
-  const predefined = settingsStore.settings?.selectedMappingResources?.length || 0
-  const custom = settingsStore.settings?.selectedCustomMappingResources?.length || 0
+  const predefined = selectedMappingResources.value?.length || 0
+  const custom = selectedCustomMappingResources.value?.length || 0
   return predefined + custom
 })
 
