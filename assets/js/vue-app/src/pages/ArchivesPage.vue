@@ -119,7 +119,7 @@
 
     <!-- Archives Table -->
     <div class="card">
-      <div class="card-body">
+      <div class="card-body p-0">
         <div v-if="archiveStore.loading" class="text-center py-5">
           <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Loading archives...</span>

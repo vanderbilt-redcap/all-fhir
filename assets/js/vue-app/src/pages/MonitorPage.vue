@@ -50,7 +50,6 @@
                 ref="archiveOptionsModal" 
                 :selected-mrns="selectedMrnsStrings"
                 :archive-type="archiveType"
-                :estimated-resources="estimatedResources"
                 @create="handleArchiveCreate"
             />
             <ArchiveCreationModal ref="archiveCreationModal" />
@@ -106,7 +105,6 @@ const archiveCreationModal = ref<InstanceType<typeof ArchiveCreationModal> | nul
 
 // Archive state
 const archiveType = ref<'selected' | 'all'>('selected')
-const estimatedResources = ref(0)
 
 // Computed properties for pagination controls
 const page = computed({
@@ -162,17 +160,11 @@ const showArchiveOptionsSelected = async () => {
     }
     
     archiveType.value = 'selected'
-    // Estimate resources based on selected MRNs - could be enhanced with actual API call
-    estimatedResources.value = selectedMrnsStrings.value.length * 10 // rough estimate
-    
     await archiveOptionsModal.value?.show()
 }
 
 const showArchiveOptionsAll = async () => {
     archiveType.value = 'all'
-    // Estimate resources based on project summary
-    estimatedResources.value = monitorStore.projectSummary?.total_completed_resources || 0
-    
     await archiveOptionsModal.value?.show()
 }
 

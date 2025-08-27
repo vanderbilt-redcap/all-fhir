@@ -94,6 +94,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { ArchiveCreateOptions } from '@/models/Archive'
+import { FetchStatus } from '@/models/Mrn'
+import { useMonitorStore } from '@/store/MonitorStore'
 
 interface Props {
   selectedMrns?: string[]
@@ -105,6 +107,8 @@ const props = withDefaults(defineProps<Props>(), {
   selectedMrns: () => [],
   estimatedResources: 0
 })
+
+const monitorStore = useMonitorStore()
 
 const emit = defineEmits<{
   create: [options: ArchiveCreateOptions, archiveType: 'selected' | 'all', selectedMrns?: string[]]
@@ -118,24 +122,91 @@ const options = ref<ArchiveCreateOptions>({
   background_mode: false
 })
 
-// Common FHIR resource types - could be fetched from API
-const availableResourceTypes = [
-  'Patient Demographics',
-  'Lab Results', 
-  'Medications',
-  'Allergies',
-  'Conditions',
-  'Procedures',
-  'Observations',
-  'Encounters',
-  'Care Plans',
-  'Immunizations'
-]
+// Dynamic resource types based on actual data from store
+const availableResourceTypes = computed(() => {
+  const resourceTypes = new Set<string>()
+  
+  if (props.archiveType === 'selected') {
+    // Get resource types from selected MRNs
+    const selectedMrnObjects = monitorStore.mrns.filter(mrn => 
+      props.selectedMrns.includes(mrn.mrn)
+    )
+    
+    selectedMrnObjects.forEach(mrn => {
+      mrn.resources.forEach(resource => {
+        // Only include mapped resources that aren't deleted
+        if (resource.status !== FetchStatus.Deleted && 
+            resource.mapping_type && 
+            resource.resource_spec) {
+          resourceTypes.add(resource.name)
+        }
+      })
+    })
+  } else {
+    // Get resource types from all MRNs in project
+    monitorStore.mrns.forEach(mrn => {
+      mrn.resources.forEach(resource => {
+        // Only include mapped resources that aren't deleted
+        if (resource.status !== FetchStatus.Deleted && 
+            resource.mapping_type && 
+            resource.resource_spec) {
+          resourceTypes.add(resource.name)
+        }
+      })
+    })
+  }
+  
+  return Array.from(resourceTypes).sort()
+})
 
 const defaultArchiveName = computed(() => {
   const timestamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '_')
   const type = props.archiveType === 'selected' ? 'selected' : 'all'
   return `fhir_archive_${type}_${timestamp}`
+})
+
+// Dynamic estimated resources calculation based on selected options
+const estimatedResources = computed(() => {
+  let count = 0
+  const selectedResourceTypes = options.value.resource_types || []
+  
+  if (props.archiveType === 'selected') {
+    // Count resources from selected MRNs
+    const selectedMrnObjects = monitorStore.mrns.filter(mrn => 
+      props.selectedMrns.includes(mrn.mrn)
+    )
+    
+    selectedMrnObjects.forEach(mrn => {
+      mrn.resources.forEach(resource => {
+        // Only count mapped, non-deleted resources
+        if (resource.status !== FetchStatus.Deleted && 
+            resource.mapping_type && 
+            resource.resource_spec) {
+          // If resource types filter is applied, only count matching types
+          if (selectedResourceTypes.length === 0 || selectedResourceTypes.includes(resource.name)) {
+            count++
+          }
+        }
+      })
+    })
+  } else {
+    // Count resources from all MRNs
+    monitorStore.mrns.forEach(mrn => {
+      mrn.resources.forEach(resource => {
+        // Only count mapped, non-deleted resources
+        if (resource.status !== FetchStatus.Deleted && 
+            resource.mapping_type && 
+            resource.resource_spec) {
+          // If resource types filter is applied, only count matching types
+          if (selectedResourceTypes.length === 0 || selectedResourceTypes.includes(resource.name)) {
+            count++
+          }
+        }
+      })
+    })
+  }
+  
+  return count
 })
 
 const isValid = computed(() => {
@@ -158,8 +229,11 @@ const show = async (): Promise<boolean> => {
   options.value = {
     archive_name: '',
     resource_types: [],
-    background_mode: props.estimatedResources > 50 // Auto-suggest background for large collections
+    background_mode: false // Will be calculated dynamically
   }
+  
+  // Auto-suggest background mode for large collections after reset
+  options.value.background_mode = estimatedResources.value > 50
   
   return await archiveOptionsModal.value?.show()
 }
