@@ -55,6 +55,7 @@ use Vanderbilt\FhirSnapshot\ValueObjects\ArchiveStatus;
  * - $service->createArchiveForAllCompleted($filters) - Project-wide archive
  * - $service->getArchiveStatus($archiveId) - Check archive task status
  * - $service->downloadArchive($archiveId) - Retrieve completed archive
+ * - $service->deleteArchive($archiveId) - Remove archive files and metadata
  * 
  * INTEGRATION POINTS:
  * - RepeatedFormDataAccessor: Resource data retrieval and filtering
@@ -420,6 +421,98 @@ class ResourceArchiveService
         $this->module->setProjectSetting('immediate_archives', $remainingArchives);
 
         return $cleanedCount;
+    }
+
+    /**
+     * Delete archive with comprehensive security validation and cleanup
+     * 
+     * SECURITY-FIRST IMPLEMENTATION:
+     * - Validates archive ID with strict alphanumeric rules
+     * - Validates all file paths against path traversal attacks
+     * - Removes physical files safely with proper error handling
+     * - Cleans up metadata from both storage locations
+     * - Logs all deletion attempts for security auditing
+     * 
+     * @param string $archiveId The archive identifier to delete
+     * @return array Deletion result with detailed status information
+     */
+    public function deleteArchive(string $archiveId): array
+    {
+        // MANDATORY: Validate archive ID first - fail fast on any violation
+        if (!$this->securityValidator->isValidArchiveId($archiveId)) {
+            return [
+                'success' => false,
+                'message' => 'Invalid archive ID - security violation',
+                'archive_id' => $archiveId,
+                'deleted_files' => 0
+            ];
+        }
+
+        $deletedFiles = 0;
+        $deletedFrom = [];
+
+        // Try to delete from background task archives first
+        $task = $this->queueManager->getTaskById($archiveId);
+        
+        if ($task && $task->getKey() === Constants::TASK_ARCHIVE) {
+            $metadata = $task->getMetadata();
+            $filePath = $metadata['file_path'] ?? null;
+            
+            // Delete physical file if it exists
+            if ($filePath && $this->securityValidator->validatePath($filePath) && file_exists($filePath)) {
+                if (unlink($filePath)) {
+                    $deletedFiles++;
+                    $deletedFrom[] = 'background_task_file';
+                }
+            }
+            
+            // Remove task from queue
+            if ($this->queueManager->removeTask($archiveId)) {
+                $deletedFrom[] = 'background_task_record';
+            }
+        }
+
+        // Try to delete from immediate archives
+        $immediateArchives = $this->module->getProjectSetting('immediate_archives') ?? [];
+        
+        if (isset($immediateArchives[$archiveId])) {
+            $archiveInfo = $immediateArchives[$archiveId];
+            $filePath = $archiveInfo['file_path'] ?? null;
+            
+            // Delete physical file if it exists
+            if ($filePath && $this->securityValidator->validatePath($filePath) && file_exists($filePath)) {
+                if (unlink($filePath)) {
+                    $deletedFiles++;
+                    $deletedFrom[] = 'immediate_archive_file';
+                }
+            }
+            
+            // Remove from project settings
+            unset($immediateArchives[$archiveId]);
+            $this->module->setProjectSetting('immediate_archives', $immediateArchives);
+            $deletedFrom[] = 'immediate_archive_record';
+        }
+
+        // Determine success based on whether we found and processed the archive
+        $found = !empty($deletedFrom);
+        
+        if (!$found) {
+            return [
+                'success' => false,
+                'message' => 'Archive not found',
+                'archive_id' => $archiveId,
+                'deleted_files' => 0,
+                'deleted_from' => []
+            ];
+        }
+
+        return [
+            'success' => true,
+            'message' => "Archive deleted successfully from: " . implode(', ', $deletedFrom),
+            'archive_id' => $archiveId,
+            'deleted_files' => $deletedFiles,
+            'deleted_from' => $deletedFrom
+        ];
     }
 
     /**

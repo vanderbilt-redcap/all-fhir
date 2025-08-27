@@ -1,5 +1,6 @@
 import z from 'zod'
 export * from './ResourceMapping'
+export * from './Archive'
 
 
 

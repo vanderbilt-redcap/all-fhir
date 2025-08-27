@@ -44,6 +44,7 @@ return function (App $app) {
     $app->post('/archives/selected', [ArchiveController::class, 'archiveSelected']);
     $app->post('/archives/all', [ArchiveController::class, 'archiveAll']);
     $app->get('/archives/{archive_id}/download', [ArchiveController::class, 'downloadArchive']);
+    $app->delete('/archives/{archive_id}', [ArchiveController::class, 'deleteArchive']);
 
     // // Dynamic route
     // $app->get('/user/{id}', function (Request $request, Response $response, array $args) {

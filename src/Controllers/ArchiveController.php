@@ -24,6 +24,7 @@ use Vanderbilt\FhirSnapshot\Services\ResourceArchiveService;
  * - POST /archives/selected → archiveSelected() → ResourceArchiveService::createArchiveForMrns()
  * - POST /archives/all → archiveAll() → ResourceArchiveService::createArchiveForAllCompleted()  
  * - GET /archives/{id}/download → downloadArchive() → ResourceArchiveService::downloadArchive()
+ * - DELETE /archives/{id} → deleteArchive() → ResourceArchiveService::deleteArchive()
  * 
  * REQUEST/RESPONSE FORMAT:
  * - Accepts JSON payloads for creation endpoints
@@ -198,7 +199,7 @@ class ArchiveController extends AbstractController
      * @param Response $response HTTP response object for file streaming
      * @return Response File download response or JSON error response
      */
-    public function downloadArchive(Request $request, Response $response, $archiveId): Response
+    public function downloadArchive(Request $request, Response $response, string $archiveId): Response
     {
         try {
             if (empty($archiveId)) {
@@ -259,5 +260,40 @@ class ArchiveController extends AbstractController
             ->withHeader('Content-Length', (string) $fileSize)
             ->withHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
             ->withBody(new \Slim\Psr7\Stream($fileStream));
+    }
+
+    /**
+     * Delete archive with security validation
+     * 
+     * Handles DELETE requests to remove archive files from both storage locations.
+     * Validates archive ID, removes physical files, and cleans up metadata.
+     * 
+     * @param Request $request HTTP request with archive_id in URL path
+     * @param Response $response HTTP response object
+     * @param string $archiveId Archive identifier from URL path
+     * @return Response JSON response with deletion result
+     */
+    public function deleteArchive(Request $request, Response $response, string $archiveId): Response
+    {
+        try {
+            if (empty($archiveId)) {
+                return $this->jsonResponse($response, [
+                    'success' => false,
+                    'message' => 'Archive ID is required'
+                ], 400);
+            }
+
+            // Delete the archive via service (includes security validation)
+            $result = $this->archiveService->deleteArchive($archiveId);
+            
+            $statusCode = $result['success'] ? 200 : 400;
+            return $this->jsonResponse($response, $result, $statusCode);
+
+        } catch (\Exception $e) {
+            return $this->jsonResponse($response, [
+                'success' => false,
+                'message' => 'Archive deletion failed: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

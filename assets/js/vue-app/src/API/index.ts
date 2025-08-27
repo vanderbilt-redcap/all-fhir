@@ -54,6 +54,37 @@ export const api = {
     return apiClient.get('', { params, responseType: 'blob' })
   },
 
+  // Archive management API methods
+  listArchives() {
+    const params = { route: `archives` }
+    return apiClient.get('', { params })
+  },
+
+  createArchiveSelected(mrns: string[], options?: any) {
+    const params = { route: `archives/selected` }
+    const payload: any = { mrns }
+    if (options) {
+      Object.assign(payload, options)
+    }
+    return apiClient.post('', payload, { params })
+  },
+
+  createArchiveAll(options?: any) {
+    const params = { route: `archives/all` }
+    const payload = options || {}
+    return apiClient.post('', payload, { params })
+  },
+
+  downloadArchive(archiveId: string) {
+    const params = { route: `archives/${archiveId}/download` }
+    return apiClient.get('', { params, responseType: 'blob' })
+  },
+
+  deleteArchive(archiveId: string) {
+    const params = { route: `archives/${archiveId}` }
+    return apiClient.delete('', { params })
+  },
+
   // Enhanced MRN and resource management
   getMrnResources(mrn: string) {
     const params = { route: `mrns/${mrn}/resources` }
