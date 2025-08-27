@@ -3,6 +3,7 @@
         <router-link to="/">Home</router-link>
         <router-link to="/setup">Setup</router-link>
         <router-link to="/monitor">Monitor</router-link>
+        <router-link to="/archives">Archives</router-link>
     </div>
 </template>
 

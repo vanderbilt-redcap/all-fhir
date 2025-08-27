@@ -1,7 +1,11 @@
 <template>
     <div class="p-3">
         <!-- Enhanced Toolbar with Full Sync and Retry Options -->
-        <MonitorToolbar @add-mrn="showAddMrnModal" />
+        <MonitorToolbar 
+            @add-mrn="showAddMrnModal"
+            @create-archive-selected="showArchiveOptionsSelected"
+            @create-archive-all="showArchiveOptionsAll"
+        />
 
         <!-- Project Summary Widget (collapsible) -->
         <div v-if="operationsStore.showSummary" class="mb-4">
@@ -40,6 +44,18 @@
         <!-- Add MRN Modal -->
         <AddMrnModal ref="addMrnModal" />
 
+        <!-- Archive Modals -->
+        <Teleport to="body">
+            <ArchiveOptionsModal 
+                ref="archiveOptionsModal" 
+                :selected-mrns="selectedMrnsStrings"
+                :archive-type="archiveType"
+                :estimated-resources="estimatedResources"
+                @create="handleArchiveCreate"
+            />
+            <ArchiveCreationModal ref="archiveCreationModal" />
+        </Teleport>
+
         <!-- Operation Feedback Toast -->
         <div 
             v-if="operationsStore.showToast && operationsStore.lastOperation"
@@ -71,13 +87,26 @@ import { ref, onMounted, computed } from 'vue'
 import MonitorToolbar from '@/components/monitor/MonitorToolbar.vue'
 import MonitorTable from '@/components/monitor/MonitorTable.vue'
 import AddMrnModal from '@/components/monitor/AddMrnModal.vue'
+import ArchiveOptionsModal from '@/components/monitor/ArchiveOptionsModal.vue'
+import ArchiveCreationModal from '@/components/monitor/ArchiveCreationModal.vue'
 import ProjectSummaryWidget from '@/components/monitor/ProjectSummaryWidget.vue'
 import { useMonitorStore } from '@/store/MonitorStore'
 import { useOperationsStore } from '@/store/OperationsStore'
+import { useArchiveStore } from '@/store/ArchiveStore'
+import type { ArchiveCreateOptions } from '@/models/Archive'
 
 const monitorStore = useMonitorStore()
 const operationsStore = useOperationsStore()
+const archiveStore = useArchiveStore()
+
+// Modal refs
 const addMrnModal = ref<InstanceType<typeof AddMrnModal> | null>(null)
+const archiveOptionsModal = ref<InstanceType<typeof ArchiveOptionsModal> | null>(null)
+const archiveCreationModal = ref<InstanceType<typeof ArchiveCreationModal> | null>(null)
+
+// Archive state
+const archiveType = ref<'selected' | 'all'>('selected')
+const estimatedResources = ref(0)
 
 // Computed properties for pagination controls
 const page = computed({
@@ -103,6 +132,13 @@ const paginationInfo = computed(() => {
     return { start, end, total }
 })
 
+// Archive-specific computed properties
+const selectedMrnsStrings = computed(() => {
+    return monitorStore.mrns
+        .filter(mrn => monitorStore.selectedMrns.includes(mrn.id))
+        .map(mrn => mrn.mrn)
+})
+
 // Methods
 const showAddMrnModal = async () => {
     if (addMrnModal.value) {
@@ -115,6 +151,54 @@ const showAddMrnModal = async () => {
                 operationsStore.recordOperation('add-mrn', false, 'Failed to add MRN')
             }
         }
+    }
+}
+
+// Archive methods
+const showArchiveOptionsSelected = async () => {
+    if (selectedMrnsStrings.value.length === 0) {
+        operationsStore.recordOperation('archive-selected', false, 'No MRNs selected for archive')
+        return
+    }
+    
+    archiveType.value = 'selected'
+    // Estimate resources based on selected MRNs - could be enhanced with actual API call
+    estimatedResources.value = selectedMrnsStrings.value.length * 10 // rough estimate
+    
+    await archiveOptionsModal.value?.show()
+}
+
+const showArchiveOptionsAll = async () => {
+    archiveType.value = 'all'
+    // Estimate resources based on project summary
+    estimatedResources.value = monitorStore.projectSummary?.total_completed_resources || 0
+    
+    await archiveOptionsModal.value?.show()
+}
+
+const handleArchiveCreate = async (options: ArchiveCreateOptions, type: 'selected' | 'all', selectedMrns?: string[]) => {
+    try {
+        let result
+        
+        if (type === 'selected' && selectedMrns) {
+            result = await archiveStore.createArchiveSelected(selectedMrns, options)
+        } else {
+            result = await archiveStore.createArchiveAll(options)
+        }
+        
+        if (result) {
+            // Show creation modal with result
+            archiveCreationModal.value?.show(result)
+            
+            operationsStore.recordOperation(
+                'archive-create', 
+                result.success, 
+                result.message
+            )
+        }
+    } catch (error) {
+        console.error('Failed to create archive:', error)
+        operationsStore.recordOperation('archive-create', false, 'Failed to create archive')
     }
 }
 

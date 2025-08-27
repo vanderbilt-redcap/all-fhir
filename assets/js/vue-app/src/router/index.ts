@@ -4,6 +4,7 @@ import MainLayout from '@/layouts/MainLayout.vue'
 import HomePage from '@/pages/HomePage.vue'
 import SetupPage from '@/pages/SetupPage.vue'
 import MonitorPage from '@/pages/MonitorPage.vue'
+import ArchivesPage from '@/pages/ArchivesPage.vue'
 
 // other
 import NotFoundPage from '@/pages/NotFoundPage.vue'
@@ -20,6 +21,7 @@ const routes = [
             { path: '', name: 'home', component: HomePage, },
             { path: 'setup', name: 'setup', component: SetupPage, },
             { path: 'monitor', name: 'monitor', component: MonitorPage, },
+            { path: 'archives', name: 'archives', component: ArchivesPage, },
             { path: 'error', name: 'error', component: ErrorPage, },
             { path: '/:pathMatch(.*)*', component: NotFoundPage },
         ],

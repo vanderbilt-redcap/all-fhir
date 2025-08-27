@@ -96,10 +96,6 @@ export const useMonitorStore = defineStore('monitor', () => {
     }
   }
 
-  const downloadSelected = async () => {
-    // This would be an API call that takes the selected MRNs
-    console.log('Downloading selected MRNs:', selectedMrns.value)
-  }
 
   const allSelected = computed(() => {
     return mrns.value.length > 0 && selectedMrns.value.length === mrns.value.length
@@ -263,7 +259,6 @@ export const useMonitorStore = defineStore('monitor', () => {
     addMrn,
     fetchMrn,
     fetchSelected,
-    downloadSelected,
     toggleSelectAll,
     toggleSelection,
     setPage,

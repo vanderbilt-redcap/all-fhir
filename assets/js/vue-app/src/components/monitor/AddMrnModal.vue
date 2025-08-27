@@ -1,78 +1,57 @@
 <template>
-    <div class="modal fade" ref="modal" tabindex="-1" aria-labelledby="addMrnModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addMrnModalLabel">Add MRN</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="mrn-input" class="form-label">MRN</label>
-                        <input type="text" class="form-control" id="mrn-input" v-model="mrn" @keyup.enter="submit" />
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @click="cancel">Cancel</button>
-                    <button type="button" class="btn btn-primary" @click="submit">Add</button>
-                </div>
-            </div>
-        </div>
+  <b-modal ref="addMrnModal">
+    <template #title>Add MRN</template>
+    
+    <div class="mb-3">
+      <label for="mrn-input" class="form-label">MRN</label>
+      <input 
+        type="text" 
+        class="form-control" 
+        id="mrn-input" 
+        v-model="mrn" 
+        @keyup.enter="submit(hide)"
+        placeholder="Enter MRN"
+      />
     </div>
+
+    <template #footer="{ hide }">
+      <div class="d-flex gap-2 justify-content-end">
+        <button 
+          type="button" 
+          class="btn btn-sm btn-secondary" 
+          @click="hide(false)"
+        >
+          <i class="fas fa-times fa-fw me-1"></i>Cancel
+        </button>
+        <button 
+          type="button" 
+          class="btn btn-sm btn-primary" 
+          @click="submit(hide)"
+          :disabled="!mrn.trim()"
+        >
+          <i class="fas fa-plus fa-fw me-1"></i>Add
+        </button>
+      </div>
+    </template>
+  </b-modal>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-// @ts-ignore
-import { Modal } from 'bootstrap'
+import { ref } from 'vue'
 
+const addMrnModal = ref<any>(null)
 const mrn = ref('')
-const modal = ref<HTMLElement | null>(null)
-let modalInstance: Modal | null = null
-let resolvePromise: ((value: string | null) => void) | null = null
 
-onMounted(() => {
-    if (modal.value) {
-        modalInstance = new Modal(modal.value)
-        modal.value.addEventListener('hidden.bs.modal', () => {
-            if (resolvePromise) {
-                resolvePromise(null)
-            }
-        })
-    }
-})
-
-onUnmounted(() => {
-    if (modalInstance) {
-        modalInstance.dispose()
-    }
-})
-
-const show = (): Promise<string | null> => {
-    return new Promise((resolve) => {
-        resolvePromise = resolve
-        if (modalInstance) {
-            modalInstance.show()
-        } else {
-            resolve(null)
-        }
-    })
+const show = async (): Promise<string | null> => {
+  mrn.value = ''
+  const result = await addMrnModal.value?.show()
+  return result ? mrn.value : null
 }
 
-const submit = () => {
-    if (resolvePromise) {
-        resolvePromise(mrn.value)
-    }
-    if (modalInstance) {
-        modalInstance.hide()
-    }
-    mrn.value = ''
-}
-
-const cancel = () => {
-    if (modalInstance) {
-        modalInstance.hide()
-    }
+const submit = (hide: Function) => {
+  if (mrn.value.trim()) {
+    hide(true)
+  }
 }
 
 defineExpose({ show })

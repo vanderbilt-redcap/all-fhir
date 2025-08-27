@@ -65,7 +65,7 @@ class ArchiveController extends AbstractController
      * @param Response $response HTTP response object
      * @return Response JSON response with archives list
      */
-    public function listArchives(Response $response): Response
+    public function listArchives(Request $request, Response $response): Response
     {
         try {
             $result = $this->archiveService->listAllArchives();

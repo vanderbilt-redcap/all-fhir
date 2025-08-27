@@ -46,15 +46,22 @@
                 </button>
             </div>
 
-            <!-- Download Actions -->
+            <!-- Archive Actions -->
             <div class="btn-group" role="group">
                 <button 
                     class="btn btn-success"
-                    @click="downloadSelected"
+                    @click="$emit('createArchiveSelected')"
                     :disabled="selectionDisabled"
-                    title="Download ZIP archive of selected completed MRNs"
+                    title="Create archive for selected completed MRNs"
                 >
-                    <i class="fas fa-download fa-fw"></i> Download Selected
+                    <i class="fas fa-archive fa-fw"></i> Create Archive
+                </button>
+                <button 
+                    class="btn btn-outline-success"
+                    @click="$emit('createArchiveAll')"
+                    title="Create archive for all completed resources"
+                >
+                    <i class="fas fa-archive fa-fw"></i> Archive All
                 </button>
             </div>
 
@@ -98,9 +105,11 @@ import { useOperationsStore } from '@/store/OperationsStore'
 const monitorStore = useMonitorStore()
 const operationsStore = useOperationsStore()
 
-// Only emit for actions that need to open modals
+// Emits for actions that need to open modals
 defineEmits<{
     addMrn: []
+    createArchiveSelected: []
+    createArchiveAll: []
 }>()
 
 // Computed properties
@@ -157,20 +166,6 @@ const bulkRetryFailed = async () => {
     } catch (error) {
         console.error('Failed to bulk retry failed resources:', error)
         operationsStore.recordOperation('bulk-retry', false, 'Failed to bulk retry failed resources')
-    }
-}
-
-const downloadSelected = async () => {
-    try {
-        await monitorStore.downloadSelected()
-        operationsStore.recordOperation(
-            'download-selected', 
-            true, 
-            `Download initiated for ${selectedCount.value} selected MRN(s).`
-        )
-    } catch (error) {
-        console.error('Failed to download selected MRNs:', error)
-        operationsStore.recordOperation('download-selected', false, 'Failed to download selected MRNs')
     }
 }
 
