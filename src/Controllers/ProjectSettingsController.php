@@ -183,9 +183,8 @@ class ProjectSettingsController extends AbstractController
             
             // Process added resources
             foreach ($changeResults['added'] as $resource) {
-                $tasks = $this->resourceManager->addMappingResource($resource);
+                $this->resourceManager->addMappingResource($resource);
                 $syncResults['resources_added']++;
-                $syncResults['tasks_created'] += count($tasks);
                 $syncResults['instances_updated'] += count($allMrns);
             }
             
@@ -193,9 +192,8 @@ class ProjectSettingsController extends AbstractController
             foreach ($changeResults['modified'] as $resource) {
                 // For modified resources, we need to update existing instances
                 // This is a simplified approach - in practice you might want more granular control
-                $tasks = $this->resourceManager->updateMappingResource($resource);
+                $this->resourceManager->updateMappingResource($resource);
                 $syncResults['resources_modified']++;
-                $syncResults['tasks_created'] += count($tasks);
                 $syncResults['instances_updated'] += count($allMrns);
             }
             
