@@ -239,6 +239,82 @@ class ResourceArchiveService
     }
 
     /**
+     * List all available archives in the project
+     * 
+     * Retrieves archives from both storage locations (immediate archives and background tasks)
+     * and combines them into a unified response format. Archives are sorted by creation date
+     * with newest first.
+     * 
+     * @return array Array of archive information with unified format
+     */
+    public function listAllArchives(): array
+    {
+        $archives = [];
+
+        // Get immediate archives from project settings
+        $immediateArchives = $this->module->getProjectSetting('immediate_archives') ?? [];
+        
+        foreach ($immediateArchives as $archiveId => $archiveInfo) {
+            $downloadUrl = $this->urlService->generateDownloadUrl($archiveId);
+            
+            $archives[] = [
+                'archive_id' => $archiveId,
+                'status' => 'completed',
+                'created_at' => $archiveInfo['created_at'] ?? '',
+                'file_name' => $archiveInfo['file_name'] ?? 'unknown',
+                'file_size' => $archiveInfo['file_size'] ?? 0,
+                'total_resources' => $archiveInfo['total_resources'] ?? 0,
+                'successful_files' => $archiveInfo['successful_files'] ?? 0,
+                'failed_files' => $archiveInfo['failed_files'] ?? 0,
+                'download_url' => $downloadUrl,
+                'processing_mode' => 'immediate'
+            ];
+        }
+
+        // Get background task archives
+        $allTasks = $this->queueManager->getTasks();
+        
+        foreach ($allTasks as $task) {
+            if ($task->getKey() !== Constants::TASK_ARCHIVE) {
+                continue;
+            }
+
+            $metadata = $task->getMetadata();
+            $params = $task->getParams();
+            $downloadUrl = null;
+            
+            // Only provide download URL for completed tasks
+            if ($task->getStatus() === 'completed') {
+                $downloadUrl = $this->urlService->generateDownloadUrl($task->getId());
+            }
+
+            $archives[] = [
+                'archive_id' => $task->getId(),
+                'status' => $task->getStatus(),
+                'created_at' => $task->getCreatedAt(),
+                'file_name' => $metadata['file_name'] ?? ($params['archive_name'] ?? 'unknown') . '.zip',
+                'file_size' => $metadata['file_size'] ?? 0,
+                'total_resources' => $params['resource_count'] ?? $metadata['total_resources'] ?? 0,
+                'successful_files' => $metadata['successful_files'] ?? 0,
+                'failed_files' => $metadata['failed_files'] ?? 0,
+                'download_url' => $downloadUrl,
+                'processing_mode' => 'background'
+            ];
+        }
+
+        // Sort by creation date (newest first)
+        usort($archives, function($a, $b) {
+            return strtotime($b['created_at']) - strtotime($a['created_at']);
+        });
+
+        return [
+            'success' => true,
+            'archives' => $archives,
+            'total_count' => count($archives)
+        ];
+    }
+
+    /**
      * Download a completed archive file with mandatory security validation
      * 
      * SECURITY-FIRST IMPLEMENTATION:

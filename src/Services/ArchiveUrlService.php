@@ -19,8 +19,8 @@ use Vanderbilt\FhirSnapshot\FhirSnapshot;
  * - Support future URL format changes in single location
  * 
  * URL PATTERNS:
- * - Download URL: /api/?route=archive/{archiveId}/download&pid={pid}&...
- * - Status URL: /api/?route=archive/{archiveId}/status&pid={pid}&...
+ * - Download URL: /api/?route=archives/{archiveId}/download&pid={pid}&...
+ * - Status URL: /api/?route=archives/{archiveId}/status&pid={pid}&...
  * - List URL: /api/?route=archives&pid={pid}&...
  * 
  * INTEGRATION POINTS:
@@ -58,7 +58,7 @@ class ArchiveUrlService
      */
     public function generateDownloadUrl(string $archiveId): string
     {
-        return $this->fhirSnapshot->buildApiUrl("archive/{$archiveId}/download");
+        return $this->fhirSnapshot->buildApiUrl("archives/{$archiveId}/download");
     }
 
     /**
@@ -71,7 +71,7 @@ class ArchiveUrlService
      */
     public function generateStatusUrl(string $archiveId): string
     {
-        return $this->fhirSnapshot->buildApiUrl("archive/{$archiveId}/status");
+        return $this->fhirSnapshot->buildApiUrl("archives/{$archiveId}/status");
     }
 
     /**
@@ -96,7 +96,7 @@ class ArchiveUrlService
      */
     public function generateCreateUrl(string $archiveType): string
     {
-        return $this->fhirSnapshot->buildApiUrl("archive/{$archiveType}");
+        return $this->fhirSnapshot->buildApiUrl("archives/{$archiveType}");
     }
 
     /**
@@ -171,8 +171,8 @@ class ArchiveUrlService
         parse_str($urlParts['query'], $queryParams);
         $route = $queryParams['route'] ?? '';
 
-        // Match pattern: archive/{archiveId}/download
-        if (preg_match('/^archive\/([a-zA-Z0-9_-]+)\/download$/', $route, $matches)) {
+        // Match pattern: archives/{archiveId}/download
+        if (preg_match('/^archives\/([a-zA-Z0-9_-]+)\/download$/', $route, $matches)) {
             return $matches[1];
         }
 

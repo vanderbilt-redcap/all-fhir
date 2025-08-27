@@ -78,8 +78,8 @@ use Vanderbilt\FhirSnapshot\Services\ResourceFetcher;
  * 
  * API URL BUILDING:
  * ```php
- * $downloadUrl = $module->buildApiUrl('archive/12345/download');
- * // Generates: https://redcap.test/api/?route=archive/12345/download&pid=123&...
+ * $downloadUrl = $module->buildApiUrl('archives/12345/download');
+ * // Generates: https://redcap.test/api/?route=archives/12345/download&pid=123&...
  * ```
  * 
  * ARCHITECTURAL INTEGRATION:

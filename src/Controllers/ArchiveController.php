@@ -20,9 +20,10 @@ use Vanderbilt\FhirSnapshot\Services\ResourceArchiveService;
  * - Support both immediate and background processing modes
  * 
  * ENDPOINT MAPPING:
- * - POST /archive/selected → archiveSelected() → ResourceArchiveService::createArchiveForMrns()
- * - POST /archive/all → archiveAll() → ResourceArchiveService::createArchiveForAllCompleted()  
- * - GET /archive/{id}/download → downloadArchive() → ResourceArchiveService::downloadArchive()
+ * - GET /archives → listArchives() → ResourceArchiveService::listAllArchives()
+ * - POST /archives/selected → archiveSelected() → ResourceArchiveService::createArchiveForMrns()
+ * - POST /archives/all → archiveAll() → ResourceArchiveService::createArchiveForAllCompleted()  
+ * - GET /archives/{id}/download → downloadArchive() → ResourceArchiveService::downloadArchive()
  * 
  * REQUEST/RESPONSE FORMAT:
  * - Accepts JSON payloads for creation endpoints
@@ -51,6 +52,32 @@ class ArchiveController extends AbstractController
     ) {
         parent::__construct($module);
         $this->archiveService = $archiveService;
+    }
+
+    /**
+     * List all available archives for the project
+     * 
+     * Handles GET requests to retrieve all available archives from both immediate
+     * and background processing storage. Returns a unified list with archive metadata,
+     * status information, and download links for completed archives.
+     * 
+     * @param Response $response HTTP response object
+     * @return Response JSON response with archives list
+     */
+    public function listArchives(Response $response): Response
+    {
+        try {
+            $result = $this->archiveService->listAllArchives();
+            return $this->jsonResponse($response, $result, 200);
+
+        } catch (\Exception $e) {
+            return $this->jsonResponse($response, [
+                'success' => false,
+                'message' => 'Failed to retrieve archives: ' . $e->getMessage(),
+                'archives' => [],
+                'total_count' => 0
+            ], 500);
+        }
     }
 
     /**
