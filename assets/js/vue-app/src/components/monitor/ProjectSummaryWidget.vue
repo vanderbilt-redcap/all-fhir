@@ -48,7 +48,7 @@
                         <h6 class="text-muted mb-3">Resource Status</h6>
                         <div class="row g-2">
                             <div v-for="(count, status) in projectSummary.overall_status_counts" :key="status" class="col-6">
-                                <div v-if="count > 0" class="text-center">
+                                <div class="text-center">
                                     <div class="h5 mb-1" :class="getStatusColor(status)">{{ count }}</div>
                                     <small class="text-muted">{{ capitalizeStatus(status) }}</small>
                                 </div>
@@ -66,6 +66,15 @@
                         <div class="row g-3">
                             <div class="col-md-4">
                                 <div class="d-flex align-items-center">
+                                    <i class="fas fa-check-circle fa-fw text-success me-2"></i>
+                                    <div>
+                                        <div class="fw-bold">{{ queueHealthStatus }}</div>
+                                        <small class="text-muted">Queue Health</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-center">
                                     <i class="fas fa-hourglass-half fa-fw text-warning me-2"></i>
                                     <div>
                                         <div class="fw-bold">{{ projectSummary.sync_status.pending_tasks }}</div>
@@ -79,15 +88,6 @@
                                     <div>
                                         <div class="fw-bold">{{ projectSummary.sync_status.failed_tasks }}</div>
                                         <small class="text-muted">Failed Tasks</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-check-circle fa-fw text-success me-2"></i>
-                                    <div>
-                                        <div class="fw-bold">{{ queueHealthStatus }}</div>
-                                        <small class="text-muted">Queue Health</small>
                                     </div>
                                 </div>
                             </div>
@@ -132,6 +132,68 @@
                                 ></div>
                             </div>
                         </div>
+                        
+                        <!-- Comprehensive Status Progress Bar -->
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <small class="text-muted">Resource States Breakdown</small>
+                                <small class="text-muted">{{ activeResources }} active resources</small>
+                            </div>
+                            <div class="progress" style="height: 12px;">
+                                <div 
+                                    v-if="statePercentages.completed > 0"
+                                    class="progress-bar bg-success"
+                                    role="progressbar"
+                                    :style="{ width: statePercentages.completed + '%' }"
+                                    :title="`Completed: ${projectSummary?.overall_status_counts.completed || 0} (${statePercentages.completed}%)`"
+                                ></div>
+                                <div 
+                                    v-if="statePercentages.fetching > 0"
+                                    class="progress-bar bg-info"
+                                    role="progressbar"
+                                    :style="{ width: statePercentages.fetching + '%' }"
+                                    :title="`Fetching: ${projectSummary?.overall_status_counts.fetching || 0} (${statePercentages.fetching}%)`"
+                                ></div>
+                                <div 
+                                    v-if="statePercentages.pending > 0"
+                                    class="progress-bar bg-warning"
+                                    role="progressbar"
+                                    :style="{ width: statePercentages.pending + '%' }"
+                                    :title="`Pending: ${projectSummary?.overall_status_counts.pending || 0} (${statePercentages.pending}%)`"
+                                ></div>
+                                <div 
+                                    v-if="statePercentages.failed > 0"
+                                    class="progress-bar bg-danger"
+                                    role="progressbar"
+                                    :style="{ width: statePercentages.failed + '%' }"
+                                    :title="`Failed: ${projectSummary?.overall_status_counts.failed || 0} (${statePercentages.failed}%)`"
+                                ></div>
+                                <div 
+                                    v-if="statePercentages.outdated > 0"
+                                    class="progress-bar bg-secondary"
+                                    role="progressbar"
+                                    :style="{ width: statePercentages.outdated + '%' }"
+                                    :title="`Outdated: ${projectSummary?.overall_status_counts.outdated || 0} (${statePercentages.outdated}%)`"
+                                ></div>
+                            </div>
+                            <div class="d-flex justify-content-start mt-1" style="font-size: 0.75rem;">
+                                <div v-if="statePercentages.completed > 0" class="me-3">
+                                    <span class="badge bg-success me-1">●</span>Completed
+                                </div>
+                                <div v-if="statePercentages.fetching > 0" class="me-3">
+                                    <span class="badge bg-info me-1">●</span>Fetching
+                                </div>
+                                <div v-if="statePercentages.pending > 0" class="me-3">
+                                    <span class="badge bg-warning me-1">●</span>Pending
+                                </div>
+                                <div v-if="statePercentages.failed > 0" class="me-3">
+                                    <span class="badge bg-danger me-1">●</span>Failed
+                                </div>
+                                <div v-if="statePercentages.outdated > 0" class="me-3">
+                                    <span class="badge bg-secondary me-1">●</span>Outdated
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -160,16 +222,44 @@ const totalResources = computed(() => {
     return Object.values(projectSummary.value.overall_status_counts).reduce((sum, count) => sum + count, 0)
 })
 
+const activeResources = computed(() => {
+    if (!projectSummary.value) return 0
+    const statusCounts = projectSummary.value.overall_status_counts
+    const deleted = statusCounts.deleted || 0
+    return totalResources.value - deleted
+})
+
 const completionPercentage = computed(() => {
-    if (!projectSummary.value || totalResources.value === 0) return 0
+    if (!projectSummary.value || activeResources.value === 0) return 0
     const completed = projectSummary.value.overall_status_counts.completed || 0
-    return Math.round((completed / totalResources.value) * 100)
+    return Math.round((completed / activeResources.value) * 100)
 })
 
 const errorPercentage = computed(() => {
-    if (!projectSummary.value || totalResources.value === 0) return 0
+    if (!projectSummary.value || activeResources.value === 0) return 0
     const failed = projectSummary.value.overall_status_counts.failed || 0
-    return Math.round((failed / totalResources.value) * 100)
+    return Math.round((failed / activeResources.value) * 100)
+})
+
+const statePercentages = computed(() => {
+    if (!projectSummary.value || activeResources.value === 0) {
+        return {
+            completed: 0,
+            failed: 0,
+            fetching: 0,
+            pending: 0,
+            outdated: 0
+        }
+    }
+    
+    const statusCounts = projectSummary.value.overall_status_counts
+    return {
+        completed: Math.round(((statusCounts.completed || 0) / activeResources.value) * 100),
+        failed: Math.round(((statusCounts.failed || 0) / activeResources.value) * 100),
+        fetching: Math.round(((statusCounts.fetching || 0) / activeResources.value) * 100),
+        pending: Math.round(((statusCounts.pending || 0) / activeResources.value) * 100),
+        outdated: Math.round(((statusCounts.outdated || 0) / activeResources.value) * 100)
+    }
 })
 
 const queueHealthStatus = computed(() => {

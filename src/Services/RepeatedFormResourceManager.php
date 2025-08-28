@@ -346,7 +346,6 @@ class RepeatedFormResourceManager
         $allMrns = $this->dataAccessor->getAllMrns();
         $summary = [
             'total_mrns' => count($allMrns),
-            'mrn_summaries' => [],
             'overall_status_counts' => [
                 FhirResourceMetadata::STATUS_PENDING => 0,
                 FhirResourceMetadata::STATUS_FETCHING => 0,
@@ -364,13 +363,6 @@ class RepeatedFormResourceManager
             }
             
             $statusCounts = $this->dataAccessor->getResourceStatusCounts($recordId);
-            $allMetadata = $this->dataAccessor->getAllResourceMetadata($recordId);
-            
-            $summary['mrn_summaries'][$mrn] = [
-                'status_counts' => $statusCounts,
-                'total_resources' => count($allMetadata),
-                'resource_types' => array_unique(array_map(fn(FhirResourceMetadata $m) => $m->getMappingType(), $allMetadata))
-            ];
             
             foreach ($statusCounts as $status => $count) {
                 $summary['overall_status_counts'][$status] += $count;
