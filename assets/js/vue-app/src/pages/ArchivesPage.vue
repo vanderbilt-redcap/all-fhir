@@ -261,7 +261,7 @@ const processingModeFilter = ref('')
 const selectedLimit = ref(10)
 
 // Auto-refresh for pending archives
-let refreshInterval: NodeJS.Timeout | null = null
+let refreshInterval: number | null = null
 
 onMounted(async () => {
   await refreshArchives()

@@ -100,7 +100,7 @@ class FhirCategoryService
             ['name' => 'Appointment - scheduled surgeries', 'resourceSpec' => FhirCategory::APPOINTMENT_SCHEDULED_SURGERIES],
             ['name' => 'Allergy intolerance', 'resourceSpec' => FhirCategory::ALLERGY_INTOLERANCE],
             ['name' => 'Adverse event', 'resourceSpec' => FhirCategory::ADVERSE_EVENT],
-            ['name' => 'Condition', 'resourceSpec' => FhirCategory::CONDITION],
+            // ['name' => 'Condition', 'resourceSpec' => FhirCategory::CONDITION],
             ['name' => 'Condition - dental finding', 'resourceSpec' => FhirCategory::CONDITION_DENTAL_FINDING],
             ['name' => 'Condition - genomics', 'resourceSpec' => FhirCategory::CONDITION_GENOMICS],
             ['name' => 'Condition - infection', 'resourceSpec' => FhirCategory::CONDITION_INFECTION],

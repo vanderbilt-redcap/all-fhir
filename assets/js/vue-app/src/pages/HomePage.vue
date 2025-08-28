@@ -4,7 +4,7 @@
     <div class="hero-section text-center mb-5">
       <h1 class="display-4 mb-3">
         <i class="fas fa-database me-3 text-primary"></i>
-        FHIR Snapshot
+        ALL FHIR
       </h1>
       <p class="lead text-muted mb-4">
         Fetch, archive, and download FHIR resources from your configured healthcare systems
