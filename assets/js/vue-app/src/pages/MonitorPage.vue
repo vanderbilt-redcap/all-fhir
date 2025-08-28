@@ -48,8 +48,8 @@
         <Teleport to="body">
             <ArchiveOptionsModal 
                 ref="archiveOptionsModal" 
-                :selected-mrns="selectedMrnsStrings"
-                :archive-type="archiveType"
+                :selected-mrns="operationsStore.archiveModalSelectedMrns"
+                :archive-type="operationsStore.archiveModalType"
                 @create="handleArchiveCreate"
             />
             <ArchiveCreationModal ref="archiveCreationModal" />
@@ -82,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import MonitorToolbar from '@/components/monitor/MonitorToolbar.vue'
 import MonitorTable from '@/components/monitor/MonitorTable.vue'
 import AddMrnModal from '@/components/monitor/AddMrnModal.vue'
@@ -103,8 +103,13 @@ const addMrnModal = ref<InstanceType<typeof AddMrnModal> | null>(null)
 const archiveOptionsModal = ref<InstanceType<typeof ArchiveOptionsModal> | null>(null)
 const archiveCreationModal = ref<InstanceType<typeof ArchiveCreationModal> | null>(null)
 
-// Archive state
-const archiveType = ref<'selected' | 'all'>('selected')
+// Watch for store-controlled modal visibility
+watch(() => operationsStore.archiveModalVisible, async (visible) => {
+  if (visible) {
+    await archiveOptionsModal.value?.show()
+    operationsStore.hideArchiveModal()
+  }
+})
 
 // Computed properties for pagination controls
 const page = computed({
@@ -159,13 +164,11 @@ const showArchiveOptionsSelected = async () => {
         return
     }
     
-    archiveType.value = 'selected'
-    await archiveOptionsModal.value?.show()
+    operationsStore.showArchiveModalSelected(selectedMrnsStrings.value)
 }
 
 const showArchiveOptionsAll = async () => {
-    archiveType.value = 'all'
-    await archiveOptionsModal.value?.show()
+    operationsStore.showArchiveModalAll()
 }
 
 const handleArchiveCreate = async (options: ArchiveCreateOptions, type: 'selected' | 'all', selectedMrns?: string[]) => {

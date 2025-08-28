@@ -129,15 +129,6 @@
         </td>
     </tr>
     
-    <!-- Archive Options Modal -->
-    <Teleport to="body">
-        <ArchiveOptionsModal 
-            ref="archiveModal"
-            :selectedMrns="[item.mrn]"
-            archiveType="selected"
-            @create="handleArchiveCreate"
-        />
-    </Teleport>
     
     <tr v-show="expanded">
         <td colspan="5" class="p-0">
@@ -170,12 +161,12 @@
 import { ref, computed } from 'vue'
 import type { Mrn } from '@/models/Mrn'
 import { FetchStatus } from '@/models/Mrn'
-import type { ArchiveCreateOptions } from '@/models/Archive'
 import MonitorResourceRow from './MonitorResourceRow.vue'
-import ArchiveOptionsModal from './ArchiveOptionsModal.vue'
 import { useMonitorStore } from '@/store/MonitorStore'
+import { useOperationsStore } from '@/store/OperationsStore'
 
 const monitorStore = useMonitorStore()
+const operationsStore = useOperationsStore()
 
 const props = defineProps<{
     item: Mrn
@@ -185,7 +176,6 @@ const props = defineProps<{
 
 const expanded = ref(false)
 const operationLoading = ref(false)
-const archiveModal = ref<InstanceType<typeof ArchiveOptionsModal> | null>(null)
 const showTooltip = ref(false)
 
 // Status display mode - can be controlled by props, store, or environment variable
@@ -255,21 +245,12 @@ const triggerFetchMrn = async () => {
 
 const showArchiveModal = async () => {
     try {
-        await archiveModal.value?.show()
+        operationsStore.showArchiveModalSelected([props.item.mrn])
     } catch (error) {
         console.error('Failed to show archive modal:', error)
     }
 }
 
-const handleArchiveCreate = async (options: ArchiveCreateOptions, archiveType: 'selected' | 'all', selectedMrns?: string[]) => {
-    try {
-        console.log('Archive creation requested:', { options, archiveType, selectedMrns })
-        // This would typically call an API to create the archive
-        // For now, just log the request - the actual implementation would be in a parent component or store
-    } catch (error) {
-        console.error('Failed to create archive:', error)
-    }
-}
 
 
 // Resource event handlers removed - now handled directly in MonitorResourceRow via stores

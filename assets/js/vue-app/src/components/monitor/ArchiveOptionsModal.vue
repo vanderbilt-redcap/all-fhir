@@ -1,7 +1,7 @@
 <template>
-  <b-modal ref="archiveOptionsModal" size="xl">
+  <b-modal ref="archiveOptionsModal" >
     <template #title>Archive Options</template>
-    <template #default>
+    <div>
       <div class="mb-3">
         <label for="archive-name" class="form-label">Archive Name</label>
         <input 
@@ -26,7 +26,6 @@
         
         <div v-else class="resource-type-list">
           <div class="form-check" v-for="resourceType in availableResourceTypes" :key="resourceType.name">
-            {{ resourceType }}
             <input 
               class="form-check-input" 
               type="checkbox" 
@@ -103,7 +102,7 @@
           </div>
         </div>
       </div>
-    </template>
+    </div>
 
     <template #footer="{ hide }">
       <div class="d-flex gap-2 justify-content-end">
@@ -124,7 +123,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, useTemplateRef } from 'vue'
+import { ref, computed } from 'vue'
 import type { ArchiveCreateOptions } from '@/models/Archive'
 import { useMonitorStore } from '@/store/MonitorStore'
 
@@ -145,7 +144,7 @@ const emit = defineEmits<{
   create: [options: ArchiveCreateOptions, archiveType: 'selected' | 'all', selectedMrns?: string[]]
 }>()
 
-const archiveOptionsModal = useTemplateRef('archiveOptionsModal')
+const archiveOptionsModal = ref<any>(null)
 
 const options = ref<ArchiveCreateOptions>({
   archive_name: '',
