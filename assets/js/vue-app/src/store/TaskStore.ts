@@ -254,7 +254,7 @@ export const useTaskStore = defineStore('task', () => {
     }
   }
 
-  const refreshTaskStatus = async (taskId?: string) => {
+  const refreshTaskStatus = async () => {
     // If specific task ID provided, we could add individual refresh logic
     // For now, refresh all tasks
     await fetchTasks()
