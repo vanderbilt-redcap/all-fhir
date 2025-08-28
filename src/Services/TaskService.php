@@ -176,9 +176,16 @@ class TaskService
             }
             
             // Only allow deletion of completed or failed tasks
-            if (!$task->isCompleted() && !$task->isFailed()) {
+            /* if (!$task->isCompleted() && !$task->isFailed()) {
                 return TaskOperationResponse::failure(
                     'Only completed or failed tasks can be deleted. Current status: ' . $task->getStatus()
+                );
+            } */
+
+            // Block deletion of processing tasks
+            if ($task->isProcessing()) {
+                return TaskOperationResponse::failure(
+                    'Tasks being processed cannot be deleted. Current status: ' . $task->getStatus()
                 );
             }
             

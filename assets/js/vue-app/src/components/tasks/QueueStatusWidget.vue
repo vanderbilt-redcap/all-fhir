@@ -55,6 +55,15 @@
                         <div class="row g-3">
                             <div class="col-md-3">
                                 <div class="d-flex align-items-center">
+                                    <i class="fas fa-list fa-fw text-primary me-2"></i>
+                                    <div>
+                                        <div class="fw-bold">{{ taskStatusCounts.total }}</div>
+                                        <small class="text-muted">Total Tasks</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="d-flex align-items-center">
                                     <i class="fas fa-play fa-fw text-info me-2"></i>
                                     <div>
                                         <div class="fw-bold">{{ taskStatusCounts.processing }}</div>
@@ -68,15 +77,6 @@
                                     <div>
                                         <div class="fw-bold">{{ taskStatusCounts.completed }}</div>
                                         <small class="text-muted">Completed</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-list fa-fw text-primary me-2"></i>
-                                    <div>
-                                        <div class="fw-bold">{{ taskStatusCounts.total }}</div>
-                                        <small class="text-muted">Total Tasks</small>
                                     </div>
                                 </div>
                             </div>

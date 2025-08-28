@@ -110,11 +110,9 @@ class TaskController
      * 
      * GET /tasks/{id}
      */
-    public function getTaskDetails(Request $request, Response $response, array $args): Response
+    public function getTaskDetails(Request $request, Response $response, $taskId): Response
     {
         try {
-            $taskId = $args['id'] ?? '';
-            
             if (empty($taskId)) {
                 $errorResponse = [
                     'success' => false,
@@ -220,10 +218,9 @@ class TaskController
      * 
      * DELETE /tasks/{id}
      */
-    public function deleteTask(Request $request, Response $response, array $args): Response
+    public function deleteTask(Request $request, Response $response, string $taskId): Response
     {
         try {
-            $taskId = $args['id'] ?? '';
             
             if (empty($taskId)) {
                 $errorResponse = [

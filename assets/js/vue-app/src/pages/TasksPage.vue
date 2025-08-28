@@ -104,42 +104,6 @@
       </div>
     </div>
 
-    <!-- Task Statistics -->
-    <div class="row mb-4">
-      <div class="col-md-3">
-        <div class="card text-center">
-          <div class="card-body py-3">
-            <h5 class="card-title text-primary mb-1">{{ taskStore.taskStatusCounts.total }}</h5>
-            <p class="card-text small text-muted mb-0">Total Tasks</p>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card text-center">
-          <div class="card-body py-3">
-            <h5 class="card-title text-warning mb-1">{{ taskStore.taskStatusCounts.pending }}</h5>
-            <p class="card-text small text-muted mb-0">Pending</p>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card text-center">
-          <div class="card-body py-3">
-            <h5 class="card-title text-info mb-1">{{ taskStore.taskStatusCounts.processing }}</h5>
-            <p class="card-text small text-muted mb-0">Processing</p>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="card text-center">
-          <div class="card-body py-3">
-            <h5 class="card-title text-success mb-1">{{ taskStore.taskStatusCounts.completed }}</h5>
-            <p class="card-text small text-muted mb-0">Completed</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- Tasks Table -->
     <div class="card">
       <div class="card-body p-0">
@@ -208,10 +172,10 @@
                         <i class="fas fa-info-circle"></i>
                       </button>
                       <button 
-                        v-if="task.status === 'completed' || task.status === 'failed'"
                         class="btn btn-outline-danger"
-                        @click="confirmDeleteTask(task)"
                         title="Delete Task"
+                        :disabled="task.status === 'processing'"
+                        @click="confirmDeleteTask(task)"
                       >
                         <i class="fas fa-trash"></i>
                       </button>
@@ -465,7 +429,7 @@ const getStatusIcon = (status: string): string => {
 // Lifecycle
 onMounted(async () => {
   await refreshTasks()
-  setupAutoRefresh()
+  // setupAutoRefresh()
 })
 
 onUnmounted(() => {

@@ -266,7 +266,7 @@ let refreshInterval: number | null = null
 
 onMounted(async () => {
   await refreshArchives()
-  setupAutoRefresh()
+  // setupAutoRefresh()
 })
 
 // Computed properties
