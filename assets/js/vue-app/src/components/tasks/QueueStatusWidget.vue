@@ -151,7 +151,7 @@ const setupAutoRefresh = () => {
 // Lifecycle
 onMounted(async () => {
     await refreshStatus()
-    setupAutoRefresh()
+    // setupAutoRefresh()
 })
 
 onUnmounted(() => {
