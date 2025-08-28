@@ -1,5 +1,5 @@
 <template>
-  <b-modal ref="archiveOptionsModal">
+  <b-modal ref="archiveOptionsModal" size="xl">
     <template #title>Archive Options</template>
     
     <div class="mb-3">
