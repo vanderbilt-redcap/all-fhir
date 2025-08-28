@@ -105,7 +105,7 @@ class QueueManager
                 $tasks[] = Task::fromArray($taskData);
             } catch (InvalidArgumentException $e) {
                 // Skip invalid tasks but log the error
-                $this->module->logToFile("Invalid task data: " . $e->getMessage());
+                $this->module->log("Invalid task data: " . $e->getMessage(), []);
             }
         }
 

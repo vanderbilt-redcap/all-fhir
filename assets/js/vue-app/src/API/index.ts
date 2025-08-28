@@ -127,5 +127,46 @@ export const api = {
       payload.resource_type = resourceType
     }
     return apiClient.post('', payload, { params })
+  },
+
+  // Task management API methods
+  listTasks(page?: number, limit?: number, filters?: any) {
+    const params: any = { route: `tasks` }
+    if (page) params.page = page
+    if (limit) params.limit = limit
+    if (filters) {
+      Object.assign(params, filters)
+    }
+    return apiClient.get('', { params })
+  },
+
+  getTaskDetails(taskId: string) {
+    const params = { route: `tasks/${taskId}` }
+    return apiClient.get('', { params })
+  },
+
+  performTaskFullSync() {
+    const params = { route: `tasks/full-sync` }
+    return apiClient.post('', {}, { params })
+  },
+
+  retryFailedTasks() {
+    const params = { route: `tasks/retry-failed` }
+    return apiClient.post('', {}, { params })
+  },
+
+  deleteTask(taskId: string) {
+    const params = { route: `tasks/${taskId}` }
+    return apiClient.delete('', { params })
+  },
+
+  getQueueStatistics() {
+    const params = { route: `tasks/queue-stats` }
+    return apiClient.get('', { params })
+  },
+
+  cleanupCompletedTasks() {
+    const params = { route: `tasks/cleanup` }
+    return apiClient.post('', {}, { params })
   }
 }

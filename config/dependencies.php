@@ -28,6 +28,8 @@ use Vanderbilt\FhirSnapshot\Queue\Processors\FullSyncProcessor;
 use Vanderbilt\FhirSnapshot\Queue\Processors\RetryFailedProcessor;
 use Vanderbilt\FhirSnapshot\Settings\Settings;
 use Vanderbilt\FhirSnapshot\Constants;
+use Vanderbilt\FhirSnapshot\Controllers\TaskController;
+use Vanderbilt\FhirSnapshot\Services\TaskService;
 use Vanderbilt\REDCap\Classes\Fhir\FhirSystem\FhirSystemManager;
 use Vanderbilt\REDCap\Classes\SystemMonitors\MemoryMonitor;
 use Vanderbilt\REDCap\Classes\SystemMonitors\ResourceMonitor;
@@ -93,6 +95,12 @@ return function (ContainerBuilder $containerBuilder) {
             $c->get(ArchiveUrlService::class)
         ),
 
+        // Tasks
+        TaskService::class => fn(Container $c) => new TaskService(
+            $c->get(FhirSnapshot::class),
+            $c->get(QueueManager::class)
+        ),
+
         // Define how to instantiate queue components
         QueueManager::class => fn(Container $c) => new QueueManager($c->get(FhirSnapshot::class)),
         MemoryMonitor::class => fn(Container $c) => new MemoryMonitor($c->get(Settings::class)->get('memory_threshold')),
@@ -123,6 +131,10 @@ return function (ContainerBuilder $containerBuilder) {
         ArchiveController::class => fn(Container $c) => new ArchiveController(
             $c->get(FhirSnapshot::class),
             $c->get(ResourceArchiveService::class)
+        ),
+        TaskController::class => fn(Container $c) => new TaskController(
+            $c->get(FhirSnapshot::class),
+            $c->get(TaskService::class)
         ),
         FetchController::class => fn(Container $c) => new FetchController($c->get(FhirSnapshot::class)),
         MrnController::class => fn(Container $c) => new MrnController(

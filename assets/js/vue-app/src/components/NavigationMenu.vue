@@ -35,6 +35,17 @@
         </li>
         <li class="nav-item">
             <router-link 
+                to="/tasks" 
+                class="nav-link"
+                :class="{ active: $route.name === 'tasks' }"
+                :aria-current="$route.name === 'tasks' ? 'page' : undefined"
+            >
+                <i class="fas fa-tasks me-2"></i>
+                Tasks
+            </router-link>
+        </li>
+        <li class="nav-item">
+            <router-link 
                 to="/archives" 
                 class="nav-link"
                 :class="{ active: $route.name === 'archives' }"

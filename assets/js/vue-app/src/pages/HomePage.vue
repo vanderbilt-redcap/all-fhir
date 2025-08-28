@@ -84,6 +84,24 @@
           <div class="card h-100 border-0 shadow-sm">
             <div class="card-body text-center d-flex flex-column">
               <div class="feature-icon mb-3">
+                <i class="fas fa-tasks fa-3x text-info"></i>
+              </div>
+              <h5 class="card-title">Background Processing</h5>
+              <p class="card-text text-muted">
+                Robust queue-based system manages large-scale FHIR fetching with automatic retry, task monitoring, and resource management.
+              </p>
+              <router-link to="/tasks" class="btn btn-outline-info btn-sm mt-auto">
+                <i class="fas fa-arrow-right me-1"></i>
+                View Tasks
+              </router-link>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3">
+          <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body text-center d-flex flex-column">
+              <div class="feature-icon mb-3">
                 <i class="fas fa-archive fa-3x text-warning"></i>
               </div>
               <h5 class="card-title">Archive & Download</h5>
@@ -94,24 +112,6 @@
                 <i class="fas fa-arrow-right me-1"></i>
                 Archives
               </router-link>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-md-6 col-lg-3">
-          <div class="card h-100 border-0 shadow-sm">
-            <div class="card-body text-center d-flex flex-column">
-              <div class="feature-icon mb-3">
-                <i class="fas fa-tasks fa-3x text-info"></i>
-              </div>
-              <h5 class="card-title">Background Processing</h5>
-              <p class="card-text text-muted">
-                Robust queue-based system handles large-scale FHIR fetching with automatic retry and resource management.
-              </p>
-              <div class="text-muted small ">
-                <i class="fas fa-info-circle me-1 "></i>
-                Automatic Operation
-              </div>
             </div>
           </div>
         </div>
@@ -185,10 +185,29 @@
               </div>
             </div>
 
+            <div class="step d-flex align-items-center mb-4">
+              <div class="step-number me-4">
+                <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center">
+                  <span class="fw-bold">4</span>
+                </div>
+              </div>
+              <div class="step-content flex-grow-1">
+                <h5>Monitor Tasks</h5>
+                <p class="text-muted mb-2">Track background processing and manage synchronization tasks</p>
+                <router-link to="/tasks" class="btn btn-secondary btn-sm">
+                  <i class="fas fa-tasks me-1"></i>
+                  View Tasks
+                </router-link>
+              </div>
+              <div class="step-icon ms-3">
+                <i class="fas fa-arrow-right text-muted fa-2x d-none d-md-block"></i>
+              </div>
+            </div>
+
             <div class="step d-flex align-items-center">
               <div class="step-number me-4">
                 <div class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center">
-                  <span class="fw-bold">4</span>
+                  <span class="fw-bold">5</span>
                 </div>
               </div>
               <div class="step-content flex-grow-1">
@@ -260,6 +279,10 @@
           <router-link to="/monitor" class="btn btn-primary">
             <i class="fas fa-plus me-1"></i>
             Add MRNs
+          </router-link>
+          <router-link to="/tasks" class="btn btn-outline-secondary">
+            <i class="fas fa-tasks me-1"></i>
+            View Tasks
           </router-link>
           <router-link to="/archives" class="btn btn-outline-primary">
             <i class="fas fa-archive me-1"></i>

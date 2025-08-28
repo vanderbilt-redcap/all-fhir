@@ -7,6 +7,7 @@ use Vanderbilt\FhirSnapshot\Controllers\ArchiveController;
 use Vanderbilt\FhirSnapshot\Controllers\FetchController;
 use Vanderbilt\FhirSnapshot\Controllers\MrnController;
 use Vanderbilt\FhirSnapshot\Controllers\ProjectSettingsController;
+use Vanderbilt\FhirSnapshot\Controllers\TaskController;
 
 return function (App $app) {
     // Home route
@@ -38,6 +39,15 @@ return function (App $app) {
     $app->post('/fetch-mrn', [FetchController::class, 'fetchMrn']);
     $app->post('/fetch-selected', [FetchController::class, 'fetchSelected']);
     $app->get('/fetch-status', [FetchController::class, 'getFetchStatus']);
+
+    // TaskController routes
+    $app->get('/tasks', [TaskController::class, 'listTasks']);
+    $app->post('/tasks/full-sync', [TaskController::class, 'performFullSync']);
+    $app->post('/tasks/retry-failed', [TaskController::class, 'retryFailedTasks']);
+    $app->get('/tasks/queue-stats', [TaskController::class, 'getQueueStatistics']);
+    $app->post('/tasks/cleanup', [TaskController::class, 'cleanupCompletedTasks']);
+    $app->get('/tasks/{id}', [TaskController::class, 'getTaskDetails']);
+    $app->delete('/tasks/{id}', [TaskController::class, 'deleteTask']);
 
     // ArchiveController routes
     $app->get('/archives', [ArchiveController::class, 'listArchives']);

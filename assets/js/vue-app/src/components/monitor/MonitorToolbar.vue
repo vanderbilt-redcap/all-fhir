@@ -22,29 +22,6 @@
                 </button>
             </div>
 
-            <!-- Sync Actions -->
-            <div class="btn-group" role="group">
-                <button 
-                    class="btn btn-warning"
-                    @click="performFullSync"
-                    :disabled="operationLoading"
-                    title="Synchronize all configured resources with existing MRNs"
-                >
-                    <i class="fas fa-arrows-rotate fa-fw"></i>
-                    <span v-if="!operationLoading">Full Sync</span>
-                    <span v-else>Syncing...</span>
-                </button>
-                <button 
-                    class="btn btn-outline-warning"
-                    @click="bulkRetryFailed"
-                    :disabled="operationLoading"
-                    title="Retry all failed resources"
-                >
-                    <i class="fas fa-exclamation-triangle fa-fw"></i>
-                    <span v-if="!operationLoading">Retry Failed</span>
-                    <span v-else>Retrying...</span>
-                </button>
-            </div>
 
             <!-- Archive Actions -->
             <div class="btn-group" role="group">
@@ -133,39 +110,6 @@ const triggerFetchSelected = async () => {
     }
 }
 
-const performFullSync = async () => {
-    try {
-        if (confirm('Are you sure you want to perform a full synchronization? This will analyze all MRNs and create missing resource instances.')) {
-            const result = await monitorStore.performFullSync()
-            operationsStore.recordOperation(
-                'full-sync', 
-                true, 
-                `Full sync completed. ${result.statistics?.missing_instances_created || 0} instances created, ${result.statistics?.orphaned_instances_cleaned || 0} cleaned.`,
-                result
-            )
-        }
-    } catch (error) {
-        console.error('Failed to perform full sync:', error)
-        operationsStore.recordOperation('full-sync', false, 'Failed to perform full synchronization')
-    }
-}
-
-const bulkRetryFailed = async () => {
-    try {
-        if (confirm('Are you sure you want to retry all failed resources? This will mark them as pending for re-processing.')) {
-            const result = await monitorStore.bulkRetryFailed()
-            operationsStore.recordOperation(
-                'bulk-retry', 
-                true, 
-                `Bulk retry completed. ${result.retried_count || 0} failed resources marked for retry.`,
-                result
-            )
-        }
-    } catch (error) {
-        console.error('Failed to bulk retry failed resources:', error)
-        operationsStore.recordOperation('bulk-retry', false, 'Failed to bulk retry failed resources')
-    }
-}
 
 
 const refreshData = async () => {

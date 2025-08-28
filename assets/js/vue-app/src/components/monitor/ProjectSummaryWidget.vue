@@ -57,43 +57,6 @@
                     </div>
                 </div>
 
-                <!-- Queue Status -->
-                <div class="col-12">
-                    <div class="border rounded p-3">
-                        <h6 class="text-muted mb-3">
-                            <i class="fas fa-clock-rotate-left fa-fw"></i> Background Queue Status
-                        </h6>
-                        <div class="row g-3">
-                            <div class="col-md-4">
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-check-circle fa-fw text-success me-2"></i>
-                                    <div>
-                                        <div class="fw-bold">{{ queueHealthStatus }}</div>
-                                        <small class="text-muted">Queue Health</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-hourglass-half fa-fw text-warning me-2"></i>
-                                    <div>
-                                        <div class="fw-bold">{{ projectSummary.sync_status.pending_tasks }}</div>
-                                        <small class="text-muted">Pending Tasks</small>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-exclamation-triangle fa-fw text-danger me-2"></i>
-                                    <div>
-                                        <div class="fw-bold">{{ projectSummary.sync_status.failed_tasks }}</div>
-                                        <small class="text-muted">Failed Tasks</small>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
                 <!-- Progress Bars -->
                 <div class="col-12">
@@ -262,16 +225,6 @@ const statePercentages = computed(() => {
     }
 })
 
-const queueHealthStatus = computed(() => {
-    if (!projectSummary.value) return 'Unknown'
-    const pending = projectSummary.value.sync_status.pending_tasks
-    const failed = projectSummary.value.sync_status.failed_tasks
-    
-    if (failed > 5) return 'Poor'
-    if (pending > 10) return 'Busy'
-    if (failed > 0 || pending > 0) return 'Active'
-    return 'Healthy'
-})
 
 // Methods
 const getStatusColor = (status: string) => {
