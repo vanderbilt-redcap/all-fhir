@@ -3,8 +3,6 @@
         <!-- Enhanced Toolbar with Full Sync and Retry Options -->
         <MonitorToolbar 
             @add-mrn="showAddMrnModal"
-            @create-archive-selected="showArchiveOptionsSelected"
-            @create-archive-all="showArchiveOptionsAll"
         />
 
         <!-- Project Summary Widget (collapsible) -->
@@ -135,12 +133,6 @@ const paginationInfo = computed(() => {
     return { start, end, total }
 })
 
-// Archive-specific computed properties
-const selectedMrnsStrings = computed(() => {
-    return monitorStore.mrns
-        .filter(mrn => monitorStore.selectedMrns.includes(mrn.id))
-        .map(mrn => mrn.mrn)
-})
 
 // Methods
 const showAddMrnModal = async () => {
@@ -157,19 +149,6 @@ const showAddMrnModal = async () => {
     }
 }
 
-// Archive methods
-const showArchiveOptionsSelected = async () => {
-    if (selectedMrnsStrings.value.length === 0) {
-        operationsStore.recordOperation('archive-selected', false, 'No MRNs selected for archive')
-        return
-    }
-    
-    operationsStore.showArchiveModalSelected(selectedMrnsStrings.value)
-}
-
-const showArchiveOptionsAll = async () => {
-    operationsStore.showArchiveModalAll()
-}
 
 const handleArchiveCreate = async (options: ArchiveCreateOptions, type: 'selected' | 'all', selectedMrns?: string[]) => {
     try {

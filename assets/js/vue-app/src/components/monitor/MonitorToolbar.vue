@@ -50,7 +50,7 @@
             <div class="btn-group" role="group">
                 <button 
                     class="btn btn-success"
-                    @click="$emit('createArchiveSelected')"
+                    @click="createArchiveSelected"
                     :disabled="selectionDisabled"
                     title="Create archive for selected completed MRNs"
                 >
@@ -58,7 +58,7 @@
                 </button>
                 <button 
                     class="btn btn-outline-success"
-                    @click="$emit('createArchiveAll')"
+                    @click="createArchiveAll"
                     title="Create archive for all completed resources"
                 >
                     <i class="fas fa-archive fa-fw"></i> Archive All
@@ -108,8 +108,6 @@ const operationsStore = useOperationsStore()
 // Emits for actions that need to open modals
 defineEmits<{
     addMrn: []
-    createArchiveSelected: []
-    createArchiveAll: []
 }>()
 
 // Computed properties
@@ -181,6 +179,24 @@ const refreshData = async () => {
         console.error('Failed to refresh data:', error)
         operationsStore.recordOperation('refresh', false, 'Failed to refresh data')
     }
+}
+
+// Archive methods that use store directly
+const createArchiveSelected = () => {
+    if (selectionDisabled.value) {
+        operationsStore.recordOperation('archive-selected', false, 'No MRNs selected for archive')
+        return
+    }
+    
+    const selectedMrnsStrings = monitorStore.mrns
+        .filter(mrn => monitorStore.selectedMrns.includes(mrn.id))
+        .map(mrn => mrn.mrn)
+    
+    operationsStore.showArchiveModalSelected(selectedMrnsStrings)
+}
+
+const createArchiveAll = () => {
+    operationsStore.showArchiveModalAll()
 }
 </script>
 

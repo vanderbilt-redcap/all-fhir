@@ -19510,47 +19510,47 @@ const lR = {
   class: "mt-2"
 }, q2 = { class: "text-muted" }, X2 = { key: 0 }, Y2 = /* @__PURE__ */ ke({
   __name: "MonitorToolbar",
-  emits: ["addMrn", "createArchiveSelected", "createArchiveAll"],
+  emits: ["addMrn"],
   setup(e) {
     const t = Gs(), n = _u(), s = re(() => t.selectedMrns.length === 0), o = re(() => t.selectedMrns.length), r = re(() => t.operationLoading), i = re(() => t.loading), a = re(() => t.projectSummary), l = async () => {
       try {
-        const h = await t.triggerFetchSelected();
+        const m = await t.triggerFetchSelected();
         n.recordOperation(
           "fetch-selected",
           !0,
-          `Fetch triggered for ${h.mrns?.length || 0} MRN(s). ${h.tasks_created || 0} tasks created.`,
-          h
+          `Fetch triggered for ${m.mrns?.length || 0} MRN(s). ${m.tasks_created || 0} tasks created.`,
+          m
         );
-      } catch (h) {
-        console.error("Failed to trigger fetch for selected MRNs:", h), n.recordOperation("fetch-selected", !1, "Failed to trigger fetch for selected MRNs");
+      } catch (m) {
+        console.error("Failed to trigger fetch for selected MRNs:", m), n.recordOperation("fetch-selected", !1, "Failed to trigger fetch for selected MRNs");
       }
     }, f = async () => {
       try {
         if (confirm("Are you sure you want to perform a full synchronization? This will analyze all MRNs and create missing resource instances.")) {
-          const h = await t.performFullSync();
+          const m = await t.performFullSync();
           n.recordOperation(
             "full-sync",
             !0,
-            `Full sync completed. ${h.statistics?.missing_instances_created || 0} instances created, ${h.statistics?.orphaned_instances_cleaned || 0} cleaned.`,
-            h
+            `Full sync completed. ${m.statistics?.missing_instances_created || 0} instances created, ${m.statistics?.orphaned_instances_cleaned || 0} cleaned.`,
+            m
           );
         }
-      } catch (h) {
-        console.error("Failed to perform full sync:", h), n.recordOperation("full-sync", !1, "Failed to perform full synchronization");
+      } catch (m) {
+        console.error("Failed to perform full sync:", m), n.recordOperation("full-sync", !1, "Failed to perform full synchronization");
       }
     }, c = async () => {
       try {
         if (confirm("Are you sure you want to retry all failed resources? This will mark them as pending for re-processing.")) {
-          const h = await t.bulkRetryFailed();
+          const m = await t.bulkRetryFailed();
           n.recordOperation(
             "bulk-retry",
             !0,
-            `Bulk retry completed. ${h.retried_count || 0} failed resources marked for retry.`,
-            h
+            `Bulk retry completed. ${m.retried_count || 0} failed resources marked for retry.`,
+            m
           );
         }
-      } catch (h) {
-        console.error("Failed to bulk retry failed resources:", h), n.recordOperation("bulk-retry", !1, "Failed to bulk retry failed resources");
+      } catch (m) {
+        console.error("Failed to bulk retry failed resources:", m), n.recordOperation("bulk-retry", !1, "Failed to bulk retry failed resources");
       }
     }, d = async () => {
       try {
@@ -19558,17 +19558,26 @@ const lR = {
           t.fetchMrns(),
           t.getProjectSummary()
         ]), n.recordOperation("refresh", !0, "Data refreshed successfully.");
-      } catch (h) {
-        console.error("Failed to refresh data:", h), n.recordOperation("refresh", !1, "Failed to refresh data");
+      } catch (m) {
+        console.error("Failed to refresh data:", m), n.recordOperation("refresh", !1, "Failed to refresh data");
       }
+    }, h = () => {
+      if (s.value) {
+        n.recordOperation("archive-selected", !1, "No MRNs selected for archive");
+        return;
+      }
+      const m = t.mrns.filter((g) => t.selectedMrns.includes(g.id)).map((g) => g.mrn);
+      n.showArchiveModalSelected(m);
+    }, p = () => {
+      n.showArchiveModalAll();
     };
-    return (h, p) => (N(), P("div", x2, [
+    return (m, g) => (N(), P("div", x2, [
       u("div", k2, [
         u("div", R2, [
           u("button", {
             class: "btn btn-primary",
-            onClick: p[0] || (p[0] = (m) => h.$emit("addMrn"))
-          }, p[4] || (p[4] = [
+            onClick: g[0] || (g[0] = (v) => m.$emit("addMrn"))
+          }, g[2] || (g[2] = [
             u("i", { class: "fas fa-plus-circle fa-fw" }, null, -1),
             ae(" Add MRN ")
           ])),
@@ -19578,8 +19587,8 @@ const lR = {
             disabled: s.value || r.value,
             title: "Trigger fetch for selected MRNs"
           }, [
-            p[6] || (p[6] = u("i", { class: "fas fa-rotate-right fa-fw" }, null, -1)),
-            r.value ? (N(), P("span", V2, p[5] || (p[5] = [
+            g[4] || (g[4] = u("i", { class: "fas fa-rotate-right fa-fw" }, null, -1)),
+            r.value ? (N(), P("span", V2, g[3] || (g[3] = [
               u("div", {
                 class: "spinner-border spinner-border-sm",
                 role: "status"
@@ -19596,7 +19605,7 @@ const lR = {
             disabled: r.value,
             title: "Synchronize all configured resources with existing MRNs"
           }, [
-            p[7] || (p[7] = u("i", { class: "fas fa-arrows-rotate fa-fw" }, null, -1)),
+            g[5] || (g[5] = u("i", { class: "fas fa-arrows-rotate fa-fw" }, null, -1)),
             r.value ? (N(), P("span", B2, "Syncing...")) : (N(), P("span", F2, "Full Sync"))
           ], 8, M2),
           u("button", {
@@ -19605,25 +19614,25 @@ const lR = {
             disabled: r.value,
             title: "Retry all failed resources"
           }, [
-            p[8] || (p[8] = u("i", { class: "fas fa-exclamation-triangle fa-fw" }, null, -1)),
+            g[6] || (g[6] = u("i", { class: "fas fa-exclamation-triangle fa-fw" }, null, -1)),
             r.value ? (N(), P("span", H2, "Retrying...")) : (N(), P("span", U2, "Retry Failed"))
           ], 8, j2)
         ]),
         u("div", W2, [
           u("button", {
             class: "btn btn-success",
-            onClick: p[1] || (p[1] = (m) => h.$emit("createArchiveSelected")),
+            onClick: h,
             disabled: s.value,
             title: "Create archive for selected completed MRNs"
-          }, p[9] || (p[9] = [
+          }, g[7] || (g[7] = [
             u("i", { class: "fas fa-archive fa-fw" }, null, -1),
             ae(" Create Archive ")
           ]), 8, $2),
           u("button", {
             class: "btn btn-outline-success",
-            onClick: p[2] || (p[2] = (m) => h.$emit("createArchiveAll")),
+            onClick: p,
             title: "Create archive for all completed resources"
-          }, p[10] || (p[10] = [
+          }, g[8] || (g[8] = [
             u("i", { class: "fas fa-archive fa-fw" }, null, -1),
             ae(" Archive All ")
           ]))
@@ -19640,9 +19649,9 @@ const lR = {
         ], 8, K2),
         u("button", {
           class: "btn btn-outline-info",
-          onClick: p[3] || (p[3] = (m) => ie(n).toggleSummary()),
+          onClick: g[1] || (g[1] = (v) => ie(n).toggleSummary()),
           title: "Toggle project summary"
-        }, p[11] || (p[11] = [
+        }, g[9] || (g[9] = [
           u("i", { class: "fas fa-chart-bar fa-fw" }, null, -1),
           ae(" Summary ")
         ]))
@@ -20196,125 +20205,11 @@ const lR = {
       const E = gt("b-modal");
       return N(), ot(E, {
         ref_key: "archiveOptionsModal",
-        ref: i,
-        size: "xl"
+        ref: i
       }, {
         title: xe(() => v[4] || (v[4] = [
           ae("Archive Options")
         ])),
-        default: xe(() => [
-          u("div", eP, [
-            v[5] || (v[5] = u("label", {
-              for: "archive-name",
-              class: "form-label"
-            }, "Archive Name", -1)),
-            ct(u("input", {
-              type: "text",
-              class: "form-control",
-              id: "archive-name",
-              "onUpdate:modelValue": v[0] || (v[0] = (b) => a.value.archive_name = b),
-              placeholder: f.value,
-              maxlength: "100"
-            }, null, 8, tP), [
-              [Cr, a.value.archive_name]
-            ]),
-            v[6] || (v[6] = u("div", { class: "form-text" }, "Optional custom name for the archive file (without extension)", -1))
-          ]),
-          u("div", nP, [
-            v[8] || (v[8] = u("label", { class: "form-label" }, "Resource Types", -1)),
-            v[9] || (v[9] = u("div", { class: "form-text mb-2" }, "Select which resource types to include", -1)),
-            l.value.length === 0 ? (N(), P("div", sP, v[7] || (v[7] = [
-              u("i", { class: "fas fa-info-circle me-2" }, null, -1),
-              ae(" No resource types found ")
-            ]))) : (N(), P("div", oP, [
-              (N(!0), P(Oe, null, Qe(l.value, (b) => (N(), P("div", {
-                class: "form-check",
-                key: b.name
-              }, [
-                ae(z(b) + " ", 1),
-                ct(u("input", {
-                  class: "form-check-input",
-                  type: "checkbox",
-                  value: b.name,
-                  "onUpdate:modelValue": v[1] || (v[1] = (y) => a.value.resource_types = y),
-                  id: `resource-${b.name}`,
-                  disabled: !b.isAvailable
-                }, null, 8, rP), [
-                  [wb, a.value.resource_types]
-                ]),
-                u("label", {
-                  class: "form-check-label",
-                  for: `resource-${b.name}`
-                }, z(b.name), 9, iP)
-              ]))), 128))
-            ]))
-          ]),
-          u("div", aP, [
-            v[12] || (v[12] = u("label", { class: "form-label" }, "Processing Mode", -1)),
-            u("div", lP, [
-              ct(u("input", {
-                class: "form-check-input",
-                type: "radio",
-                name: "processing-mode",
-                id: "immediate-mode",
-                value: !1,
-                "onUpdate:modelValue": v[2] || (v[2] = (b) => a.value.background_mode = b)
-              }, null, 512), [
-                [zi, a.value.background_mode]
-              ]),
-              v[10] || (v[10] = u("label", {
-                class: "form-check-label",
-                for: "immediate-mode"
-              }, [
-                u("strong", null, "Immediate Processing"),
-                u("div", { class: "small text-muted" }, "Process archive immediately (recommended for small selections)")
-              ], -1))
-            ]),
-            u("div", cP, [
-              ct(u("input", {
-                class: "form-check-input",
-                type: "radio",
-                name: "processing-mode",
-                id: "background-mode",
-                value: !0,
-                "onUpdate:modelValue": v[3] || (v[3] = (b) => a.value.background_mode = b)
-              }, null, 512), [
-                [zi, a.value.background_mode]
-              ]),
-              v[11] || (v[11] = u("label", {
-                class: "form-check-label",
-                for: "background-mode"
-              }, [
-                u("strong", null, "Background Processing"),
-                u("div", { class: "small text-muted" }, "Process archive in background (recommended for large collections)")
-              ], -1))
-            ])
-          ]),
-          u("div", {
-            class: me(["alert", c.value > 0 ? "alert-info" : "alert-warning"])
-          }, [
-            u("div", uP, [
-              u("i", {
-                class: me([c.value > 0 ? "fas fa-info-circle" : "fas fa-exclamation-triangle", "me-2"])
-              }, null, 2),
-              v[13] || (v[13] = u("strong", null, "Archive Summary", -1))
-            ]),
-            c.value > 0 ? (N(), P("div", dP, [
-              u("div", fP, [
-                u("strong", null, z(c.value), 1),
-                v[14] || (v[14] = ae(" completed resources will be included "))
-              ]),
-              u("div", pP, z(d.value.availableTypes) + " of " + z(d.value.totalTypes) + " resource types have completed data ", 1)
-            ])) : (N(), P("div", hP, [
-              v[15] || (v[15] = u("div", { class: "mb-1" }, [
-                u("strong", null, "No resources available for archiving")
-              ], -1)),
-              u("div", mP, [
-                d.value.totalTypes === 0 ? (N(), P("span", gP, " No resource types found ")) : (N(), P("span", vP, z(d.value.totalTypes) + " resource types found, but none have completed data ", 1))
-              ])
-            ]))
-          ], 2)
-        ]),
         footer: xe(({ hide: b }) => [
           u("div", _P, [
             u("button", {
@@ -20334,6 +20229,120 @@ const lR = {
               u("i", { class: "fas fa-archive fa-fw me-1" }, null, -1),
               ae("Create Archive ")
             ]), 8, yP)
+          ])
+        ]),
+        default: xe(() => [
+          u("div", null, [
+            u("div", eP, [
+              v[5] || (v[5] = u("label", {
+                for: "archive-name",
+                class: "form-label"
+              }, "Archive Name", -1)),
+              ct(u("input", {
+                type: "text",
+                class: "form-control",
+                id: "archive-name",
+                "onUpdate:modelValue": v[0] || (v[0] = (b) => a.value.archive_name = b),
+                placeholder: f.value,
+                maxlength: "100"
+              }, null, 8, tP), [
+                [Cr, a.value.archive_name]
+              ]),
+              v[6] || (v[6] = u("div", { class: "form-text" }, "Optional custom name for the archive file (without extension)", -1))
+            ]),
+            u("div", nP, [
+              v[8] || (v[8] = u("label", { class: "form-label" }, "Resource Types", -1)),
+              v[9] || (v[9] = u("div", { class: "form-text mb-2" }, "Select which resource types to include", -1)),
+              l.value.length === 0 ? (N(), P("div", sP, v[7] || (v[7] = [
+                u("i", { class: "fas fa-info-circle me-2" }, null, -1),
+                ae(" No resource types found ")
+              ]))) : (N(), P("div", oP, [
+                (N(!0), P(Oe, null, Qe(l.value, (b) => (N(), P("div", {
+                  class: "form-check",
+                  key: b.name
+                }, [
+                  ct(u("input", {
+                    class: "form-check-input",
+                    type: "checkbox",
+                    value: b.name,
+                    "onUpdate:modelValue": v[1] || (v[1] = (y) => a.value.resource_types = y),
+                    id: `resource-${b.name}`,
+                    disabled: !b.isAvailable
+                  }, null, 8, rP), [
+                    [wb, a.value.resource_types]
+                  ]),
+                  u("label", {
+                    class: "form-check-label",
+                    for: `resource-${b.name}`
+                  }, z(b.name), 9, iP)
+                ]))), 128))
+              ]))
+            ]),
+            u("div", aP, [
+              v[12] || (v[12] = u("label", { class: "form-label" }, "Processing Mode", -1)),
+              u("div", lP, [
+                ct(u("input", {
+                  class: "form-check-input",
+                  type: "radio",
+                  name: "processing-mode",
+                  id: "immediate-mode",
+                  value: !1,
+                  "onUpdate:modelValue": v[2] || (v[2] = (b) => a.value.background_mode = b)
+                }, null, 512), [
+                  [zi, a.value.background_mode]
+                ]),
+                v[10] || (v[10] = u("label", {
+                  class: "form-check-label",
+                  for: "immediate-mode"
+                }, [
+                  u("strong", null, "Immediate Processing"),
+                  u("div", { class: "small text-muted" }, "Process archive immediately (recommended for small selections)")
+                ], -1))
+              ]),
+              u("div", cP, [
+                ct(u("input", {
+                  class: "form-check-input",
+                  type: "radio",
+                  name: "processing-mode",
+                  id: "background-mode",
+                  value: !0,
+                  "onUpdate:modelValue": v[3] || (v[3] = (b) => a.value.background_mode = b)
+                }, null, 512), [
+                  [zi, a.value.background_mode]
+                ]),
+                v[11] || (v[11] = u("label", {
+                  class: "form-check-label",
+                  for: "background-mode"
+                }, [
+                  u("strong", null, "Background Processing"),
+                  u("div", { class: "small text-muted" }, "Process archive in background (recommended for large collections)")
+                ], -1))
+              ])
+            ]),
+            u("div", {
+              class: me(["alert", c.value > 0 ? "alert-info" : "alert-warning"])
+            }, [
+              u("div", uP, [
+                u("i", {
+                  class: me([c.value > 0 ? "fas fa-info-circle" : "fas fa-exclamation-triangle", "me-2"])
+                }, null, 2),
+                v[13] || (v[13] = u("strong", null, "Archive Summary", -1))
+              ]),
+              c.value > 0 ? (N(), P("div", dP, [
+                u("div", fP, [
+                  u("strong", null, z(c.value), 1),
+                  v[14] || (v[14] = ae(" completed resources will be included "))
+                ]),
+                u("div", pP, z(d.value.availableTypes) + " of " + z(d.value.totalTypes) + " resource types have completed data ", 1)
+              ])) : (N(), P("div", hP, [
+                v[15] || (v[15] = u("div", { class: "mb-1" }, [
+                  u("strong", null, "No resources available for archiving")
+                ], -1)),
+                u("div", mP, [
+                  d.value.totalTypes === 0 ? (N(), P("span", gP, " No resource types found ")) : (N(), P("span", vP, z(d.value.totalTypes) + " resource types found, but none have completed data ", 1))
+                ])
+              ]))
+            ], 2)
           ])
         ]),
         _: 1
@@ -20863,46 +20872,38 @@ const lR = {
   __name: "MonitorPage",
   setup(e) {
     const t = Gs(), n = _u(), s = m_(), o = ee(null), r = ee(null), i = ee(null);
-    Wt(() => n.archiveModalVisible, async (E) => {
-      E && (await r.value?.show(), n.hideArchiveModal());
+    Wt(() => n.archiveModalVisible, async (m) => {
+      m && (await r.value?.show(), n.hideArchiveModal());
     });
     const a = re({
       get: () => t.pagination.page,
-      set: (E) => t.setPage(E)
+      set: (m) => t.setPage(m)
     }), l = re({
       get: () => t.pagination.limit,
-      set: (E) => t.setLimit(E)
+      set: (m) => t.setLimit(m)
     }), f = re(() => t.pagination.total), c = re(() => t.pagination.perPageOptions), d = re(() => {
-      const E = t.pagination.total, b = t.pagination.page, y = t.pagination.limit, A = E === 0 ? 0 : (b - 1) * y + 1, O = Math.min(b * y, E);
-      return { start: A, end: O, total: E };
-    }), h = re(() => t.mrns.filter((E) => t.selectedMrns.includes(E.id)).map((E) => E.mrn)), p = async () => {
+      const m = t.pagination.total, g = t.pagination.page, v = t.pagination.limit, E = m === 0 ? 0 : (g - 1) * v + 1, b = Math.min(g * v, m);
+      return { start: E, end: b, total: m };
+    }), h = async () => {
       if (o.value) {
-        const E = await o.value.show();
-        if (E)
+        const m = await o.value.show();
+        if (m)
           try {
-            await t.addMrn(E), n.recordOperation("add-mrn", !0, "MRN added successfully");
+            await t.addMrn(m), n.recordOperation("add-mrn", !0, "MRN added successfully");
           } catch {
             n.recordOperation("add-mrn", !1, "Failed to add MRN");
           }
       }
-    }, m = async () => {
-      if (h.value.length === 0) {
-        n.recordOperation("archive-selected", !1, "No MRNs selected for archive");
-        return;
-      }
-      n.showArchiveModalSelected(h.value);
-    }, g = async () => {
-      n.showArchiveModalAll();
-    }, v = async (E, b, y) => {
+    }, p = async (m, g, v) => {
       try {
-        let A;
-        b === "selected" && y ? A = await s.createArchiveSelected(y, E) : A = await s.createArchiveAll(E), A && (i.value?.show(A), n.recordOperation(
+        let E;
+        g === "selected" && v ? E = await s.createArchiveSelected(v, m) : E = await s.createArchiveAll(m), E && (i.value?.show(E), n.recordOperation(
           "archive-create",
-          A.success,
-          A.message
+          E.success,
+          E.message
         ));
-      } catch (A) {
-        console.error("Failed to create archive:", A), n.recordOperation("archive-create", !1, "Failed to create archive");
+      } catch (E) {
+        console.error("Failed to create archive:", E), n.recordOperation("archive-create", !1, "Failed to create archive");
       }
     };
     return cn(async () => {
@@ -20911,17 +20912,13 @@ const lR = {
           t.fetchMrns(),
           t.getProjectSummary()
         ]);
-      } catch (E) {
-        console.error("Failed to load initial data:", E), n.recordOperation("initial-load", !1, "Failed to load initial data");
+      } catch (m) {
+        console.error("Failed to load initial data:", m), n.recordOperation("initial-load", !1, "Failed to load initial data");
       }
-    }), (E, b) => {
-      const y = gt("b-pagination"), A = gt("b-pagination-dropdown");
+    }), (m, g) => {
+      const v = gt("b-pagination"), E = gt("b-pagination-dropdown");
       return N(), P("div", VV, [
-        ge(Y2, {
-          onAddMrn: p,
-          onCreateArchiveSelected: m,
-          onCreateArchiveAll: g
-        }),
+        ge(Y2, { onAddMrn: h }),
         ie(n).showSummary ? (N(), P("div", LV, [
           ge(PV)
         ])) : Be("", !0),
@@ -20936,17 +20933,17 @@ const lR = {
         ie(t).pagination.total > 0 ? (N(), P("div", MV, [
           u("small", FV, " Showing " + z(d.value.start) + "-" + z(d.value.end) + " of " + z(d.value.total) + " MRNs ", 1),
           u("div", BV, [
-            ge(y, {
+            ge(v, {
               size: "sm",
               perPage: l.value,
               totalItems: f.value,
               modelValue: a.value,
-              "onUpdate:modelValue": b[0] || (b[0] = (O) => a.value = O)
+              "onUpdate:modelValue": g[0] || (g[0] = (b) => a.value = b)
             }, null, 8, ["perPage", "totalItems", "modelValue"]),
-            ge(A, {
+            ge(E, {
               options: c.value,
               modelValue: l.value,
-              "onUpdate:modelValue": b[1] || (b[1] = (O) => l.value = O)
+              "onUpdate:modelValue": g[1] || (g[1] = (b) => l.value = b)
             }, null, 8, ["options", "modelValue"])
           ])
         ])) : Be("", !0),
@@ -20960,7 +20957,7 @@ const lR = {
             ref: r,
             "selected-mrns": ie(n).archiveModalSelectedMrns,
             "archive-type": ie(n).archiveModalType,
-            onCreate: v
+            onCreate: p
           }, null, 8, ["selected-mrns", "archive-type"]),
           ge(UP, {
             ref_key: "archiveCreationModal",
@@ -20982,7 +20979,7 @@ const lR = {
               u("button", {
                 type: "button",
                 class: "btn-close btn-close-white me-2 m-auto",
-                onClick: b[2] || (b[2] = (O) => ie(n).clearToast())
+                onClick: g[2] || (g[2] = (b) => ie(n).clearToast())
               })
             ])
           ], 2)
