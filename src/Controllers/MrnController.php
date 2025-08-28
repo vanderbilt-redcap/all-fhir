@@ -6,7 +6,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Vanderbilt\FhirSnapshot\Constants;
 use Vanderbilt\FhirSnapshot\Services\RepeatedFormResourceManager;
-use Vanderbilt\FhirSnapshot\ValueObjects\SyncResults;
+use Vanderbilt\FhirSnapshot\Queue\QueueManager;
 use REDCap;
 
 /**
@@ -38,7 +38,8 @@ class MrnController extends AbstractController
 {
     public function __construct(
         protected \Vanderbilt\FhirSnapshot\FhirSnapshot $module,
-        private RepeatedFormResourceManager $resourceManager
+        private RepeatedFormResourceManager $resourceManager,
+        private QueueManager $queueManager
     ) {
         parent::__construct($module);
     }
@@ -337,22 +338,72 @@ class MrnController extends AbstractController
 
     /**
      * Perform full project synchronization
+     * 
+     * Synchronizes all configured FHIR resources with existing project data.
+     * Can be performed in real-time (default) or as a background task.
+     * 
+     * @param Request $request HTTP request with optional 'background' parameter
+     * @param Response $response HTTP response
+     * @return Response JSON response with sync results or task information
      */
     public function performFullSync(Request $request, Response $response): Response
     {
         try {
+            $params = (array) $request->getParsedBody();
+            $background = $params['background'] ?? false;
             $configuredResources = $this->module->getAllConfiguredMappingResources();
-            $syncResults = $this->resourceManager->performFullSync($configuredResources);
 
-            $responseData = [
-                'success' => true,
-                'message' => $syncResults->getSummaryMessage(),
-                'statistics' => $syncResults->getStatistics(),
-                'sync_results' => $syncResults->toArray()
-            ];
+            if ($background) {
+                // Create background task for full sync
+                $projectId = $this->module->getProjectId();
+                
+                // Convert resources to serializable format
+                $configuredResourcesData = [];
+                foreach ($configuredResources as $resource) {
+                    $configuredResourcesData[] = $resource->toArray();
+                }
 
-            $response->getBody()->write(json_encode($responseData));
-            return $response->withHeader('Content-Type', 'application/json');
+                $task = $this->queueManager->addTask(
+                    Constants::TASK_FULL_SYNC,
+                    [
+                        'project_id' => $projectId,
+                        'configured_resources' => $configuredResourcesData
+                    ],
+                    [
+                        'created_by_endpoint' => 'performFullSync',
+                        'creation_timestamp' => time(),
+                        'background_mode' => true
+                    ]
+                );
+
+                $taskId = $task->getId();
+
+                $responseData = [
+                    'success' => true,
+                    'background' => true,
+                    'message' => 'Full sync task created successfully',
+                    'task_id' => $taskId,
+                    'configured_resources_count' => count($configuredResources),
+                    'project_id' => $projectId
+                ];
+
+                $response->getBody()->write(json_encode($responseData));
+                return $response->withHeader('Content-Type', 'application/json');
+            } else {
+                // Perform real-time sync (existing behavior)
+                $syncResults = $this->resourceManager->performFullSync($configuredResources);
+
+                $responseData = [
+                    'success' => true,
+                    'background' => false,
+                    'message' => $syncResults->getSummaryMessage(),
+                    'statistics' => $syncResults->getStatistics(),
+                    'sync_results' => $syncResults->toArray()
+                ];
+
+                $response->getBody()->write(json_encode($responseData));
+                return $response->withHeader('Content-Type', 'application/json');
+            }
             
         } catch (\Exception $e) {
             $response->getBody()->write(json_encode(['error' => 'Failed to perform full sync: ' . $e->getMessage()]));
@@ -362,6 +413,13 @@ class MrnController extends AbstractController
 
     /**
      * Retry failed resources
+     * 
+     * Retries failed FHIR resources in either single or bulk mode.
+     * Can be performed in real-time (default) or as a background task.
+     * 
+     * @param Request $request HTTP request with retry parameters and optional 'background' parameter
+     * @param Response $response HTTP response
+     * @return Response JSON response with retry results or task information
      */
     public function retryFailed(Request $request, Response $response): Response
     {
@@ -370,46 +428,128 @@ class MrnController extends AbstractController
         $resourceType = $params['resource_type'] ?? null;
         $repeatInstance = $params['repeat_instance'] ?? null;
         $bulkMode = $params['bulk'] ?? false;
+        $background = $params['background'] ?? false;
 
         try {
-            if ($bulkMode) {
-                // Bulk retry all failed resources
-                $filters = [];
-                if ($resourceType) {
-                    $filters['resource_type'] = $resourceType;
-                }
+            if ($background) {
+                // Create background task for retry operation
+                $projectId = $this->module->getProjectId();
                 
-                $retriedCount = $this->resourceManager->bulkRetryFailed($filters);
-                
-                $responseData = [
-                    'success' => true,
-                    'message' => "Bulk retry completed. {$retriedCount} failed resources marked for retry.",
-                    'retried_count' => $retriedCount
-                ];
-            } else {
-                // Single resource retry
-                if (!$mrn || !$resourceType || !$repeatInstance) {
-                    $response->getBody()->write(json_encode(['error' => 'MRN, resource type, and repeat instance are required for single retry']));
-                    return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
-                }
-                
-                $success = $this->resourceManager->retryFailedResource($mrn, $resourceType, (int)$repeatInstance);
-                
-                if ($success) {
+                if ($bulkMode) {
+                    // Background bulk retry
+                    $filters = [];
+                    if ($resourceType) {
+                        $filters['resource_type'] = $resourceType;
+                    }
+
+                    $task = $this->queueManager->addTask(
+                        Constants::TASK_RETRY_FAILED,
+                        [
+                            'project_id' => $projectId,
+                            'operation_type' => 'bulk',
+                            'filters' => $filters
+                        ],
+                        [
+                            'created_by_endpoint' => 'retryFailed',
+                            'creation_timestamp' => time(),
+                            'background_mode' => true
+                        ]
+                    );
+
                     $responseData = [
                         'success' => true,
-                        'message' => "Retry task created for MRN: {$mrn}, Resource: {$resourceType}, Instance: {$repeatInstance}"
+                        'background' => true,
+                        'operation_type' => 'bulk',
+                        'message' => 'Bulk retry task created successfully',
+                        'task_id' => $task->getId(),
+                        'filters' => $filters,
+                        'project_id' => $projectId
                     ];
                 } else {
+                    // Background single retry
+                    if (!$mrn || !$resourceType || !$repeatInstance) {
+                        $response->getBody()->write(json_encode(['error' => 'MRN, resource type, and repeat instance are required for single retry']));
+                        return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
+                    }
+
+                    $task = $this->queueManager->addTask(
+                        Constants::TASK_RETRY_FAILED,
+                        [
+                            'project_id' => $projectId,
+                            'operation_type' => 'single',
+                            'mrn' => $mrn,
+                            'resource_type' => $resourceType,
+                            'repeat_instance' => $repeatInstance
+                        ],
+                        [
+                            'created_by_endpoint' => 'retryFailed',
+                            'creation_timestamp' => time(),
+                            'background_mode' => true
+                        ]
+                    );
+
                     $responseData = [
-                        'success' => false,
-                        'error' => 'Failed to create retry task or resource is not in failed state'
+                        'success' => true,
+                        'background' => true,
+                        'operation_type' => 'single',
+                        'message' => 'Single retry task created successfully',
+                        'task_id' => $task->getId(),
+                        'mrn' => $mrn,
+                        'resource_type' => $resourceType,
+                        'repeat_instance' => $repeatInstance,
+                        'project_id' => $projectId
                     ];
                 }
-            }
 
-            $response->getBody()->write(json_encode($responseData));
-            return $response->withHeader('Content-Type', 'application/json');
+                $response->getBody()->write(json_encode($responseData));
+                return $response->withHeader('Content-Type', 'application/json');
+            } else {
+                // Perform real-time retry (existing behavior)
+                if ($bulkMode) {
+                    // Bulk retry all failed resources
+                    $filters = [];
+                    if ($resourceType) {
+                        $filters['resource_type'] = $resourceType;
+                    }
+                    
+                    $retriedCount = $this->resourceManager->bulkRetryFailed($filters);
+                    
+                    $responseData = [
+                        'success' => true,
+                        'background' => false,
+                        'operation_type' => 'bulk',
+                        'message' => "Bulk retry completed. {$retriedCount} failed resources marked for retry.",
+                        'retried_count' => $retriedCount
+                    ];
+                } else {
+                    // Single resource retry
+                    if (!$mrn || !$resourceType || !$repeatInstance) {
+                        $response->getBody()->write(json_encode(['error' => 'MRN, resource type, and repeat instance are required for single retry']));
+                        return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
+                    }
+                    
+                    $success = $this->resourceManager->retryFailedResource($mrn, $resourceType, (int)$repeatInstance);
+                    
+                    if ($success) {
+                        $responseData = [
+                            'success' => true,
+                            'background' => false,
+                            'operation_type' => 'single',
+                            'message' => "Retry task created for MRN: {$mrn}, Resource: {$resourceType}, Instance: {$repeatInstance}"
+                        ];
+                    } else {
+                        $responseData = [
+                            'success' => false,
+                            'background' => false,
+                            'operation_type' => 'single',
+                            'error' => 'Failed to create retry task or resource is not in failed state'
+                        ];
+                    }
+                }
+
+                $response->getBody()->write(json_encode($responseData));
+                return $response->withHeader('Content-Type', 'application/json');
+            }
             
         } catch (\Exception $e) {
             $response->getBody()->write(json_encode(['error' => 'Failed to retry resources: ' . $e->getMessage()]));

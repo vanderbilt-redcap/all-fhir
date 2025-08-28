@@ -24,6 +24,8 @@ use Vanderbilt\FhirSnapshot\Queue\QueueManager;
 use Vanderbilt\FhirSnapshot\Queue\QueueProcessor;
 use Vanderbilt\FhirSnapshot\Queue\Processors\ArchiveProcessor;
 use Vanderbilt\FhirSnapshot\Queue\Processors\EmailNotificationProcessor;
+use Vanderbilt\FhirSnapshot\Queue\Processors\FullSyncProcessor;
+use Vanderbilt\FhirSnapshot\Queue\Processors\RetryFailedProcessor;
 use Vanderbilt\FhirSnapshot\Settings\Settings;
 use Vanderbilt\FhirSnapshot\Constants;
 use Vanderbilt\REDCap\Classes\Fhir\FhirSystem\FhirSystemManager;
@@ -100,6 +102,8 @@ return function (ContainerBuilder $containerBuilder) {
             $processorFactories = [
                 Constants::TASK_ARCHIVE => fn() => $c->get(ArchiveProcessor::class),
                 Constants::TASK_EMAIL_NOTIFICATION => fn() => $c->get(EmailNotificationProcessor::class),
+                Constants::TASK_FULL_SYNC => fn() => $c->get(FullSyncProcessor::class),
+                Constants::TASK_RETRY_FAILED => fn() => $c->get(RetryFailedProcessor::class),
             ];
             
             return new QueueProcessor(
@@ -112,6 +116,8 @@ return function (ContainerBuilder $containerBuilder) {
         
         ArchiveProcessor::class => fn(Container $c) => new ArchiveProcessor($c->get(FhirSnapshot::class)),
         EmailNotificationProcessor::class => fn(Container $c) => new EmailNotificationProcessor($c->get(FhirSnapshot::class)),
+        FullSyncProcessor::class => fn(Container $c) => new FullSyncProcessor($c->get(RepeatedFormResourceManager::class)),
+        RetryFailedProcessor::class => fn(Container $c) => new RetryFailedProcessor($c->get(RepeatedFormResourceManager::class)),
 
         // Define how to instantiate the controllers.
         ArchiveController::class => fn(Container $c) => new ArchiveController(
@@ -121,7 +127,8 @@ return function (ContainerBuilder $containerBuilder) {
         FetchController::class => fn(Container $c) => new FetchController($c->get(FhirSnapshot::class)),
         MrnController::class => fn(Container $c) => new MrnController(
             $c->get(FhirSnapshot::class),
-            $c->get(RepeatedFormResourceManager::class)
+            $c->get(RepeatedFormResourceManager::class),
+            $c->get(QueueManager::class)
         ),
         ProjectSettingsController::class => fn(Container $c) => new ProjectSettingsController(
             $c->get(FhirSnapshot::class),
