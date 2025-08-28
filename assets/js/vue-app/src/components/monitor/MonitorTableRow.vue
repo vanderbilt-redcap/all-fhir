@@ -37,14 +37,25 @@
                 <button 
                     class="btn btn-sm btn-success"
                     :disabled="item.status !== 'Completed'"
-                    @click="downloadMrnData"
-                    title="Download all completed resources for this MRN"
+                    @click="showArchiveModal"
+                    title="Create archive for this MRN's completed resources"
                 >
                     <i class="fas fa-download fa-fw"></i>
                 </button>
             </div>
         </td>
     </tr>
+    
+    <!-- Archive Options Modal -->
+    <Teleport to="body">
+        <ArchiveOptionsModal 
+            ref="archiveModal"
+            :selectedMrns="[item.mrn]"
+            archiveType="selected"
+            @create="handleArchiveCreate"
+        />
+    </Teleport>
+    
     <tr v-show="expanded">
         <td colspan="5" class="p-0">
             <div class="ps-3">
@@ -76,7 +87,9 @@
 import { ref, computed } from 'vue'
 import type { Mrn } from '@/models/Mrn'
 import { FetchStatus } from '@/models/Mrn'
+import type { ArchiveCreateOptions } from '@/models/Archive'
 import MonitorResourceRow from './MonitorResourceRow.vue'
+import ArchiveOptionsModal from './ArchiveOptionsModal.vue'
 import { useMonitorStore } from '@/store/MonitorStore'
 
 const monitorStore = useMonitorStore()
@@ -89,17 +102,19 @@ const props = defineProps<{
 
 const expanded = ref(false)
 const operationLoading = ref(false)
+const archiveModal = ref<InstanceType<typeof ArchiveOptionsModal> | null>(null)
 
 const toggleExpand = () => {
     expanded.value = !expanded.value
 }
 
 const resourceSummary = computed(() => {
-    const total = props.item.resources.length
-    const completed = props.item.resources.filter(r => r.status === FetchStatus.Completed).length
-    const failed = props.item.resources.filter(r => r.status === FetchStatus.Failed).length
-    const pending = props.item.resources.filter(r => r.status === FetchStatus.Pending).length
-    const fetching = props.item.resources.filter(r => r.status === FetchStatus.Fetching).length
+    const nonDeletedResources = props.item.resources.filter(r => r.status !== FetchStatus.Deleted)
+    const total = nonDeletedResources.length
+    const completed = nonDeletedResources.filter(r => r.status === FetchStatus.Completed).length
+    const failed = nonDeletedResources.filter(r => r.status === FetchStatus.Failed).length
+    const pending = nonDeletedResources.filter(r => r.status === FetchStatus.Pending).length
+    const fetching = nonDeletedResources.filter(r => r.status === FetchStatus.Fetching).length
     
     let summary = `${completed}/${total} completed`
     if (failed > 0) summary += `, ${failed} failed`
@@ -140,12 +155,21 @@ const triggerFetchMrn = async () => {
     }
 }
 
-const downloadMrnData = async () => {
+const showArchiveModal = async () => {
     try {
-        // This would typically create a ZIP file with all completed resources
-        await monitorStore.downloadSelected()
+        await archiveModal.value?.show()
     } catch (error) {
-        console.error('Failed to download MRN data:', error)
+        console.error('Failed to show archive modal:', error)
+    }
+}
+
+const handleArchiveCreate = async (options: ArchiveCreateOptions, archiveType: 'selected' | 'all', selectedMrns?: string[]) => {
+    try {
+        console.log('Archive creation requested:', { options, archiveType, selectedMrns })
+        // This would typically call an API to create the archive
+        // For now, just log the request - the actual implementation would be in a parent component or store
+    } catch (error) {
+        console.error('Failed to create archive:', error)
     }
 }
 

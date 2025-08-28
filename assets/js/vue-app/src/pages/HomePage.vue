@@ -263,7 +263,7 @@
           </router-link>
           <router-link to="/archives" class="btn btn-outline-primary">
             <i class="fas fa-archive me-1"></i>
-            Create Archive
+            View Archives
           </router-link>
         </div>
       </div>
