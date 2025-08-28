@@ -243,9 +243,10 @@ export const useArchiveStore = defineStore('archive', () => {
     }
   }
 
-  const setLimit = (limit: number) => {
+  const setLimit = async (limit: number) => {
     pagination.value.limit = limit
     pagination.value.page = 1 // Reset to first page when changing limit
+    await fetchArchives()
   }
 
   const setFilter = (filterType: keyof typeof filters.value, value: string) => {

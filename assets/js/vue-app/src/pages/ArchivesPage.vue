@@ -63,7 +63,6 @@
             <select 
               class="form-select form-select-sm"
               v-model="selectedLimit"
-              @change="onLimitChange"
             >
               <option v-for="option in archiveStore.pagination.perPageOptions" :key="option" :value="option">
                 {{ option }}
@@ -215,23 +214,16 @@
         Showing {{ paginationInfo.start }}-{{ paginationInfo.end }} of {{ paginationInfo.total }} archives
       </small>
       <div class="d-flex gap-2">
-        <nav aria-label="Archives pagination">
-          <ul class="pagination pagination-sm mb-0">
-            <li class="page-item" :class="{ disabled: !archiveStore.pagination.hasPrevious }">
-              <button class="page-link" @click="goToPage(archiveStore.pagination.page - 1)" :disabled="!archiveStore.pagination.hasPrevious">
-                Previous
-              </button>
-            </li>
-            <li v-for="page in visiblePages" :key="page" class="page-item" :class="{ active: page === archiveStore.pagination.page }">
-              <button class="page-link" @click="goToPage(page)">{{ page }}</button>
-            </li>
-            <li class="page-item" :class="{ disabled: !archiveStore.pagination.hasNext }">
-              <button class="page-link" @click="goToPage(archiveStore.pagination.page + 1)" :disabled="!archiveStore.pagination.hasNext">
-                Next
-              </button>
-            </li>
-          </ul>
-        </nav>
+        <b-pagination
+          size="sm"
+          :perPage="selectedLimit"
+          :totalItems="archiveStore.filteredArchives.length"
+          v-model="currentPage"
+        ></b-pagination>
+        <b-pagination-dropdown
+          :options="archiveStore.pagination.perPageOptions"
+          v-model="selectedLimit"
+        />
       </div>
     </div>
 
@@ -258,7 +250,16 @@ const deleteModal = ref<any>(null)
 const searchQuery = ref('')
 const statusFilter = ref('')
 const processingModeFilter = ref('')
-const selectedLimit = ref(10)
+// Computed properties for pagination controls
+const currentPage = computed({
+    get: () => archiveStore.pagination.page,
+    set: (value) => archiveStore.setPage(value),
+})
+
+const selectedLimit = computed({
+    get: () => archiveStore.pagination.limit,
+    set: (value) => archiveStore.setLimit(value),
+})
 
 // Auto-refresh for pending archives
 let refreshInterval: number | null = null
@@ -283,21 +284,6 @@ const paginationInfo = computed(() => {
   const start = (archiveStore.pagination.page - 1) * archiveStore.pagination.limit + 1
   const end = Math.min(start + archiveStore.pagination.limit - 1, total)
   return { start, end, total }
-})
-
-const visiblePages = computed(() => {
-  const currentPage = archiveStore.pagination.page
-  const totalPages = archiveStore.pagination.totalPages
-  const pages = []
-  
-  const startPage = Math.max(1, currentPage - 2)
-  const endPage = Math.min(totalPages, currentPage + 2)
-  
-  for (let i = startPage; i <= endPage; i++) {
-    pages.push(i)
-  }
-  
-  return pages
 })
 
 // Methods
@@ -326,19 +312,11 @@ const onProcessingModeFilterChange = () => {
   archiveStore.setFilter('processingMode', processingModeFilter.value)
 }
 
-const onLimitChange = () => {
-  archiveStore.setLimit(selectedLimit.value)
-}
-
 const clearAllFilters = () => {
   searchQuery.value = ''
   statusFilter.value = ''
   processingModeFilter.value = ''
   archiveStore.clearFilters()
-}
-
-const goToPage = (page: number) => {
-  archiveStore.setPage(page)
 }
 
 const downloadArchive = async (archive: Archive) => {
