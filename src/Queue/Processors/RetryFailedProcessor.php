@@ -3,6 +3,7 @@
 namespace Vanderbilt\FhirSnapshot\Queue\Processors;
 
 use Vanderbilt\FhirSnapshot\Constants;
+use Vanderbilt\FhirSnapshot\FhirSnapshot;
 use Vanderbilt\FhirSnapshot\ValueObjects\Task;
 use Vanderbilt\FhirSnapshot\ValueObjects\TaskProcessorResult;
 use Vanderbilt\FhirSnapshot\Services\RepeatedFormResourceManager;
@@ -91,7 +92,12 @@ use Vanderbilt\FhirSnapshot\Services\RepeatedFormResourceManager;
 class RetryFailedProcessor extends AbstractTaskProcessor
 {
 
-    function __construct(private RepeatedFormResourceManager $resourceManager) {}
+    function __construct(
+        private FhirSnapshot $module,
+        private RepeatedFormResourceManager $resourceManager
+    ) {
+        parent::__construct($module);
+    }
 
     public function getTaskKey(): string
     {

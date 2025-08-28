@@ -124,8 +124,14 @@ return function (ContainerBuilder $containerBuilder) {
         
         ArchiveProcessor::class => fn(Container $c) => new ArchiveProcessor($c->get(FhirSnapshot::class)),
         EmailNotificationProcessor::class => fn(Container $c) => new EmailNotificationProcessor($c->get(FhirSnapshot::class)),
-        FullSyncProcessor::class => fn(Container $c) => new FullSyncProcessor($c->get(RepeatedFormResourceManager::class)),
-        RetryFailedProcessor::class => fn(Container $c) => new RetryFailedProcessor($c->get(RepeatedFormResourceManager::class)),
+        FullSyncProcessor::class => fn(Container $c) => new FullSyncProcessor(
+            $c->get(FhirSnapshot::class),
+            $c->get(RepeatedFormResourceManager::class)
+        ),
+        RetryFailedProcessor::class => fn(Container $c) => new RetryFailedProcessor(
+            $c->get(FhirSnapshot::class),
+            $c->get(RepeatedFormResourceManager::class)
+        ),
 
         // Define how to instantiate the controllers.
         ArchiveController::class => fn(Container $c) => new ArchiveController(

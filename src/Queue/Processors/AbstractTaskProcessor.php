@@ -10,13 +10,9 @@ use Vanderbilt\REDCap\Classes\SystemMonitors\ResourceMonitor;
 
 abstract class AbstractTaskProcessor implements TaskProcessorInterface
 {
-    protected FhirSnapshot $module;
     protected ?ResourceMonitor $resourceMonitor = null;
 
-    public function __construct(FhirSnapshot $module)
-    {
-        $this->module = $module;
-    }
+    public function __construct(private FhirSnapshot $module) {}
 
     public function process(Task $task, ?ResourceMonitor $resourceMonitor = null): TaskProcessorResult
     {
