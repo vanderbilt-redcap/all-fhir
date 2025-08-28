@@ -20,13 +20,72 @@ export interface MonitoredResource {
     error_message?: string        // error details if failed
 }
 
+// New interfaces for enhanced status information
+export interface StatusDistribution {
+    distribution: Record<string, {
+        count: number
+        percentage: number
+    }>
+    total_resources: number
+    completed_resources: number
+    completion_percentage: number
+    archivable_resources: number
+    has_completed_resources: boolean
+    is_fully_completed: boolean
+    is_mixed_state: boolean
+    dominant_status: string | null
+}
+
+export interface ResourceTypeStatus {
+    total_count: number
+    completed_count: number
+    failed_count: number
+    pending_count: number
+    fetching_count: number
+    outdated_count: number
+    has_completed: boolean
+    completion_percentage: number
+    is_archivable: boolean
+}
+
+export interface ArchiveButtonConfig {
+    variant: string
+    disabled: boolean
+    tooltip: string
+    text: string
+}
+
+export interface ProgressBarSegment {
+    status: FetchStatus
+    count: number
+    percentage: number
+    color: string
+}
+
+export interface ProgressBarConfig {
+    segments: ProgressBarSegment[]
+    completion_percentage: number
+    total_resources: number
+}
+
+export interface MrnStatusSummary {
+    overall_status: FetchStatus
+    status_distribution: StatusDistribution
+    has_archivable_resources: boolean
+    resource_type_statuses: Record<string, ResourceTypeStatus>
+    smart_status_display: string
+    archive_button_config: ArchiveButtonConfig
+    progress_bar_config: ProgressBarConfig
+    available_resource_types: string[]
+}
+
 export interface Mrn {
     id: number
     mrn: string
-    status: FetchStatus                              // calculated overall status
     resources: MonitoredResource[]                   // detailed resource list
-    status_counts: Record<string, number>            // count by status
-    total_resources: number                          // total resource count
+    
+    // Enhanced status information from backend VOs (optional until backend provides it)
+    status_summary?: MrnStatusSummary               // comprehensive status data
 }
 
 export interface ProjectSummary {

@@ -2,13 +2,13 @@
   <div class="home-page">
     <!-- Hero Section -->
     <div class="hero-section text-center mb-5">
-      <h1 class="display-4 mb-3">
-        <i class="fas fa-database me-3 text-primary"></i>
-        ALL FHIR
-      </h1>
-      <p class="lead text-muted mb-4">
-        Fetch, archive, and download FHIR resources from your configured healthcare systems
-      </p>
+      <div class="d-flex flex-column gap-2 align-items-center">
+        <img :src="ALL_FHIR_LOGO" title="ALL FHIR" style="height: 200px"/>
+        <p class="text-muted mb-4">
+          Fetch, archive, and download FHIR resources from your configured healthcare systems
+        </p>
+      </div>
+
       <div class="row justify-content-center">
         <div class="col-md-8">
           <div class="bg-light p-4 rounded">
@@ -287,6 +287,7 @@ import { onMounted, computed } from 'vue'
 import { useSettingsStore } from '@/store/SettingsStore'
 import { useMonitorStore } from '@/store/MonitorStore'
 import { storeToRefs } from 'pinia'
+import ALL_FHIR_LOGO from '@/assets/ALL FHIR Logo-trim.png'
 
 const settingsStore = useSettingsStore()
 const monitorStore = useMonitorStore()

@@ -9,7 +9,7 @@
         class="form-control" 
         id="mrn-input" 
         v-model="mrn" 
-        @keyup.enter="submit(hide)"
+        @keyup.enter="submitOnEnter"
         placeholder="Enter MRN"
       />
     </div>
@@ -51,6 +51,12 @@ const show = async (): Promise<string | null> => {
 const submit = (hide: Function) => {
   if (mrn.value.trim()) {
     hide(true)
+  }
+}
+
+const submitOnEnter = () => {
+  if (mrn.value.trim()) {
+    addMrnModal.value?.hide(true)
   }
 }
 

@@ -10,13 +10,96 @@
         </td>
         <td>{{ item.mrn }}</td>
         <td>
-            <span :class="statusClass(item.status)">{{ item.status }}</span>
+            <!-- Status Display Options - All available for testing -->
+            
+            <!-- Solution A: Smart Status Text -->
+            <div v-if="statusDisplayMode === 'smart'" class="status-display-smart">
+                <span :class="getStatusClass()" :title="getStatusTooltip()">
+                    {{ monitorStore.getSmartStatusDisplay(item) }}
+                </span>
+            </div>
+            
+            <!-- Solution B: Progress Bar Visualization -->
+            <div v-else-if="statusDisplayMode === 'progress'" class="status-display-progress">
+                <div class="progress position-relative" style="height: 20px;">
+                    <div
+                        v-for="segment in progressConfig.segments"
+                        :key="segment.status"
+                        :class="`progress-bar bg-${segment.color}`"
+                        :style="{ width: segment.percentage + '%' }"
+                        :title="`${segment.status}: ${segment.count} (${segment.percentage}%)`"
+                    ></div>
+                </div>
+                <small class="text-muted">{{ Math.round(progressConfig.completion_percentage) }}% complete</small>
+            </div>
+            
+            <!-- Solution C: Status Badge Collection -->
+            <div v-else-if="statusDisplayMode === 'badges'" class="status-display-badges">
+                <span
+                    v-for="segment in progressConfig.segments"
+                    :key="segment.status"
+                    :class="`badge bg-${segment.color} me-1`"
+                    :title="`${segment.status}: ${segment.count} resources`"
+                    style="font-size: 0.7em;"
+                >
+                    {{ segment.status.charAt(0).toUpperCase() }}: {{ segment.count }}
+                </span>
+            </div>
+            
+            <!-- Solution D: Enhanced Tooltip (Legacy display with rich tooltip) -->
+            <div v-else class="status-display-legacy">
+                <span 
+                    :class="getStatusClass()" 
+                    :title="getDetailedTooltip()"
+                    @mouseenter="showTooltip = true"
+                    @mouseleave="showTooltip = false"
+                >
+                    {{ monitorStore.getSmartStatusDisplay(item) }}
+                </span>
+                
+                <!-- Rich tooltip overlay -->
+                <div v-if="showTooltip" class="position-absolute bg-dark text-white p-2 rounded shadow-lg" style="z-index: 1000; top: 100%; left: 0; width: 250px;">
+                    <div class="fw-bold mb-1">Status Breakdown</div>
+                    <div class="small">
+                        <div v-for="segment in progressConfig.segments" :key="segment.status" class="d-flex justify-content-between">
+                            <span>{{ segment.status }}:</span>
+                            <span>{{ segment.count }} ({{ segment.percentage }}%)</span>
+                        </div>
+                        <hr class="my-1">
+                        <div class="d-flex justify-content-between">
+                            <span>Total Resources:</span>
+                            <span>{{ progressConfig.total_resources }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Completion:</span>
+                            <span>{{ Math.round(progressConfig.completion_percentage) }}%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
         </td>
         <td>
-            <span>{{ resourceSummary }}</span>
-            <button class="btn btn-sm btn-light ms-2" @click="toggleExpand" :aria-expanded="expanded">
-                <i :class="`fas fa-chevron-${expanded ? 'up' : 'down'} fa-fw`"></i>
-            </button>
+            <div class="d-flex align-items-center">
+                <span>{{ resourceSummary }}</span>
+                <button class="btn btn-sm btn-light ms-2" @click="toggleExpand" :aria-expanded="expanded">
+                    <i :class="`fas fa-chevron-${expanded ? 'up' : 'down'} fa-fw`"></i>
+                </button>
+                <!-- Dev Mode Toggle for Status Display -->
+                <div class="ms-2" v-if="showDevControls">
+                    <select 
+                        v-model="statusDisplayMode" 
+                        class="form-select form-select-sm"
+                        style="width: 100px; font-size: 0.75em;"
+                        title="Status Display Mode (Dev)"
+                    >
+                        <option value="smart">Smart</option>
+                        <option value="progress">Progress</option>
+                        <option value="badges">Badges</option>
+                        <option value="legacy">Legacy</option>
+                    </select>
+                </div>
+            </div>
         </td>
         <td>
             <div class="btn-group" role="group">
@@ -35,10 +118,10 @@
                     </span>
                 </button>
                 <button 
-                    class="btn btn-sm btn-success"
-                    :disabled="item.status !== 'Completed'"
+                    :class="`btn btn-sm btn-${archiveButtonConfig.variant}`"
+                    :disabled="archiveButtonConfig.disabled"
                     @click="showArchiveModal"
-                    title="Create archive for this MRN's completed resources"
+                    :title="archiveButtonConfig.tooltip"
                 >
                     <i class="fas fa-download fa-fw"></i>
                 </button>
@@ -103,6 +186,13 @@ const props = defineProps<{
 const expanded = ref(false)
 const operationLoading = ref(false)
 const archiveModal = ref<InstanceType<typeof ArchiveOptionsModal> | null>(null)
+const showTooltip = ref(false)
+
+// Status display mode - can be controlled by props, store, or environment variable
+const statusDisplayMode = ref<'smart' | 'progress' | 'badges' | 'legacy'>('smart')
+
+// Dev controls visibility - can be controlled by environment or dev mode
+const showDevControls = ref(import.meta.env?.DEV ?? false)
 
 const toggleExpand = () => {
     expanded.value = !expanded.value
@@ -124,24 +214,32 @@ const resourceSummary = computed(() => {
     return summary
 })
 
-const statusClass = (status: FetchStatus) => {
-    const baseClass = 'badge'
-    switch (status) {
-        case FetchStatus.Pending:
-            return `${baseClass} bg-warning text-dark`
-        case FetchStatus.Fetching:
-            return `${baseClass} bg-info text-dark`
-        case FetchStatus.Completed:
-            return `${baseClass} bg-success`
-        case FetchStatus.Failed:
-            return `${baseClass} bg-danger`
-        case FetchStatus.Outdated:
-            return `${baseClass} bg-secondary`
-        case FetchStatus.Deleted:
-            return `${baseClass} bg-dark`
-        default:
-            return `${baseClass} bg-secondary`
-    }
+// Enhanced computed properties for status display
+const progressConfig = computed(() => {
+    return monitorStore.getProgressBarConfig(props.item)
+})
+
+const archiveButtonConfig = computed(() => {
+    return monitorStore.getArchiveButtonConfig(props.item)
+})
+
+// Tooltip content methods
+const getStatusTooltip = (): string => {
+    const config = progressConfig.value
+    if (config.segments.length === 0) return 'No resources'
+    
+    const parts = config.segments.map(s => `${s.status}: ${s.count}`)
+    return `${parts.join(', ')} | ${Math.round(config.completion_percentage)}% complete`
+}
+
+const getDetailedTooltip = (): string => {
+    return getStatusTooltip() + ' (hover for details)'
+}
+
+const getStatusClass = (): string => {
+    const status = monitorStore.getStatusForStyling(props.item)
+    const colorVariant = monitorStore.getStatusColor(status)
+    return `badge bg-${colorVariant}`
 }
 
 const triggerFetchMrn = async () => {

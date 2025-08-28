@@ -5,8 +5,7 @@ import type {
   Archive, 
   ArchiveCreateOptions, 
   ArchiveCreateResponse, 
-  ArchiveDeleteResponse, 
-  ArchiveListResponse 
+  ArchiveDeleteResponse
 } from '@/models/Archive'
 import { api } from '@/API'
 
@@ -232,7 +231,7 @@ export const useArchiveStore = defineStore('archive', () => {
     }
   }
 
-  const refreshArchiveStatus = async (archiveId?: string) => {
+  const refreshArchiveStatus = async (_archiveId?: string) => {
     // If specific archive ID provided, we could add individual refresh logic
     // For now, refresh all archives
     await fetchArchives()
