@@ -6,6 +6,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Vanderbilt\FhirSnapshot\Constants;
 use Vanderbilt\FhirSnapshot\Services\RepeatedFormResourceManager;
+use Vanderbilt\FhirSnapshot\ValueObjects\SyncResults;
 use REDCap;
 
 /**
@@ -343,22 +344,11 @@ class MrnController extends AbstractController
             $configuredResources = $this->module->getAllConfiguredMappingResources();
             $syncResults = $this->resourceManager->performFullSync($configuredResources);
 
-            $createdTasks = count($syncResults['created_tasks']);
-            $cleanedInstances = $syncResults['cleaned_instances'];
-            $missingInstances = count($syncResults['comparison']['missing_instances']);
-            $orphanedInstances = count($syncResults['comparison']['orphaned_instances']);
-
             $responseData = [
                 'success' => true,
-                'message' => "Full sync completed. Created {$missingInstances} missing instances, " .
-                           "cleaned {$cleanedInstances} orphaned instances, " .
-                           "and created {$createdTasks} background tasks.",
-                'statistics' => [
-                    'missing_instances_created' => $missingInstances,
-                    'orphaned_instances_cleaned' => $cleanedInstances,
-                    'background_tasks_created' => $createdTasks
-                ],
-                'sync_results' => $syncResults
+                'message' => $syncResults->getSummaryMessage(),
+                'statistics' => $syncResults->getStatistics(),
+                'sync_results' => $syncResults->toArray()
             ];
 
             $response->getBody()->write(json_encode($responseData));

@@ -5,6 +5,7 @@ namespace Vanderbilt\FhirSnapshot\Services;
 use Vanderbilt\FhirSnapshot\FhirSnapshot;
 use Vanderbilt\FhirSnapshot\ValueObjects\MappingResource;
 use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
+use Vanderbilt\FhirSnapshot\ValueObjects\SyncResults;
 use Vanderbilt\FhirSnapshot\Queue\QueueManager;
 use Vanderbilt\FhirSnapshot\Services\FhirResourceService;
 
@@ -289,17 +290,14 @@ class RepeatedFormResourceManager
      * - Provides detailed results for monitoring and reporting
      * 
      * @param MappingResource[] $configuredResources Array of configured mapping resources
-     * @return array Sync results with comparison data and cleanup counts
+     * @return SyncResults Sync results with comparison data and cleanup counts
      */
-    public function performFullSync(array $configuredResources): array
+    public function performFullSync(array $configuredResources): SyncResults
     {
         $existingMrns = $this->dataAccessor->getAllMrns();
         $comparison = $this->syncService->compareConfiguredVsExisting($configuredResources, $existingMrns);
         
-        $syncResults = [
-            'cleaned_instances' => 0,
-            'comparison' => $comparison
-        ];
+        $syncResults = SyncResults::create($comparison);
         
         $createdInstances = 0;
         
@@ -311,7 +309,7 @@ class RepeatedFormResourceManager
         }
         
         // Create missing instances
-        foreach ($comparison['missing_instances'] as $missing) {
+        foreach ($syncResults->getMissingInstances() as $missing) {
             /** @var array{mrn: string, resource_type: string} $missing */
             $recordId = $this->dataAccessor->getRecordIdByMrn($missing['mrn']);
             $nextInstance = $this->dataAccessor->getNextRepeatInstance($recordId);
@@ -336,7 +334,9 @@ class RepeatedFormResourceManager
         
         // Resources will be automatically fetched by cron job
         
-        $syncResults['cleaned_instances'] = $this->syncService->cleanupOrphanedInstances($comparison['orphaned_instances']);
+        $syncResults->setCreatedInstances($createdInstances);
+        $cleanedCount = $this->syncService->cleanupOrphanedInstances($syncResults->getOrphanedInstances());
+        $syncResults->setCleanedInstances($cleanedCount);
         
         return $syncResults;
     }
