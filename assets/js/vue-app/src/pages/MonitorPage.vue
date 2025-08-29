@@ -51,6 +51,11 @@
                 @create="handleArchiveCreate"
             />
             <ArchiveCreationModal ref="archiveCreationModal" />
+            <StreamingArchiveModal 
+                ref="streamingArchiveModal" 
+                :selected-mrns="operationsStore.streamingModalSelectedMrns"
+                :archive-type="operationsStore.streamingModalType"
+            />
         </Teleport>
 
         <!-- Operation Feedback Toast -->
@@ -86,6 +91,7 @@ import MonitorTable from '@/components/monitor/MonitorTable.vue'
 import AddMrnModal from '@/components/monitor/AddMrnModal.vue'
 import ArchiveOptionsModal from '@/components/monitor/ArchiveOptionsModal.vue'
 import ArchiveCreationModal from '@/components/monitor/ArchiveCreationModal.vue'
+import StreamingArchiveModal from '@/components/archives/StreamingArchiveModal.vue'
 import ProjectSummaryWidget from '@/components/monitor/ProjectSummaryWidget.vue'
 import { useMonitorStore } from '@/store/MonitorStore'
 import { useOperationsStore } from '@/store/OperationsStore'
@@ -100,12 +106,20 @@ const archiveStore = useArchiveStore()
 const addMrnModal = ref<InstanceType<typeof AddMrnModal> | null>(null)
 const archiveOptionsModal = ref<InstanceType<typeof ArchiveOptionsModal> | null>(null)
 const archiveCreationModal = ref<InstanceType<typeof ArchiveCreationModal> | null>(null)
+const streamingArchiveModal = ref<InstanceType<typeof StreamingArchiveModal> | null>(null)
 
 // Watch for store-controlled modal visibility
 watch(() => operationsStore.archiveModalVisible, async (visible) => {
   if (visible) {
     await archiveOptionsModal.value?.show()
     operationsStore.hideArchiveModal()
+  }
+})
+
+watch(() => operationsStore.streamingModalVisible, async (visible) => {
+  if (visible) {
+    await streamingArchiveModal.value?.show()
+    operationsStore.hideStreamingModal()
   }
 })
 

@@ -40,6 +40,32 @@
                 </button>
             </div>
 
+            <!-- Streaming Archive Actions -->
+            <b-dropdown 
+                text="Stream Download"
+                variant="info"
+                title="Stream download archives"
+            >
+                <template #button>
+                    <i class="fas fa-bolt fa-fw me-1"></i>Stream Download
+                </template>
+                
+                <b-dropdown-item 
+                    @click="createStreamingArchiveSelected"
+                    :class="{ disabled: selectionDisabled }"
+                    :prevent-close="false"
+                >
+                    <i class="fas fa-bolt me-2"></i>Stream Selected Records
+                </b-dropdown-item>
+                
+                <b-dropdown-item 
+                    @click="createStreamingArchiveAll"
+                    :prevent-close="false"
+                >
+                    <i class="fas fa-bolt me-2"></i>Stream All Records
+                </b-dropdown-item>
+            </b-dropdown>
+
             <!-- Refresh Button -->
             <button 
                 class="btn btn-outline-secondary"
@@ -78,10 +104,8 @@ defineEmits<{
 
 // Computed properties
 const selectionDisabled = computed(() => monitorStore.selectedMrns.length === 0)
-const selectedCount = computed(() => monitorStore.selectedMrns.length)
 const operationLoading = computed(() => monitorStore.operationLoading)
 const loading = computed(() => monitorStore.loading)
-const projectSummary = computed(() => monitorStore.projectSummary)
 
 // Methods
 const triggerFetchSelected = async () => {
@@ -130,6 +154,24 @@ const createArchiveSelected = () => {
 
 const createArchiveAll = () => {
     operationsStore.showArchiveModalAll()
+}
+
+// Streaming archive methods
+const createStreamingArchiveSelected = () => {
+    if (selectionDisabled.value) {
+        operationsStore.recordOperation('streaming-archive-selected', false, 'No MRNs selected for streaming archive')
+        return
+    }
+    
+    const selectedMrnsStrings = monitorStore.mrns
+        .filter(mrn => monitorStore.selectedMrns.includes(mrn.id))
+        .map(mrn => mrn.mrn)
+    
+    operationsStore.showStreamingModalSelected(selectedMrnsStrings)
+}
+
+const createStreamingArchiveAll = () => {
+    operationsStore.showStreamingModalAll()
 }
 </script>
 

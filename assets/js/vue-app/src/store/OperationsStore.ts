@@ -15,6 +15,12 @@ export interface ArchiveModalState {
   selectedMrns: string[]
 }
 
+export interface StreamingModalState {
+  visible: boolean
+  archiveType: 'selected' | 'all'
+  selectedMrns: string[]
+}
+
 export const useOperationsStore = defineStore('operations', () => {
   // State
   const loading = ref(false)
@@ -24,6 +30,13 @@ export const useOperationsStore = defineStore('operations', () => {
   
   // Archive Modal State
   const archiveModal = ref<ArchiveModalState>({
+    visible: false,
+    archiveType: 'selected',
+    selectedMrns: []
+  })
+
+  // Streaming Modal State
+  const streamingModal = ref<StreamingModalState>({
     visible: false,
     archiveType: 'selected',
     selectedMrns: []
@@ -79,10 +92,40 @@ export const useOperationsStore = defineStore('operations', () => {
     archiveModal.value.visible = false
   }
 
-  // Computed properties for modal
+  // Streaming Modal Actions
+  const showStreamingModalSelected = (selectedMrns: string[]) => {
+    streamingModal.value = {
+      visible: true,
+      archiveType: 'selected',
+      selectedMrns
+    }
+  }
+
+  const showStreamingModalAll = () => {
+    streamingModal.value = {
+      visible: true,
+      archiveType: 'all',
+      selectedMrns: []
+    }
+  }
+
+  const hideStreamingModal = () => {
+    streamingModal.value.visible = false
+  }
+
+  // Helper method for displaying toasts
+  const displayToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    recordOperation('Toast', type === 'success', message)
+  }
+
+  // Computed properties for modals
   const archiveModalVisible = computed(() => archiveModal.value.visible)
   const archiveModalType = computed(() => archiveModal.value.archiveType)
   const archiveModalSelectedMrns = computed(() => archiveModal.value.selectedMrns)
+
+  const streamingModalVisible = computed(() => streamingModal.value.visible)
+  const streamingModalType = computed(() => streamingModal.value.archiveType)
+  const streamingModalSelectedMrns = computed(() => streamingModal.value.selectedMrns)
 
   return {
     // State
@@ -96,6 +139,7 @@ export const useOperationsStore = defineStore('operations', () => {
     recordOperation,
     clearToast,
     toggleSummary,
+    displayToast,
     
     // Archive Modal
     archiveModalVisible,
@@ -103,6 +147,14 @@ export const useOperationsStore = defineStore('operations', () => {
     archiveModalSelectedMrns,
     showArchiveModalSelected,
     showArchiveModalAll,
-    hideArchiveModal
+    hideArchiveModal,
+
+    // Streaming Modal
+    streamingModalVisible,
+    streamingModalType,
+    streamingModalSelectedMrns,
+    showStreamingModalSelected,
+    showStreamingModalAll,
+    hideStreamingModal
   }
 })

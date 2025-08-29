@@ -89,3 +89,22 @@ export const ProcessingMode = {
 } as const
 
 export type ProcessingModeType = typeof ProcessingMode[keyof typeof ProcessingMode]
+
+/**
+ * Streaming archive-specific interfaces
+ */
+export interface StreamingArchiveOptions {
+  mrns: string[]
+  resource_types?: string[]
+  archive_name?: string
+}
+
+/**
+ * Streaming progress tracking
+ */
+export interface StreamingProgress {
+  active: boolean
+  filename: string
+  startTime: Date | null
+  progress?: number
+}

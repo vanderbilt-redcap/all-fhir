@@ -55,6 +55,10 @@ return function (App $app) {
     $app->post('/archives/all', [ArchiveController::class, 'archiveAll']);
     $app->get('/archives/{archive_id}/download', [ArchiveController::class, 'downloadArchive']);
     $app->delete('/archives/{archive_id}', [ArchiveController::class, 'deleteArchive']);
+    
+    // On-demand streaming archive routes
+    $app->post('/archives/stream/selected', [ArchiveController::class, 'streamSelected']);
+    $app->post('/archives/stream/all', [ArchiveController::class, 'streamAll']);
 
     // // Dynamic route
     // $app->get('/user/{id}', function (Request $request, Response $response, array $args) {

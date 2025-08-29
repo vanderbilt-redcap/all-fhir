@@ -20,6 +20,7 @@
     "require": {
         "slim/slim": "^4.0",
         "slim/psr7": "^1.7",
-        "php-di/php-di": "^7.0"
+        "php-di/php-di": "^7.0",
+        "maennchen/zipstream-php": "^3.1"
     }
 }

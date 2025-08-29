@@ -5,6 +5,7 @@ namespace Vanderbilt\FhirSnapshot\Controllers;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Vanderbilt\FhirSnapshot\Services\ResourceArchiveService;
+use Vanderbilt\FhirSnapshot\Services\OnDemandStreamingPackager;
 
 /**
  * ArchiveController
@@ -24,6 +25,8 @@ use Vanderbilt\FhirSnapshot\Services\ResourceArchiveService;
  * - POST /archives/selected → archiveSelected() → ResourceArchiveService::createArchiveForMrns()
  * - POST /archives/all → archiveAll() → ResourceArchiveService::createArchiveForAllCompleted()  
  * - GET /archives/{id}/download → downloadArchive() → ResourceArchiveService::downloadArchive()
+ * - POST /archives/stream/selected → streamSelected() → OnDemandStreamingPackager::streamResourcesForMrns()
+ * - POST /archives/stream/all → streamAll() → OnDemandStreamingPackager::streamAllCompletedResources()
  * - DELETE /archives/{id} → deleteArchive() → ResourceArchiveService::deleteArchive()
  * 
  * REQUEST/RESPONSE FORMAT:
@@ -41,18 +44,22 @@ use Vanderbilt\FhirSnapshot\Services\ResourceArchiveService;
 class ArchiveController extends AbstractController
 {
     private ResourceArchiveService $archiveService;
+    private OnDemandStreamingPackager $streamingPackager;
 
     /**
-     * Initialize controller with ResourceArchiveService dependency
+     * Initialize controller with service dependencies
      * 
-     * @param ResourceArchiveService $archiveService Service for archive operations
+     * @param ResourceArchiveService $archiveService Service for traditional archive operations
+     * @param OnDemandStreamingPackager $streamingPackager Service for on-demand streaming
      */
     public function __construct(
         \Vanderbilt\FhirSnapshot\FhirSnapshot $module,
-        ResourceArchiveService $archiveService
+        ResourceArchiveService $archiveService,
+        OnDemandStreamingPackager $streamingPackager
     ) {
         parent::__construct($module);
         $this->archiveService = $archiveService;
+        $this->streamingPackager = $streamingPackager;
     }
 
     /**
@@ -260,6 +267,165 @@ class ArchiveController extends AbstractController
             ->withHeader('Content-Length', (string) $fileSize)
             ->withHeader('Cache-Control', 'no-store, no-cache, must-revalidate')
             ->withBody(new \Slim\Psr7\Stream($fileStream));
+    }
+
+    /**
+     * Stream ZIP archive for selected MRNs on-demand
+     * 
+     * Handles POST requests to create streaming ZIP archives for specified MRNs
+     * and resource types. Creates archives on-the-fly without server storage.
+     * 
+     * Expected request payload:
+     * {
+     *   "mrns": ["123456", "789012"],
+     *   "resource_types": ["Demographics", "Conditions"], // optional - empty = all types
+     *   "archive_name": "custom_name", // optional
+     *   "date_from": "2024-01-01", // optional
+     *   "date_to": "2024-12-31" // optional
+     * }
+     * 
+     * @param Request $request HTTP request with streaming parameters
+     * @param Response $response HTTP response for streaming
+     * @return Response Streaming ZIP download or JSON error
+     */
+    public function streamSelected(Request $request, Response $response): Response
+    {
+        try {
+            $params = (array) $request->getParsedBody();
+            
+            // Validate required parameters
+            if (empty($params['mrns']) || !is_array($params['mrns'])) {
+                return $this->jsonResponse($response, [
+                    'success' => false,
+                    'message' => 'MRNs array is required for streaming archive'
+                ], 400);
+            }
+
+            // Check if streaming is supported
+            if (!OnDemandStreamingPackager::isStreamingSupported()) {
+                return $this->jsonResponse($response, [
+                    'success' => false,
+                    'message' => 'On-demand streaming not supported in current environment'
+                ], 503);
+            }
+
+            // Prepare streaming options
+            $options = [];
+            if (!empty($params['resource_types']) && is_array($params['resource_types'])) {
+                $options['resource_types'] = $params['resource_types'];
+            }
+            if (!empty($params['archive_name'])) {
+                $options['archive_name'] = trim($params['archive_name']);
+            }
+            if (!empty($params['date_from'])) {
+                $options['date_from'] = $params['date_from'];
+            }
+            if (!empty($params['date_to'])) {
+                $options['date_to'] = $params['date_to'];
+            }
+
+            // Clear output buffers and start streaming
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+
+            // Stream the archive directly - this handles all HTTP headers and content
+            $this->streamingPackager->streamResourcesForMrns(
+                $params['mrns'],
+                $params['resource_types'] ?? [],
+                $options
+            );
+
+            // This line won't execute due to direct streaming
+            return $response;
+
+        } catch (\Exception $e) {
+            // If headers haven't been sent, return JSON error
+            if (!headers_sent()) {
+                return $this->jsonResponse($response, [
+                    'success' => false,
+                    'message' => 'Streaming failed: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            // If streaming already started, the error is handled within the stream
+            return $response;
+        }
+    }
+
+    /**
+     * Stream ZIP archive for all completed resources in project
+     * 
+     * Handles POST requests to create streaming ZIP archives containing all
+     * completed resources in the project with optional filtering.
+     * 
+     * Expected request payload:
+     * {
+     *   "mrn_list": ["123", "456"], // optional - limit to specific MRNs
+     *   "resource_types": ["Demographics", "Labs"], // optional - empty = all types
+     *   "archive_name": "project_complete_archive", // optional
+     *   "date_from": "2024-01-01", // optional
+     *   "date_to": "2024-12-31" // optional
+     * }
+     * 
+     * @param Request $request HTTP request with filtering options
+     * @param Response $response HTTP response for streaming
+     * @return Response Streaming ZIP download or JSON error
+     */
+    public function streamAll(Request $request, Response $response): Response
+    {
+        try {
+            $params = (array) $request->getParsedBody();
+
+            // Check if streaming is supported
+            if (!OnDemandStreamingPackager::isStreamingSupported()) {
+                return $this->jsonResponse($response, [
+                    'success' => false,
+                    'message' => 'On-demand streaming not supported in current environment'
+                ], 503);
+            }
+
+            // Prepare streaming options
+            $options = [];
+            if (!empty($params['mrn_list']) && is_array($params['mrn_list'])) {
+                $options['mrn_list'] = $params['mrn_list'];
+            }
+            if (!empty($params['resource_types']) && is_array($params['resource_types'])) {
+                $options['resource_types'] = $params['resource_types'];
+            }
+            if (!empty($params['archive_name'])) {
+                $options['archive_name'] = trim($params['archive_name']);
+            }
+            if (!empty($params['date_from'])) {
+                $options['date_from'] = $params['date_from'];
+            }
+            if (!empty($params['date_to'])) {
+                $options['date_to'] = $params['date_to'];
+            }
+
+            // Clear output buffers and start streaming
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+
+            // Stream all completed resources - handles all HTTP headers and content
+            $this->streamingPackager->streamAllCompletedResources($options);
+
+            // This line won't execute due to direct streaming
+            return $response;
+
+        } catch (\Exception $e) {
+            // If headers haven't been sent, return JSON error
+            if (!headers_sent()) {
+                return $this->jsonResponse($response, [
+                    'success' => false,
+                    'message' => 'Streaming failed: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            // If streaming already started, the error is handled within the stream
+            return $response;
+        }
     }
 
     /**

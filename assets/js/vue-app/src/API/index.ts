@@ -180,5 +180,25 @@ export const api = {
   cleanupCompletedTasks() {
     const params = { route: `tasks/cleanup` }
     return apiClient.post('', {}, { params })
+  },
+
+  // Streaming archive API methods
+  streamSelectedArchive(mrns: string[], options?: any) {
+    const params = { route: 'archives/stream/selected' }
+    const payload = { mrns, ...options }
+    return apiClient.post('', payload, { 
+      params, 
+      responseType: 'blob',
+      timeout: 0 // No timeout for streaming
+    })
+  },
+
+  streamAllArchive(options?: any) {
+    const params = { route: 'archives/stream/all' }  
+    return apiClient.post('', options || {}, { 
+      params, 
+      responseType: 'blob',
+      timeout: 0 
+    })
   }
 }
