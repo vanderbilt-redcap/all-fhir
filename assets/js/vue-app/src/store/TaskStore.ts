@@ -18,6 +18,7 @@ export const useTaskStore = defineStore('task', () => {
   const loading = ref(false)
   const tasks = ref<Task[]>([])
   const operationLoading = ref(false)
+  const deletingTasks = ref<Set<string>>(new Set())
   
   // Pagination state
   const pagination = ref<PaginationInfo>({
@@ -223,18 +224,34 @@ export const useTaskStore = defineStore('task', () => {
   }
 
   const deleteTask = async (taskId: string): Promise<boolean> => {
+    // Optimistic update: find and store task before removal
+    const taskIndex = tasks.value.findIndex(task => task.id === taskId)
+    if (taskIndex === -1) {
+      errorsStore.addError({
+        message: 'Task not found',
+        source: 'TaskStore.deleteTask',
+        timestamp: new Date()
+      })
+      return false
+    }
+
+    const taskToDelete = tasks.value[taskIndex]
+    
     try {
-      operationLoading.value = true
+      // Mark task as being deleted for UI feedback
+      deletingTasks.value.add(taskId)
+      
+      // Optimistically remove task from UI
+      tasks.value.splice(taskIndex, 1)
+      
+      // Make API call
       const response = await api.deleteTask(taskId)
       
       if (response.data.success) {
-        // Remove task from local state
-        const index = tasks.value.findIndex(task => task.id === taskId)
-        if (index !== -1) {
-          tasks.value.splice(index, 1)
-        }
         return true
       } else {
+        // Rollback: restore task to original position
+        tasks.value.splice(taskIndex, 0, taskToDelete)
         errorsStore.addError({
           message: response.data.message || 'Failed to delete task',
           source: 'TaskStore.deleteTask',
@@ -243,6 +260,8 @@ export const useTaskStore = defineStore('task', () => {
         return false
       }
     } catch (err) {
+      // Rollback: restore task to original position
+      tasks.value.splice(taskIndex, 0, taskToDelete)
       errorsStore.addError({
         message: `Failed to delete task: ${err}`,
         source: 'TaskStore.deleteTask',
@@ -250,7 +269,8 @@ export const useTaskStore = defineStore('task', () => {
       })
       return false
     } finally {
-      operationLoading.value = false
+      // Remove from deleting set
+      deletingTasks.value.delete(taskId)
     }
   }
 
@@ -283,11 +303,16 @@ export const useTaskStore = defineStore('task', () => {
     pagination.value.page = 1
   }
 
+  const isTaskDeleting = (taskId: string): boolean => {
+    return deletingTasks.value.has(taskId)
+  }
+
   return {
     // State
     loading,
     tasks,
     operationLoading,
+    deletingTasks,
     pagination,
     filters,
 
@@ -310,6 +335,7 @@ export const useTaskStore = defineStore('task', () => {
     setPage,
     setLimit,
     setFilter,
-    clearFilters
+    clearFilters,
+    isTaskDeleting
   }
 })

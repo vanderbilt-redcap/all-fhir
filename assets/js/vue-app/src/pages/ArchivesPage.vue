@@ -195,8 +195,9 @@
                         class="btn btn-outline-danger"
                         @click="showDeleteModal(archive)"
                         title="Delete Archive"
+                        :disabled="archiveStore.isArchiveDeleting(archive.archive_id)"
                       >
-                        <i class="fas fa-trash"></i>
+                        <i class="fas" :class="archiveStore.isArchiveDeleting(archive.archive_id) ? 'fa-spinner fa-spin' : 'fa-trash'"></i>
                       </button>
                     </div>
                   </td>
@@ -291,14 +292,14 @@ const refreshArchives = async () => {
   await archiveStore.fetchArchives()
 }
 
-const setupAutoRefresh = () => {
-  // Auto-refresh every 30 seconds if there are pending/processing archives
-  refreshInterval = setInterval(async () => {
-    if (archiveStore.pendingArchives.length > 0) {
-      await archiveStore.refreshArchiveStatus()
-    }
-  }, 30000)
-}
+// const setupAutoRefresh = () => {
+//   // Auto-refresh every 30 seconds if there are pending/processing archives
+//   refreshInterval = setInterval(async () => {
+//     if (archiveStore.pendingArchives.length > 0) {
+//       await archiveStore.refreshArchiveStatus()
+//     }
+//   }, 30000)
+// }
 
 const onSearchInput = () => {
   archiveStore.setFilter('searchQuery', searchQuery.value)

@@ -174,10 +174,10 @@
                       <button 
                         class="btn btn-outline-danger"
                         title="Delete Task"
-                        :disabled="task.status === 'processing'"
+                        :disabled="task.status === 'processing' || taskStore.isTaskDeleting(task.id)"
                         @click="confirmDeleteTask(task)"
                       >
-                        <i class="fas fa-trash"></i>
+                        <i class="fas" :class="taskStore.isTaskDeleting(task.id) ? 'fa-spinner fa-spin' : 'fa-trash'"></i>
                       </button>
                     </div>
                   </td>
@@ -371,14 +371,14 @@ const confirmDeleteTask = async (task: Task) => {
   }
 }
 
-const setupAutoRefresh = () => {
-  refreshInterval = setInterval(async () => {
-    const { pending, processing } = taskStore.taskStatusCounts
-    if (pending > 0 || processing > 0) {
-      await taskStore.refreshTaskStatus()
-    }
-  }, 30000)
-}
+// const setupAutoRefresh = () => {
+//   refreshInterval = setInterval(async () => {
+//     const { pending, processing } = taskStore.taskStatusCounts
+//     if (pending > 0 || processing > 0) {
+//       await taskStore.refreshTaskStatus()
+//     }
+//   }, 30000)
+// }
 
 // Utility functions
 const formatRelativeDate = (dateString: string): string => {

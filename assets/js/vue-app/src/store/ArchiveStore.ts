@@ -16,6 +16,7 @@ export const useArchiveStore = defineStore('archive', () => {
   const loading = ref(false)
   const archives = ref<Archive[]>([])
   const operationLoading = ref(false)
+  const deletingArchives = ref<Set<string>>(new Set())
   
   // Pagination state
   const pagination = ref({
@@ -200,18 +201,34 @@ export const useArchiveStore = defineStore('archive', () => {
   }
 
   const deleteArchive = async (archiveId: string): Promise<ArchiveDeleteResponse | null> => {
+    // Optimistic update: find and store archive before removal
+    const archiveIndex = archives.value.findIndex(a => a.archive_id === archiveId)
+    if (archiveIndex === -1) {
+      errorsStore.addError({
+        message: 'Archive not found',
+        source: 'ArchiveStore.deleteArchive',
+        timestamp: new Date()
+      })
+      return null
+    }
+
+    const archiveToDelete = archives.value[archiveIndex]
+    
     try {
-      operationLoading.value = true
+      // Mark archive as being deleted for UI feedback
+      deletingArchives.value.add(archiveId)
+      
+      // Optimistically remove archive from UI
+      archives.value.splice(archiveIndex, 1)
+      
+      // Make API call
       const response = await api.deleteArchive(archiveId)
       
       if (response.data.success) {
-        // Remove archive from local state
-        const index = archives.value.findIndex(a => a.archive_id === archiveId)
-        if (index !== -1) {
-          archives.value.splice(index, 1)
-        }
         return response.data
       } else {
+        // Rollback: restore archive to original position
+        archives.value.splice(archiveIndex, 0, archiveToDelete)
         errorsStore.addError({
           message: response.data.message || 'Failed to delete archive',
           source: 'ArchiveStore.deleteArchive',
@@ -220,6 +237,8 @@ export const useArchiveStore = defineStore('archive', () => {
         return response.data
       }
     } catch (err) {
+      // Rollback: restore archive to original position
+      archives.value.splice(archiveIndex, 0, archiveToDelete)
       errorsStore.addError({
         message: `Failed to delete archive: ${err}`,
         source: 'ArchiveStore.deleteArchive',
@@ -227,7 +246,8 @@ export const useArchiveStore = defineStore('archive', () => {
       })
       return null
     } finally {
-      operationLoading.value = false
+      // Remove from deleting set
+      deletingArchives.value.delete(archiveId)
     }
   }
 
@@ -261,11 +281,16 @@ export const useArchiveStore = defineStore('archive', () => {
     pagination.value.page = 1
   }
 
+  const isArchiveDeleting = (archiveId: string): boolean => {
+    return deletingArchives.value.has(archiveId)
+  }
+
   return {
     // State
     loading,
     archives,
     operationLoading,
+    deletingArchives,
     pagination,
     filters,
 
@@ -285,6 +310,7 @@ export const useArchiveStore = defineStore('archive', () => {
     setPage,
     setLimit,
     setFilter,
-    clearFilters
+    clearFilters,
+    isArchiveDeleting
   }
 })
