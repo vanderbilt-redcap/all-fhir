@@ -57,6 +57,15 @@
                 >
                     <i class="fas fa-eye fa-fw"></i>
                 </button>
+                <button 
+                    v-if="resource.status === 'Completed'"
+                    class="btn btn-sm btn-info"
+                    @click="streamDownload"
+                    :disabled="loading || streamingStore.isStreamingActive"
+                    title="Stream download this resource"
+                >
+                    <i class="fas fa-bolt fa-fw"></i>
+                </button>
             </div>
         </td>
     </tr>
@@ -75,6 +84,9 @@ import { ref } from 'vue'
 import type { MonitoredResource } from '@/models/Mrn'
 import { FetchStatus } from '@/models/Mrn'
 import { useMonitorStore } from '@/store/MonitorStore'
+import { useStreamingStore } from '@/store/StreamingStore'
+import { useOperationsStore } from '@/store/OperationsStore'
+import { api } from '@/API'
 
 const props = defineProps<{
     resource: MonitoredResource
@@ -82,6 +94,8 @@ const props = defineProps<{
 }>()
 
 const monitorStore = useMonitorStore()
+const streamingStore = useStreamingStore()
+const operationsStore = useOperationsStore()
 const showFullError = ref(false)
 const loading = ref(false)
 
@@ -143,6 +157,52 @@ const retryResource = async () => {
 const viewDetails = () => {
     // TODO: Implement resource details modal or navigation
     console.log('View details for resource:', props.resource)
+}
+
+const streamDownload = async () => {
+    try {
+        loading.value = true
+        
+        // Generate archive name for this specific resource
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '_')
+        const archiveName = `${props.mrn}_${props.resource.name}_${timestamp}`
+        
+        streamingStore.startStreaming(archiveName)
+        operationsStore.displayToast(`Started streaming download: ${archiveName}`, 'info')
+        
+        // Prepare options for streaming a single resource type for this MRN
+        const streamingOptions = {
+            mrns: [props.mrn],
+            resource_types: [props.resource.name],
+            archive_name: archiveName
+        }
+        
+        const response = await api.streamSelectedArchive([props.mrn], streamingOptions)
+        
+        // Create and trigger download
+        const blob = new Blob([response.data])
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `${archiveName}.zip`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
+        
+        const duration = streamingStore.finishStreaming()
+        operationsStore.displayToast(
+            `Download completed: ${archiveName} (${duration}s)`, 
+            'success'
+        )
+        
+    } catch (error: any) {
+        streamingStore.finishStreaming()
+        operationsStore.displayToast(`Streaming download failed: ${error.message}`, 'error')
+        console.error('Failed to stream download resource:', error)
+    } finally {
+        loading.value = false
+    }
 }
 </script>
 

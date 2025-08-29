@@ -137,6 +137,14 @@
                 >
                     <i class="fas fa-download fa-fw"></i>
                 </button>
+                <button 
+                    class="btn btn-sm btn-info"
+                    :disabled="streamButtonDisabled || operationLoading || streamingStore.isStreamingActive"
+                    @click="streamDownloadMrn"
+                    :title="streamButtonTooltip"
+                >
+                    <i class="fas fa-bolt fa-fw"></i>
+                </button>
             </div>
         </td>
     </tr>
@@ -176,10 +184,12 @@ import { FetchStatus } from '@/models/Mrn'
 import MonitorResourceRow from './MonitorResourceRow.vue'
 import { useMonitorStore } from '@/store/MonitorStore'
 import { useOperationsStore } from '@/store/OperationsStore'
+import { useStreamingStore } from '@/store/StreamingStore'
 import { api } from '@/API'
 
 const monitorStore = useMonitorStore()
 const operationsStore = useOperationsStore()
+const streamingStore = useStreamingStore()
 
 const props = defineProps<{
     item: Mrn
@@ -244,6 +254,24 @@ const retryButtonTooltip = computed(() => {
     }
 })
 
+// Stream button computed properties
+const hasCompletedResources = computed(() => {
+    return props.item.resources.some(r => r.status === FetchStatus.Completed)
+})
+
+const streamButtonDisabled = computed(() => {
+    return !hasCompletedResources.value
+})
+
+const streamButtonTooltip = computed(() => {
+    if (hasCompletedResources.value) {
+        const completedCount = props.item.resources.filter(r => r.status === FetchStatus.Completed).length
+        return `Stream download ${completedCount} completed resource${completedCount > 1 ? 's' : ''} for MRN ${props.item.mrn}`
+    } else {
+        return 'No completed resources to stream'
+    }
+})
+
 // Tooltip content methods
 const getStatusTooltip = (): string => {
     const config = progressConfig.value
@@ -295,6 +323,62 @@ const retryFailedResources = async () => {
         await monitorStore.getProjectSummary()
     } catch (error) {
         console.error('Failed to retry failed resources:', error)
+    } finally {
+        operationLoading.value = false
+    }
+}
+
+const streamDownloadMrn = async () => {
+    if (!hasCompletedResources.value) {
+        return // Button should be disabled, but extra safety check
+    }
+    
+    try {
+        operationLoading.value = true
+        
+        // Generate archive name for this MRN
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '_')
+        const archiveName = `${props.item.mrn}_all_resources_${timestamp}`
+        
+        streamingStore.startStreaming(archiveName)
+        operationsStore.displayToast(`Started streaming download: ${archiveName}`, 'info')
+        
+        // Get all completed resource types for this MRN
+        const completedResourceTypes = props.item.resources
+            .filter(r => r.status === FetchStatus.Completed)
+            .map(r => r.name)
+            .filter((name, index, array) => array.indexOf(name) === index) // Remove duplicates
+        
+        // Prepare options for streaming all completed resources for this MRN
+        const streamingOptions = {
+            mrns: [props.item.mrn],
+            resource_types: completedResourceTypes,
+            archive_name: archiveName
+        }
+        
+        const response = await api.streamSelectedArchive([props.item.mrn], streamingOptions)
+        
+        // Create and trigger download
+        const blob = new Blob([response.data])
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = `${archiveName}.zip`
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
+        
+        const duration = streamingStore.finishStreaming()
+        operationsStore.displayToast(
+            `Download completed: ${archiveName} (${duration}s)`, 
+            'success'
+        )
+        
+    } catch (error: any) {
+        streamingStore.finishStreaming()
+        operationsStore.displayToast(`Streaming download failed: ${error.message}`, 'error')
+        console.error('Failed to stream download MRN:', error)
     } finally {
         operationLoading.value = false
     }
