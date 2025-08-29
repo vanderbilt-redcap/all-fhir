@@ -30,8 +30,8 @@ use JsonSerializable;
  * 
  * FACTORY METHODS:
  * - fromPackagerResult(): Creates from ArchivePackager output
- * - fromStoredData(): Creates from stored project settings
- * - fromTaskMetadata(): Creates from background task metadata
+ * - fromArchiveData(): Creates from unified archive metadata
+ * - fromTaskMetadata(): Creates from background task metadata (legacy support)
  * 
  * USAGE PATTERNS:
  * - Type-safe property access via getters
@@ -116,25 +116,24 @@ class ArchiveInfo implements JsonSerializable
     }
 
     /**
-     * Factory method to create from stored project settings data
+     * Factory method to create from unified archive data
      * 
-     * @param string $archiveId Archive identifier
-     * @param array $storedData Data from immediate_archives project setting
+     * @param array $archiveData Data from unified archives project setting
      * @return self New ArchiveInfo instance
      */
-    public static function fromStoredData(string $archiveId, array $storedData): self
+    public static function fromArchiveData(array $archiveData): self
     {
         return new self(
-            archiveId: $archiveId,
-            filePath: $storedData['file_path'] ?? '',
-            fileName: $storedData['file_name'] ?? 'unknown.zip',
-            fileSize: $storedData['file_size'] ?? 0,
-            totalResources: $storedData['total_resources'] ?? 0,
-            successfulFiles: $storedData['successful_files'] ?? 0,
-            failedFiles: $storedData['failed_files'] ?? 0,
+            archiveId: $archiveData['archive_id'] ?? '',
+            filePath: $archiveData['file_path'] ?? '',
+            fileName: $archiveData['file_name'] ?? 'unknown.zip',
+            fileSize: $archiveData['file_size'] ?? 0,
+            totalResources: $archiveData['total_resources'] ?? 0,
+            successfulFiles: $archiveData['successful_files'] ?? 0,
+            failedFiles: $archiveData['failed_files'] ?? 0,
             downloadUrl: null, // Will be set externally using withDownloadUrl()
-            createdAt: $storedData['created_at'] ?? null,
-            errors: $storedData['errors'] ?? []
+            createdAt: $archiveData['created_at'] ?? null,
+            errors: $archiveData['errors'] ?? []
         );
     }
 

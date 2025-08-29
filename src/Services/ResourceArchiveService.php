@@ -8,6 +8,8 @@ use Vanderbilt\FhirSnapshot\Constants;
 use Vanderbilt\FhirSnapshot\Security\PathSecurityValidator;
 use Vanderbilt\FhirSnapshot\ValueObjects\ArchiveInfo;
 use Vanderbilt\FhirSnapshot\ValueObjects\ArchiveStatus;
+use Vanderbilt\FhirSnapshot\Services\ArchiveMetadataService;
+use Vanderbilt\FhirSnapshot\ValueObjects\Task;
 
 /**
  * ResourceArchiveService
@@ -76,6 +78,7 @@ class ResourceArchiveService
      * @param ArchivePackager $archivePackager Low-level ZIP creation and file management
      * @param QueueManager $queueManager Background task management
      * @param ArchiveUrlService $urlService URL generation service for download links
+     * @param ArchiveMetadataService $archiveMetadataService Unified archive metadata management
      */
     public function __construct(
         private FhirSnapshot $module,
@@ -83,6 +86,7 @@ class ResourceArchiveService
         private ArchivePackager $archivePackager,
         private QueueManager $queueManager,
         private ArchiveUrlService $urlService,
+        private ArchiveMetadataService $archiveMetadataService,
     ) {
         $this->projectId = $module->getProjectId();
         $this->securityValidator = new PathSecurityValidator(
@@ -183,45 +187,31 @@ class ResourceArchiveService
     }
 
     /**
-     * Get status information for a specific archive task
+     * Get status information for a specific archive
      * 
-     * Handles both background-processed archives (queue tasks) and immediate archives.
+     * Uses unified archive metadata from the archives project setting.
      * Returns ArchiveStatus value object with proper download URLs generated.
      * 
-     * @param string $archiveId The archive task identifier
+     * @param string $archiveId The archive identifier
      * @return ArchiveStatus|null Archive status information or null if not found
      */
     public function getArchiveStatus(string $archiveId): ?ArchiveStatus
     {
-        // First, try to get status from queue (background-processed archives)
-        $task = $this->queueManager->getTaskById($archiveId);
+        $archiveData = $this->archiveMetadataService->getArchive($archiveId);
         
-        if ($task && $task->getKey() === Constants::TASK_ARCHIVE) {
-            $archiveStatus = ArchiveStatus::fromTask($task);
-            
-            // Add download URL if completed
-            if ($task->getStatus() === ArchiveStatus::STATUS_COMPLETED) {
-                $downloadUrl = $this->urlService->generateDownloadUrl($archiveId);
-                $archiveStatus = $archiveStatus->withDownloadUrl($downloadUrl);
-            }
-
-            return $archiveStatus;
+        if (!$archiveData) {
+            return null;
         }
-
-        // If not found in queue, check immediate archives
-        $immediateArchives = $this->module->getProjectSetting('immediate_archives') ?? [];
         
-        if (isset($immediateArchives[$archiveId])) {
-            $archiveStatus = ArchiveStatus::fromImmediateArchive($archiveId, $immediateArchives[$archiveId]);
-            
-            // Add download URL for immediate archives
+        $archiveStatus = ArchiveStatus::fromArchiveData($archiveData);
+        
+        // Add download URL if completed
+        if ($archiveStatus->isCompleted()) {
             $downloadUrl = $this->urlService->generateDownloadUrl($archiveId);
             $archiveStatus = $archiveStatus->withDownloadUrl($downloadUrl);
-            
-            return $archiveStatus;
         }
-
-        return null;
+        
+        return $archiveStatus;
     }
 
     /**
@@ -242,72 +232,40 @@ class ResourceArchiveService
     /**
      * List all available archives in the project
      * 
-     * Retrieves archives from both storage locations (immediate archives and background tasks)
-     * and combines them into a unified response format. Archives are sorted by creation date
-     * with newest first.
+     * Retrieves archives from the unified archives project setting.
+     * Archives are sorted by creation date with newest first.
      * 
      * @return array Array of archive information with unified format
      */
     public function listAllArchives(): array
     {
+        $archiveData = $this->archiveMetadataService->getAllArchives();
         $archives = [];
-
-        // Get immediate archives from project settings
-        $immediateArchives = $this->module->getProjectSetting('immediate_archives') ?? [];
         
-        foreach ($immediateArchives as $archiveId => $archiveInfo) {
-            $downloadUrl = $this->urlService->generateDownloadUrl($archiveId);
+        foreach ($archiveData as $archiveId => $archive) {
+            $downloadUrl = null;
+            
+            // Only provide download URL for completed archives
+            if ($archive['status'] === 'completed') {
+                $downloadUrl = $this->urlService->generateDownloadUrl($archiveId);
+            }
             
             $archives[] = [
                 'archive_id' => $archiveId,
-                'status' => 'completed',
-                'created_at' => $archiveInfo['created_at'] ?? '',
-                'file_name' => $archiveInfo['file_name'] ?? 'unknown',
-                'file_size' => $archiveInfo['file_size'] ?? 0,
-                'total_resources' => $archiveInfo['total_resources'] ?? 0,
-                'successful_files' => $archiveInfo['successful_files'] ?? 0,
-                'failed_files' => $archiveInfo['failed_files'] ?? 0,
+                'status' => $archive['status'],
+                'created_at' => $archive['created_at'],
+                'completed_at' => $archive['completed_at'],
+                'file_name' => $archive['file_name'],
+                'file_size' => $archive['file_size'],
+                'total_resources' => $archive['total_resources'],
+                'successful_files' => $archive['successful_files'],
+                'failed_files' => $archive['failed_files'],
                 'download_url' => $downloadUrl,
-                'processing_mode' => 'immediate'
+                'processing_mode' => $archive['processing_mode'],
+                'error_message' => $archive['error_message']
             ];
         }
-
-        // Get background task archives
-        $allTasks = $this->queueManager->getTasks();
         
-        foreach ($allTasks as $task) {
-            if ($task->getKey() !== Constants::TASK_ARCHIVE) {
-                continue;
-            }
-
-            $metadata = $task->getMetadata();
-            $params = $task->getParams();
-            $downloadUrl = null;
-            
-            // Only provide download URL for completed tasks
-            if ($task->getStatus() === 'completed') {
-                $downloadUrl = $this->urlService->generateDownloadUrl($task->getId());
-            }
-
-            $archives[] = [
-                'archive_id' => $task->getId(),
-                'status' => $task->getStatus(),
-                'created_at' => $task->getCreatedAt(),
-                'file_name' => $metadata['file_name'] ?? ($params['archive_name'] ?? 'unknown') . '.zip',
-                'file_size' => $metadata['file_size'] ?? 0,
-                'total_resources' => $params['resource_count'] ?? $metadata['total_resources'] ?? 0,
-                'successful_files' => $metadata['successful_files'] ?? 0,
-                'failed_files' => $metadata['failed_files'] ?? 0,
-                'download_url' => $downloadUrl,
-                'processing_mode' => 'background'
-            ];
-        }
-
-        // Sort by creation date (newest first)
-        usort($archives, function($a, $b) {
-            return strtotime($b['created_at']) - strtotime($a['created_at']);
-        });
-
         return [
             'success' => true,
             'archives' => $archives,
@@ -325,7 +283,7 @@ class ResourceArchiveService
      * - Fails immediately on any security violation
      * - No fallback mechanisms that could bypass security
      * 
-     * @param string $archiveId The archive task identifier or direct archive ID
+     * @param string $archiveId The archive identifier
      * @return string|null File path for download or null if not available/security violation
      */
     public function downloadArchive(string $archiveId): ?string
@@ -335,24 +293,17 @@ class ResourceArchiveService
             return null;
         }
         
+        $archiveData = $this->archiveMetadataService->getArchive($archiveId);
         
-        // First, try to get status from queue (for background-processed archives)
-        $status = $this->getArchiveStatus($archiveId);
-        
-        if ($status && $status->getStatus() === 'completed') {
-            $filePath = $status->getFilePath() ?? null;
-            
-            // MANDATORY: Validate file path with strict security checks
-            if ($filePath && $this->securityValidator->validatePath($filePath)) {
-                return $filePath;
-            }
+        if (!$archiveData || $archiveData['status'] !== 'completed') {
+            return null;
         }
         
-        // Try direct file path approach for immediate archives
-        $directFilePath = $this->resolveDirectArchiveFilePath($archiveId);
+        $filePath = $archiveData['file_path'] ?? null;
         
-        if ($directFilePath && $this->securityValidator->validatePath($directFilePath)) {
-            return $directFilePath;
+        // MANDATORY: Validate file path with strict security checks
+        if ($filePath && $this->securityValidator->validatePath($filePath)) {
+            return $filePath;
         }
         
         return null;
@@ -361,66 +312,14 @@ class ResourceArchiveService
     /**
      * Clean up completed archive files older than specified days
      * 
-     * Cleans up both background-processed archives (from queue tasks) and 
-     * immediate archives (stored in project settings).
+     * Uses the unified archive metadata service to clean up old archives.
      * 
      * @param int $olderThanDays Number of days to retain completed archives
      * @return int Number of archive files cleaned up
      */
     public function cleanupOldArchives(int $olderThanDays = 7): int
     {
-        $cleanedCount = 0;
-        $cutoffTime = strtotime("-{$olderThanDays} days");
-
-        // Clean up background-processed archives (queue tasks)
-        $completedTasks = $this->queueManager->getTasksByStatus('completed');
-        
-        foreach ($completedTasks as $task) {
-            if ($task->getKey() !== Constants::TASK_ARCHIVE) {
-                continue;
-            }
-
-            $taskTime = strtotime($task->getUpdatedAt());
-            if ($taskTime < $cutoffTime) {
-                $metadata = $task->getMetadata();
-                $filePath = $metadata['file_path'] ?? null;
-                
-                if ($filePath && file_exists($filePath)) {
-                    unlink($filePath);
-                    $cleanedCount++;
-                }
-                
-                // Remove the task record as well
-                $this->queueManager->removeTask($task->getId());
-            }
-        }
-
-        // Clean up immediate archives (stored in project settings)
-        $immediateArchives = $this->module->getProjectSetting('immediate_archives') ?? [];
-        $remainingArchives = [];
-
-        foreach ($immediateArchives as $archiveId => $archiveInfo) {
-            $createdTime = strtotime($archiveInfo['created_at']);
-            
-            if ($createdTime < $cutoffTime) {
-                $filePath = $archiveInfo['file_path'];
-                
-                if (file_exists($filePath)) {
-                    unlink($filePath);
-                    $cleanedCount++;
-                }
-                
-                // Don't include in remaining archives (effectively removes it)
-            } else {
-                // Keep this archive
-                $remainingArchives[$archiveId] = $archiveInfo;
-            }
-        }
-
-        // Update the project settings with remaining archives
-        $this->module->setProjectSetting('immediate_archives', $remainingArchives);
-
-        return $cleanedCount;
+        return $this->archiveMetadataService->cleanupOldArchives($olderThanDays);
     }
 
     /**
@@ -430,7 +329,7 @@ class ResourceArchiveService
      * - Validates archive ID with strict alphanumeric rules
      * - Validates all file paths against path traversal attacks
      * - Removes physical files safely with proper error handling
-     * - Cleans up metadata from both storage locations
+     * - Cleans up metadata from unified storage
      * - Logs all deletion attempts for security auditing
      * 
      * @param string $archiveId The archive identifier to delete
@@ -438,123 +337,9 @@ class ResourceArchiveService
      */
     public function deleteArchive(string $archiveId): array
     {
-        // MANDATORY: Validate archive ID first - fail fast on any violation
-        if (!$this->securityValidator->isValidArchiveId($archiveId)) {
-            return [
-                'success' => false,
-                'message' => 'Invalid archive ID - security violation',
-                'archive_id' => $archiveId,
-                'deleted_files' => 0
-            ];
-        }
-
-        $deletedFiles = 0;
-        $deletedFrom = [];
-
-        // Try to delete from background task archives first
-        $task = $this->queueManager->getTaskById($archiveId);
-        
-        if ($task && $task->getKey() === Constants::TASK_ARCHIVE) {
-            $metadata = $task->getMetadata();
-            $filePath = $metadata['file_path'] ?? null;
-            
-            // Delete physical file if it exists
-            if ($filePath && $this->securityValidator->validatePath($filePath) && file_exists($filePath)) {
-                if (unlink($filePath)) {
-                    $deletedFiles++;
-                    $deletedFrom[] = 'background_task_file';
-                }
-            }
-            
-            // Remove task from queue
-            if ($this->queueManager->removeTask($archiveId)) {
-                $deletedFrom[] = 'background_task_record';
-            }
-        }
-
-        // Try to delete from immediate archives
-        $immediateArchives = $this->module->getProjectSetting('immediate_archives') ?? [];
-        
-        if (isset($immediateArchives[$archiveId])) {
-            $archiveInfo = $immediateArchives[$archiveId];
-            $filePath = $archiveInfo['file_path'] ?? null;
-            
-            // Delete physical file if it exists
-            if ($filePath && $this->securityValidator->validatePath($filePath) && file_exists($filePath)) {
-                if (unlink($filePath)) {
-                    $deletedFiles++;
-                    $deletedFrom[] = 'immediate_archive_file';
-                }
-            }
-            
-            // Remove from project settings
-            unset($immediateArchives[$archiveId]);
-            $this->module->setProjectSetting('immediate_archives', $immediateArchives);
-            $deletedFrom[] = 'immediate_archive_record';
-        }
-
-        // Determine success based on whether we found and processed the archive
-        $found = !empty($deletedFrom);
-        
-        if (!$found) {
-            return [
-                'success' => false,
-                'message' => 'Archive not found',
-                'archive_id' => $archiveId,
-                'deleted_files' => 0,
-                'deleted_from' => []
-            ];
-        }
-
-        return [
-            'success' => true,
-            'message' => "Archive deleted successfully from: " . implode(', ', $deletedFrom),
-            'archive_id' => $archiveId,
-            'deleted_files' => $deletedFiles,
-            'deleted_from' => $deletedFrom
-        ];
+        return $this->archiveMetadataService->deleteArchive($archiveId, true);
     }
 
-    /**
-     * Resolve direct file path for immediate archives with strict security
-     * 
-     * SECURITY-HARDENED IMPLEMENTATION:
-     * - REMOVED all vulnerable path construction patterns
-     * - REMOVED direct path usage from archive ID
-     * - REMOVED pattern matching with user input
-     * - ONLY uses pre-validated stored paths
-     * - ONLY constructs paths within allowed base directory
-     * - NO legacy support for unsafe path patterns
-     * 
-     * @param string $archiveId Archive identifier (already validated)
-     * @return string|null File path if safely resolvable, null otherwise
-     */
-    private function resolveDirectArchiveFilePath(string $archiveId): ?string
-    {
-        // ONLY check stored immediate archive info - no fallback patterns
-        $immediateArchives = $this->module->getProjectSetting('immediate_archives') ?? [];
-        
-        if (isset($immediateArchives[$archiveId])) {
-            $storedInfo = $immediateArchives[$archiveId];
-            $filePath = $storedInfo['file_path'] ?? null;
-            
-            if ($filePath) {
-                // The stored path will be validated by validateArchivePath() in the caller
-                // We just return it here for validation
-                return $filePath;
-            }
-        }
-        
-        // REMOVED: All vulnerable fallback logic including:
-        // - Direct usage of archiveId as path
-        // - Pattern matching with user input
-        // - Path concatenation with user-controlled data
-        // - Legacy path resolution attempts
-        
-        // If not found in stored archives, try safe construction with validated archive ID
-        // Use the security validator to create a safe path
-        return $this->securityValidator->createSafeFilePath($archiveId);
-    }
 
     /**
      * Collect completed FHIR resources for specified MRNs with filtering
@@ -643,7 +428,7 @@ class ResourceArchiveService
             'creation_timestamp' => date('c')
         ];
 
-        $task = \Vanderbilt\FhirSnapshot\ValueObjects\Task::create(
+        $task = Task::create(
             Constants::TASK_ARCHIVE, 
             $taskParams, 
             $taskMetadata
@@ -654,22 +439,39 @@ class ResourceArchiveService
             $task->getParams(), 
             $task->getMetadata()
         );
+        
+        // Generate security-compliant archive ID (separate from task ID)
+        $archiveId = ArchivePackager::generateCompliantArchiveId();
+        
+        // Store mapping in task metadata for processor to use
+        $this->queueManager->updateTaskMetadata($addedTask->getId(), array_merge(
+            $addedTask->getMetadata(),
+            ['archive_id' => $archiveId]
+        ));
+        
+        // Create pending archive metadata using compliant archive ID
+        $this->archiveMetadataService->createPendingArchive($archiveId, [
+            'archive_name' => $archiveName,
+            'total_resources' => count($resources),
+            'processing_mode' => 'background'
+        ]);
 
         return [
             'success' => true,
             'message' => 'Archive task created successfully for background processing',
-            'archive_id' => $addedTask->getId(),
+            'archive_id' => $archiveId,
             'total_resources' => count($resources),
             'processing_mode' => 'background',
-            'task_status' => 'pending'
+            'task_status' => 'pending',
+            'task_id' => $addedTask->getId()
         ];
     }
 
     /**
      * Create archive immediately for small datasets
      * 
-     * For immediate archives, we store a simple mapping in project settings to enable
-     * proper download functionality. The archive_id can be used directly with downloadArchive().
+     * Uses unified archive metadata service to store archive information.
+     * The archive_id can be used directly with downloadArchive().
      * 
      * @param array $resources Array of resource data for archiving
      * @param array $options Archive creation options
@@ -686,8 +488,15 @@ class ResourceArchiveService
                 'project_id' => $this->projectId
             ]);
 
-            // Store immediate archive info for download capability
-            $this->storeImmediateArchiveInfo($archiveInfo->getArchiveId(), $archiveInfo->toArray());
+            // Store immediate archive in unified metadata service
+            $this->archiveMetadataService->createPendingArchive($archiveInfo->getArchiveId(), [
+                'archive_name' => $archiveName,
+                'total_resources' => count($resources),
+                'processing_mode' => 'immediate'
+            ]);
+            
+            // Mark as completed immediately since it's already done
+            $this->archiveMetadataService->markCompleted($archiveInfo->getArchiveId(), $archiveInfo->toArray());
 
             return [
                 'success' => true,
@@ -712,51 +521,4 @@ class ResourceArchiveService
         }
     }
 
-    /**
-     * Store immediate archive information with mandatory security validation
-     * 
-     * SECURITY-HARDENED IMPLEMENTATION:
-     * - Validates archive ID with strict rules before storage
-     * - Validates file path against path traversal attacks before storage
-     * - Rejects any storage attempt that fails security checks
-     * - Logs all storage attempts and security violations
-     * - Only stores paths within allowed base directory
-     * 
-     * @param string $archiveId Archive identifier
-     * @param array $archiveInfo Archive creation result from ArchivePackager
-     * @throws \InvalidArgumentException If security validation fails
-     */
-    private function storeImmediateArchiveInfo(string $archiveId, array $archiveInfo): void
-    {
-        // MANDATORY: Validate archive ID with strict security rules
-        if (!$this->securityValidator->isValidArchiveId($archiveId)) {
-            throw new \InvalidArgumentException('Invalid archive ID - security violation');
-        }
-        
-        // MANDATORY: Validate file path before storing
-        $filePath = $archiveInfo['file_path'] ?? null;
-        if (!$filePath) {
-            throw new \InvalidArgumentException('File path is required for archive storage');
-        }
-        
-        // MANDATORY: Validate file path against security rules
-        if (!$this->securityValidator->validatePath($filePath)) {
-            throw new \InvalidArgumentException('File path failed security validation');
-        }
-        
-        // All security checks passed - store the archive info
-        $immediateArchives = $this->module->getProjectSetting('immediate_archives') ?? [];
-        
-        $immediateArchives[$archiveId] = [
-            'file_path' => $filePath,  // Already validated
-            'file_name' => $archiveInfo['file_name'] ?? 'unknown',
-            'file_size' => $archiveInfo['file_size'] ?? 0,
-            'created_at' => date('c'),
-            'total_resources' => $archiveInfo['total_resources'] ?? 0,
-            'successful_files' => $archiveInfo['successful_files'] ?? 0,
-            'failed_files' => $archiveInfo['failed_files'] ?? 0
-        ];
-        
-        $this->module->setProjectSetting('immediate_archives', $immediateArchives);
-    }
 }

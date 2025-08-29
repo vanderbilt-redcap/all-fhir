@@ -138,8 +138,7 @@ class ArchivePackager
         $tempDir = $options['temp_dir'] ?? $this->tempDir;
 
         // Generate unique archive ID that complies with PathSecurityValidator rules
-        // Using timestamp + random to avoid dots from uniqid(..., true)
-        $archiveId = 'archive_' . date('YmdHis') . '_' . bin2hex(random_bytes(8));
+        $archiveId = self::generateCompliantArchiveId();
         $zipFileName = $archiveName . '.zip';
         $zipFilePath = $tempDir . DIRECTORY_SEPARATOR . $zipFileName;
 
@@ -490,5 +489,18 @@ class ArchivePackager
         ];
 
         return $errors[$zipError] ?? "Unknown error ({$zipError})";
+    }
+    
+    /**
+     * Generate security-compliant archive ID
+     * 
+     * Uses timestamp + random bytes to avoid dots from uniqid(..., true)
+     * and comply with PathSecurityValidator rules: [a-zA-Z0-9_-]+
+     * 
+     * @return string Compliant archive ID
+     */
+    public static function generateCompliantArchiveId(): string
+    {
+        return 'archive_' . date('YmdHis') . '_' . bin2hex(random_bytes(8));
     }
 }

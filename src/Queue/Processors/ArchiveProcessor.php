@@ -7,6 +7,7 @@ use Vanderbilt\FhirSnapshot\FhirSnapshot;
 use Vanderbilt\FhirSnapshot\ValueObjects\Task;
 use Vanderbilt\FhirSnapshot\ValueObjects\TaskProcessorResult;
 use Vanderbilt\FhirSnapshot\Services\ArchivePackager;
+use Vanderbilt\FhirSnapshot\Services\ArchiveMetadataService;
 
 /**
  * ArchiveProcessor
@@ -74,7 +75,8 @@ class ArchiveProcessor extends AbstractTaskProcessor
 
     function __construct(
         private FhirSnapshot $module,
-        private ArchivePackager $archivePackager
+        private ArchivePackager $archivePackager,
+        private ArchiveMetadataService $archiveMetadataService
     ) {
         parent::__construct($module);
     }
@@ -138,13 +140,17 @@ class ArchiveProcessor extends AbstractTaskProcessor
             if ($archiveInfo->getFailedFiles() > 0) {
                 $this->logWarning("Archive created with {$archiveInfo->getFailedFiles()} failed files");
             }
+            
+            // Get the archive ID from task metadata (set by ResourceArchiveService)
+            $metadata = $task->getMetadata();
+            $archiveId = $metadata['archive_id'] ?? $task->getId(); // Fallback to task ID for backward compatibility
+            
+            // Update archive status in unified metadata service
+            $this->archiveMetadataService->markCompleted($archiveId, $archiveInfo->toArray());
 
             return TaskProcessorResult::success(
                 "FHIR archive created successfully: {$archiveInfo->getSuccessfulFiles()} files, " .
-                "{$archiveInfo->getFileSize()} bytes",
-                [
-                    'archive_info' => $archiveInfo
-                ]
+                "{$archiveInfo->getFileSize()} bytes"
             );
 
         } catch (\Exception $e) {
@@ -152,6 +158,13 @@ class ArchiveProcessor extends AbstractTaskProcessor
             $processingTime = $endTime - $startTime;
 
             $this->logError("Failed to create FHIR archive: " . $e->getMessage());
+            
+            // Get the archive ID from task metadata (set by ResourceArchiveService)
+            $metadata = $task->getMetadata();
+            $archiveId = $metadata['archive_id'] ?? $task->getId(); // Fallback to task ID for backward compatibility
+            
+            // Mark archive as failed in unified metadata service
+            $this->archiveMetadataService->markFailed($archiveId, $e->getMessage());
 
             return TaskProcessorResult::failure(
                 "Failed to create FHIR archive: " . $e->getMessage()

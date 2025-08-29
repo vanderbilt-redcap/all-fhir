@@ -29,8 +29,8 @@ use JsonSerializable;
  * - 'background': Archive created via queue task, status may vary
  * 
  * FACTORY METHODS:
- * - fromTask(): Creates from queue task data
- * - fromImmediateArchive(): Creates for immediate archive
+ * - fromTask(): Creates from queue task data (legacy support)
+ * - fromArchiveData(): Creates from unified archive metadata
  * - fromCompletedTask(): Creates for completed background task
  * 
  * INTEGRATION POINTS:
@@ -115,25 +115,33 @@ class ArchiveStatus implements JsonSerializable
     }
 
     /**
-     * Factory method to create for immediate archive
+     * Factory method to create from unified archive data
      * 
-     * @param string $archiveId Archive identifier
-     * @param array $storedData Data from immediate_archives project setting
+     * @param array $archiveData Data from unified archives project setting
      * @return self New ArchiveStatus instance
      */
-    public static function fromImmediateArchive(string $archiveId, array $storedData): self
+    public static function fromArchiveData(array $archiveData): self
     {
-        $archiveInfo = ArchiveInfo::fromStoredData($archiveId, $storedData);
-        $createdAt = $storedData['created_at'] ?? date('c');
+        $archiveInfo = null;
+        
+        // Create ArchiveInfo if archive is completed and has file data
+        if ($archiveData['status'] === self::STATUS_COMPLETED && !empty($archiveData['file_path'])) {
+            $archiveInfo = ArchiveInfo::fromArchiveData($archiveData);
+        }
+        
+        $createdAt = $archiveData['created_at'] ?? date('c');
+        $updatedAt = $archiveData['completed_at'] ?? $createdAt;
 
         return new self(
-            archiveId: $archiveId,
-            status: self::STATUS_COMPLETED, // Immediate archives are always completed
-            processingMode: self::MODE_IMMEDIATE,
+            archiveId: $archiveData['archive_id'],
+            status: $archiveData['status'],
+            processingMode: $archiveData['processing_mode'] ?? self::MODE_BACKGROUND,
             createdAt: $createdAt,
-            updatedAt: $createdAt, // Same as created for immediate archives
+            updatedAt: $updatedAt,
             archiveInfo: $archiveInfo,
-            metadata: []
+            metadata: [
+                'error_message' => $archiveData['error_message'] ?? null
+            ]
         );
     }
 

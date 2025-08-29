@@ -29,6 +29,7 @@ use Vanderbilt\FhirSnapshot\Queue\Processors\RetryFailedProcessor;
 use Vanderbilt\FhirSnapshot\Settings\Settings;
 use Vanderbilt\FhirSnapshot\Constants;
 use Vanderbilt\FhirSnapshot\Controllers\TaskController;
+use Vanderbilt\FhirSnapshot\Services\ArchiveMetadataService;
 use Vanderbilt\FhirSnapshot\Services\TaskService;
 use Vanderbilt\REDCap\Classes\Fhir\FhirSystem\FhirSystemManager;
 use Vanderbilt\REDCap\Classes\SystemMonitors\MemoryMonitor;
@@ -88,16 +89,17 @@ return function (ContainerBuilder $containerBuilder) {
         ),
         ArchiveProcessor::class => fn(Container $c) => new ArchiveProcessor(
             $c->get(FhirSnapshot::class),
-            $c->get(ArchivePackager::class)
+            $c->get(ArchivePackager::class),
+            $c->get(ArchiveMetadataService::class)
         ),
         ResourceArchiveService::class => fn(Container $c) => new ResourceArchiveService(
             $c->get(FhirSnapshot::class),
             $c->get(RepeatedFormDataAccessor::class),
             $c->get(ArchivePackager::class),
             $c->get(QueueManager::class),
-            $c->get(ArchiveUrlService::class)
+            $c->get(ArchiveUrlService::class),
+            $c->get(ArchiveMetadataService::class)
         ),
-
         // Tasks
         TaskService::class => fn(Container $c) => new TaskService(
             $c->get(FhirSnapshot::class),
