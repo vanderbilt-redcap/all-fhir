@@ -126,7 +126,7 @@ class TaskService
             
             return TaskOperationResponse::taskCreationSuccess(
                 $task->getId(),
-                'full_sync',
+                Constants::TASK_FULL_SYNC,
                 ['queued_at' => date('Y-m-d H:i:s')]
             );
             
@@ -155,7 +155,7 @@ class TaskService
             }
             
             // Create retry failed task and add to queue
-            $task = $this->queueManager->addTask('retry_failed', [], [
+            $task = $this->queueManager->addTask(Constants::TASK_RETRY_FAILED, [], [
                 'initiated_by' => 'task_service',
                 'initiated_at' => date('Y-m-d H:i:s'),
                 'failed_tasks_count' => $failedCount
@@ -163,7 +163,7 @@ class TaskService
             
             return TaskOperationResponse::taskCreationSuccess(
                 $task->getId(),
-                'retry_failed',
+                Constants::TASK_RETRY_FAILED,
                 [
                     'failed_tasks_count' => $failedCount,
                     'queued_at' => date('Y-m-d H:i:s')
