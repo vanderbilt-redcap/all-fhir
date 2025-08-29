@@ -143,8 +143,10 @@ class TaskService
      * 
      * Finds all failed FhirResourceMetadata records across the project and creates 
      * a task to retry their fetch operations using the RetryFailedProcessor.
+     * 
+     * @param array $filters Optional filters to limit retry scope (e.g., record_ids, resource_type)
      */
-    public function queueRetryFailedResources(): TaskOperationResponse
+    public function queueRetryFailedResources(array $filters = []): TaskOperationResponse
     {
         try {
             // Get count of failed FHIR resources (not failed tasks)
@@ -164,7 +166,8 @@ class TaskService
             // Create retry failed task with proper parameters for RetryFailedProcessor
             $task = $this->queueManager->addTask(Constants::TASK_RETRY_FAILED, [
                 'project_id' => $projectId,
-                'operation_type' => 'bulk'
+                'operation_type' => 'bulk',
+                'filters' => $filters
             ], [
                 'initiated_by' => 'task_service',
                 'initiated_at' => date('Y-m-d H:i:s'),

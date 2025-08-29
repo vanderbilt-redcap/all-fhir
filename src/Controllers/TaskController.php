@@ -185,11 +185,16 @@ class TaskController
      * Queue retry failed resources operation
      * 
      * POST /tasks/retry-failed
+     * Optional request body: {"filters": {"record_ids": [123, 456]}}
      */
     public function retryFailedResources(Request $request, Response $response): Response
     {
         try {
-            $operationResponse = $this->taskService->queueRetryFailedResources();
+            // Parse optional filters from request body
+            $body = $request->getParsedBody();
+            $filters = isset($body['filters']) && is_array($body['filters']) ? $body['filters'] : [];
+            
+            $operationResponse = $this->taskService->queueRetryFailedResources($filters);
             
             $response->getBody()->write(json_encode($operationResponse->toArray()));
             return $response

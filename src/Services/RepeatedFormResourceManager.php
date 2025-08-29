@@ -231,18 +231,24 @@ class RepeatedFormResourceManager
     }
 
     /**
-     * Retry all failed resources with optional filtering by resource type
+     * Retry all failed resources with optional filtering by resource type or record IDs
      * 
-     * @param array $filters Optional filters including 'resource_type' to limit retry scope
+     * @param array $filters Optional filters including 'resource_type' and 'record_ids' to limit retry scope
      * @return int Number of resources marked for retry
      */
     public function bulkRetryFailed(array $filters = []): int
     {
-        $allRecordIds = $this->dataAccessor->getAllRecordIds();
+        // Determine which record IDs to process
+        if (!empty($filters['record_ids']) && is_array($filters['record_ids'])) {
+            $recordIds = array_map('strval', $filters['record_ids']); // Ensure strings
+        } else {
+            $recordIds = $this->dataAccessor->getAllRecordIds();
+        }
+        
         $resourcesToRetry = [];
         
         // Find all failed resources that match filters
-        foreach ($allRecordIds as $recordId) {
+        foreach ($recordIds as $recordId) {
             $allMetadata = $this->dataAccessor->getAllResourceMetadata($recordId);
             
             foreach ($allMetadata as $metadata) {

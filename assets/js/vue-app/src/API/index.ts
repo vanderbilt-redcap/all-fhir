@@ -150,9 +150,10 @@ export const api = {
     return apiClient.post('', {}, { params })
   },
 
-  retryFailedResources() {
+  retryFailedResources(filters?: { record_ids?: number[], resource_type?: string }) {
     const params = { route: `tasks/retry-failed` }
-    return apiClient.post('', {}, { params })
+    const payload = filters ? { filters } : {}
+    return apiClient.post('', payload, { params })
   },
 
   deleteTask(taskId: string) {

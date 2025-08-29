@@ -118,6 +118,20 @@
                     </span>
                 </button>
                 <button 
+                    class="btn btn-sm btn-warning"
+                    @click="retryFailedResources"
+                    :disabled="retryButtonDisabled || operationLoading"
+                    :title="retryButtonTooltip"
+                >
+                    <i class="fas fa-redo fa-fw"></i>
+                    <span v-if="!operationLoading">Retry</span>
+                    <span v-else>
+                        <div class="spinner-border spinner-border-sm" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </span>
+                </button>
+                <button 
                     :class="`btn btn-sm btn-${archiveButtonConfig.variant}`"
                     :disabled="archiveButtonConfig.disabled"
                     @click="showArchiveModal"
@@ -164,6 +178,7 @@ import { FetchStatus } from '@/models/Mrn'
 import MonitorResourceRow from './MonitorResourceRow.vue'
 import { useMonitorStore } from '@/store/MonitorStore'
 import { useOperationsStore } from '@/store/OperationsStore'
+import { api } from '@/API'
 
 const monitorStore = useMonitorStore()
 const operationsStore = useOperationsStore()
@@ -213,6 +228,24 @@ const archiveButtonConfig = computed(() => {
     return monitorStore.getArchiveButtonConfig(props.item)
 })
 
+// Retry button computed properties
+const hasFailedResources = computed(() => {
+    return props.item.resources.some(r => r.status === FetchStatus.Failed)
+})
+
+const retryButtonDisabled = computed(() => {
+    return !hasFailedResources.value
+})
+
+const retryButtonTooltip = computed(() => {
+    if (hasFailedResources.value) {
+        const failedCount = props.item.resources.filter(r => r.status === FetchStatus.Failed).length
+        return `Retry ${failedCount} failed resource${failedCount > 1 ? 's' : ''} for this record`
+    } else {
+        return 'No failed resources to retry'
+    }
+})
+
 // Tooltip content methods
 const getStatusTooltip = (): string => {
     const config = progressConfig.value
@@ -248,6 +281,24 @@ const showArchiveModal = async () => {
         operationsStore.showArchiveModalSelected([props.item.mrn])
     } catch (error) {
         console.error('Failed to show archive modal:', error)
+    }
+}
+
+const retryFailedResources = async () => {
+    if (!hasFailedResources.value) {
+        return // Button should be disabled, but extra safety check
+    }
+    
+    try {
+        operationLoading.value = true
+        await api.retryFailedResources({ record_ids: [props.item.id] })
+        
+        // Refresh monitor data after successful retry
+        await monitorStore.getProjectSummary()
+    } catch (error) {
+        console.error('Failed to retry failed resources:', error)
+    } finally {
+        operationLoading.value = false
     }
 }
 

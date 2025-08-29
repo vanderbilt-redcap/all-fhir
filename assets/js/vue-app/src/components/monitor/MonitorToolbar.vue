@@ -12,16 +12,14 @@
                     :disabled="selectionDisabled || operationLoading"
                     title="Trigger fetch for selected MRNs"
                 >
-                    <i class="fas fa-rotate-right fa-fw"></i>
-                    <span v-if="!operationLoading">Fetch Selected</span>
+                    <template v-if="!operationLoading">
+                        <span><i class="fas fa-cloud-arrow-down fa-fw"></i> Fetch Selected</span>
+                    </template>
                     <span v-else>
-                        <div class="spinner-border spinner-border-sm" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
+                        <span><i class="fas fa-spinner fa-spin fa-fw"></i> Fetch Selected</span>
                     </span>
                 </button>
             </div>
-
 
             <!-- Archive Actions -->
             <div class="btn-group" role="group">
