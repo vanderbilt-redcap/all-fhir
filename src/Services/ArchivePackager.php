@@ -9,6 +9,7 @@ use Vanderbilt\FhirSnapshot\ValueObjects\ArchiveInfo;
 use ZipArchive;
 use Exception;
 
+
 /**
  * ArchivePackager
  * 
@@ -149,46 +150,51 @@ class ArchivePackager
             throw new Exception("Cannot create ZIP archive: " . $this->getZipError($zipResult));
         }
 
-        $archiveStats = [
-            'total_resources' => 0,
-            'successful_files' => 0,
-            'failed_files' => 0,
-            'total_size_bytes' => 0,
-            'resources_by_mrn' => [],
-            'errors' => []
-        ];
+        // Initialize counters for archive statistics
+        $totalResources = 0;
+        $successfulFiles = 0;
+        $failedFiles = 0;
+        $errors = [];
+        $resourcesByMrn = [];
 
         try {
             // Process each resource and add to ZIP
             foreach ($resources as $resource) {
-                $this->addResourceToZip($zip, $resource, $projectId, $archiveStats);
+                $this->addResourceToZip(
+                    $zip, 
+                    $resource, 
+                    $projectId, 
+                    $totalResources, 
+                    $successfulFiles, 
+                    $failedFiles, 
+                    $errors, 
+                    $resourcesByMrn
+                );
             }
 
             // Add archive metadata if requested
             if ($includeMetadata) {
-                $this->addArchiveMetadata($zip, $resources, $archiveStats, $options);
+                $this->addArchiveMetadata($zip, $resources, $totalResources, $successfulFiles, $failedFiles, $resourcesByMrn, $options);
             }
 
             $zip->close();
 
-            // Get final file size
+            // Get final file size and generate download URL
             $fileSize = file_exists($zipFilePath) ? filesize($zipFilePath) : 0;
-
-            // Generate download URL
             $downloadUrl = $this->urlService->generateDownloadUrl($archiveId);
 
-            // Create ArchiveInfo object
+            // Create ArchiveInfo object directly
             return new ArchiveInfo(
                 archiveId: $archiveId,
                 filePath: $zipFilePath,
                 fileName: $zipFileName,
                 fileSize: $fileSize,
-                totalResources: $archiveStats['total_resources'],
-                successfulFiles: $archiveStats['successful_files'],
-                failedFiles: $archiveStats['failed_files'],
+                totalResources: $totalResources,
+                successfulFiles: $successfulFiles,
+                failedFiles: $failedFiles,
                 downloadUrl: $downloadUrl,
                 createdAt: date('c'),
-                errors: $archiveStats['errors']
+                errors: $errors
             );
 
         } catch (Exception $e) {
@@ -297,9 +303,22 @@ class ArchivePackager
      * @param ZipArchive $zip ZIP archive object
      * @param array $resource Resource data array
      * @param string $projectId Project identifier
-     * @param array $archiveStats Statistics tracking (passed by reference)
+     * @param int $totalResources Total resource count (passed by reference)
+     * @param int $successfulFiles Successful file count (passed by reference)  
+     * @param int $failedFiles Failed file count (passed by reference)
+     * @param array $errors Error messages array (passed by reference)
+     * @param array $resourcesByMrn Resources grouped by MRN (passed by reference)
      */
-    private function addResourceToZip(ZipArchive $zip, array $resource, string $projectId, array &$archiveStats): void
+    private function addResourceToZip(
+        ZipArchive $zip, 
+        array $resource, 
+        string $projectId, 
+        int &$totalResources,
+        int &$successfulFiles,
+        int &$failedFiles,
+        array &$errors,
+        array &$resourcesByMrn
+    ): void
     {
         $recordId = $resource['record_id'];
         $mrn = $resource['mrn'];
@@ -310,30 +329,34 @@ class ArchivePackager
             try {
                 $metadata = FhirResourceMetadata::fromArray($metadata);
             } catch (\InvalidArgumentException $e) {
-                $archiveStats['errors'][] = "Invalid metadata structure for record {$recordId}: " . $e->getMessage();
-                $archiveStats['failed_files']++;
+                $errors[] = "Invalid metadata structure for record {$recordId}: " . $e->getMessage();
+                $failedFiles++;
+                $totalResources++;
                 return;
             }
         }
 
         if (!$metadata instanceof FhirResourceMetadata) {
-            $archiveStats['errors'][] = "Invalid metadata for record {$recordId}";
-            $archiveStats['failed_files']++;
+            $errors[] = "Invalid metadata for record {$recordId}";
+            $failedFiles++;
+            $totalResources++;
             return;
         }
 
         $edocId = $metadata->getEdocId();
         if (!$edocId) {
-            $archiveStats['errors'][] = "No file reference for {$metadata->getResourceName()} in record {$recordId}";
-            $archiveStats['failed_files']++;
+            $errors[] = "No file reference for {$metadata->getResourceName()} in record {$recordId}";
+            $failedFiles++;
+            $totalResources++;
             return;
         }
 
         // Retrieve FHIR file content
         $fileInfo = $this->retrieveFhirFile($edocId);
         if (!$fileInfo) {
-            $archiveStats['errors'][] = "Failed to retrieve file for edoc {$edocId} in record {$recordId}";
-            $archiveStats['failed_files']++;
+            $errors[] = "Failed to retrieve file for edoc {$edocId} in record {$recordId}";
+            $failedFiles++;
+            $totalResources++;
             return;
         }
 
@@ -344,25 +367,24 @@ class ArchivePackager
 
         // Add file to ZIP
         if ($zip->addFromString($archivePath, $fileInfo['content'])) {
-            $archiveStats['successful_files']++;
-            $archiveStats['total_size_bytes'] += $fileInfo['file_size'];
+            $successfulFiles++;
+            $totalResources++;
             
             // Track resources by MRN
-            if (!isset($archiveStats['resources_by_mrn'][$mrn])) {
-                $archiveStats['resources_by_mrn'][$mrn] = [];
+            if (!isset($resourcesByMrn[$mrn])) {
+                $resourcesByMrn[$mrn] = [];
             }
-            $archiveStats['resources_by_mrn'][$mrn][] = [
+            $resourcesByMrn[$mrn][] = [
                 'resource_name' => $metadata->getResourceName(),
                 'file_name' => $fileName,
                 'file_size' => $fileInfo['file_size'],
                 'fetch_date' => $metadata->getFetchDate()
             ];
         } else {
-            $archiveStats['errors'][] = "Failed to add {$fileName} to archive";
-            $archiveStats['failed_files']++;
+            $errors[] = "Failed to add {$fileName} to archive";
+            $failedFiles++;
+            $totalResources++;
         }
-
-        $archiveStats['total_resources']++;
     }
 
     /**
@@ -370,11 +392,29 @@ class ArchivePackager
      * 
      * @param ZipArchive $zip ZIP archive object
      * @param array $resources Original resource data
-     * @param array $archiveStats Processing statistics
+     * @param int $totalResources Total resource count
+     * @param int $successfulFiles Successful file count
+     * @param int $failedFiles Failed file count
+     * @param array $resourcesByMrn Resources grouped by MRN
      * @param array $options Packaging options
      */
-    private function addArchiveMetadata(ZipArchive $zip, array $resources, array $archiveStats, array $options): void
+    private function addArchiveMetadata(
+        ZipArchive $zip, 
+        array $resources, 
+        int $totalResources,
+        int $successfulFiles,
+        int $failedFiles,
+        array $resourcesByMrn,
+        array $options
+    ): void
     {
+        $processingStats = [
+            'total_resources' => $totalResources,
+            'successful_files' => $successfulFiles,
+            'failed_files' => $failedFiles,
+            'resources_by_mrn' => $resourcesByMrn
+        ];
+
         $metadata = [
             'archive_info' => [
                 'created_at' => date('c'),
@@ -384,13 +424,13 @@ class ArchivePackager
                 'total_resources' => count($resources),
                 'version' => '1.0'
             ],
-            'processing_stats' => $archiveStats,
+            'processing_stats' => $processingStats,
             'folder_structure' => [
                 'description' => 'Files are organized as: project_id/record_id/mrn/resource_name-fetch_date.json',
-                'total_mrns' => count($archiveStats['resources_by_mrn']),
-                'mrn_list' => array_keys($archiveStats['resources_by_mrn'])
+                'total_mrns' => count($resourcesByMrn),
+                'mrn_list' => array_keys($resourcesByMrn)
             ],
-            'file_details' => $archiveStats['resources_by_mrn']
+            'file_details' => $resourcesByMrn
         ];
 
         $metadataJson = json_encode($metadata, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
