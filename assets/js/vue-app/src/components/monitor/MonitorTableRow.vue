@@ -109,13 +109,12 @@
                     :disabled="operationLoading"
                     title="Trigger fetch for this MRN"
                 >
-                    <i class="fas fa-rotate-right fa-fw"></i>
-                    <span v-if="!operationLoading">Fetch</span>
-                    <span v-else>
-                        <div class="spinner-border spinner-border-sm" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                    </span>
+                    <template v-if="!operationLoading">
+                        <i class="fas fa-cloud-arrow-down fa-fw"></i> Fetch
+                    </template>
+                    <template v-else>
+                        <i class="fas fa-spinner fa-spin fa-fw"></i> Fetch
+                    </template>
                 </button>
                 <button 
                     class="btn btn-sm btn-warning"
@@ -123,13 +122,12 @@
                     :disabled="retryButtonDisabled || operationLoading"
                     :title="retryButtonTooltip"
                 >
-                    <i class="fas fa-redo fa-fw"></i>
-                    <span v-if="!operationLoading">Retry</span>
-                    <span v-else>
-                        <div class="spinner-border spinner-border-sm" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                    </span>
+                    <template v-if="!operationLoading">
+                        <i class="fas fa-redo fa-fw"></i> Retry
+                    </template>
+                    <template v-else>
+                        <i class="fas fa-spinner fa-spin fa-fw"></i> Retry
+                    </template>
                 </button>
                 <button 
                     :class="`btn btn-sm btn-${archiveButtonConfig.variant}`"
