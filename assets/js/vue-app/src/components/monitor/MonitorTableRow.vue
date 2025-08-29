@@ -185,11 +185,13 @@ import MonitorResourceRow from './MonitorResourceRow.vue'
 import { useMonitorStore } from '@/store/MonitorStore'
 import { useOperationsStore } from '@/store/OperationsStore'
 import { useStreamingStore } from '@/store/StreamingStore'
+import { useNotificationStore } from '@/store/NotificationStore'
 import { api } from '@/API'
 
 const monitorStore = useMonitorStore()
 const operationsStore = useOperationsStore()
 const streamingStore = useStreamingStore()
+const notificationStore = useNotificationStore()
 
 const props = defineProps<{
     item: Mrn
@@ -341,7 +343,7 @@ const streamDownloadMrn = async () => {
         const archiveName = `${props.item.mrn}_all_resources_${timestamp}`
         
         streamingStore.startStreaming(archiveName)
-        operationsStore.displayToast(`Started streaming download: ${archiveName}`, 'info')
+        notificationStore.showInfo(`Started streaming download: ${archiveName}`)
         
         // Get all completed resource types for this MRN
         const completedResourceTypes = props.item.resources
@@ -370,14 +372,11 @@ const streamDownloadMrn = async () => {
         window.URL.revokeObjectURL(url)
         
         const duration = streamingStore.finishStreaming()
-        operationsStore.displayToast(
-            `Download completed: ${archiveName} (${duration}s)`, 
-            'success'
-        )
+        notificationStore.showSuccess(`Download completed: ${archiveName} (${duration}s)`)
         
     } catch (error: any) {
         streamingStore.finishStreaming()
-        operationsStore.displayToast(`Streaming download failed: ${error.message}`, 'error')
+        notificationStore.showError(`Streaming download failed: ${error.message}`)
         console.error('Failed to stream download MRN:', error)
     } finally {
         operationLoading.value = false

@@ -93,9 +93,11 @@
 import { computed } from 'vue'
 import { useMonitorStore } from '@/store/MonitorStore'
 import { useOperationsStore } from '@/store/OperationsStore'
+import { useNotificationStore } from '@/store/NotificationStore'
 
 const monitorStore = useMonitorStore()
 const operationsStore = useOperationsStore()
+const notificationStore = useNotificationStore()
 
 // Emits for actions that need to open modals
 defineEmits<{
@@ -111,15 +113,10 @@ const loading = computed(() => monitorStore.loading)
 const triggerFetchSelected = async () => {
     try {
         const result = await monitorStore.triggerFetchSelected()
-        operationsStore.recordOperation(
-            'fetch-selected', 
-            true, 
-            `Fetch triggered for ${result.mrns?.length || 0} MRN(s). ${result.tasks_created || 0} tasks created.`,
-            result
-        )
+        notificationStore.showSuccess(`Fetch triggered for ${result.mrns?.length || 0} MRN(s). ${result.tasks_created || 0} tasks created.`)
     } catch (error) {
         console.error('Failed to trigger fetch for selected MRNs:', error)
-        operationsStore.recordOperation('fetch-selected', false, 'Failed to trigger fetch for selected MRNs')
+        notificationStore.showError('Failed to trigger fetch for selected MRNs')
     }
 }
 
@@ -131,17 +128,17 @@ const refreshData = async () => {
             monitorStore.fetchMrns(),
             monitorStore.getProjectSummary()
         ])
-        operationsStore.recordOperation('refresh', true, 'Data refreshed successfully.')
+        notificationStore.showSuccess('Data refreshed successfully')
     } catch (error) {
         console.error('Failed to refresh data:', error)
-        operationsStore.recordOperation('refresh', false, 'Failed to refresh data')
+        notificationStore.showError('Failed to refresh data')
     }
 }
 
 // Archive methods that use store directly
 const createArchiveSelected = () => {
     if (selectionDisabled.value) {
-        operationsStore.recordOperation('archive-selected', false, 'No MRNs selected for archive')
+        notificationStore.showWarning('No MRNs selected for archive')
         return
     }
     
@@ -159,7 +156,7 @@ const createArchiveAll = () => {
 // Streaming archive methods
 const createStreamingArchiveSelected = () => {
     if (selectionDisabled.value) {
-        operationsStore.recordOperation('streaming-archive-selected', false, 'No MRNs selected for streaming archive')
+        notificationStore.showWarning('No MRNs selected for streaming archive')
         return
     }
     

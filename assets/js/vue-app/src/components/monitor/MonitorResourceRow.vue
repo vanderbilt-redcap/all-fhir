@@ -86,6 +86,7 @@ import { FetchStatus } from '@/models/Mrn'
 import { useMonitorStore } from '@/store/MonitorStore'
 import { useStreamingStore } from '@/store/StreamingStore'
 import { useOperationsStore } from '@/store/OperationsStore'
+import { useNotificationStore } from '@/store/NotificationStore'
 import { api } from '@/API'
 
 const props = defineProps<{
@@ -96,6 +97,7 @@ const props = defineProps<{
 const monitorStore = useMonitorStore()
 const streamingStore = useStreamingStore()
 const operationsStore = useOperationsStore()
+const notificationStore = useNotificationStore()
 const showFullError = ref(false)
 const loading = ref(false)
 
@@ -168,7 +170,7 @@ const streamDownload = async () => {
         const archiveName = `${props.mrn}_${props.resource.name}_${timestamp}`
         
         streamingStore.startStreaming(archiveName)
-        operationsStore.displayToast(`Started streaming download: ${archiveName}`, 'info')
+        notificationStore.showInfo(`Started streaming download: ${archiveName}`)
         
         // Prepare options for streaming a single resource type for this MRN
         const streamingOptions = {
@@ -191,14 +193,11 @@ const streamDownload = async () => {
         window.URL.revokeObjectURL(url)
         
         const duration = streamingStore.finishStreaming()
-        operationsStore.displayToast(
-            `Download completed: ${archiveName} (${duration}s)`, 
-            'success'
-        )
+        notificationStore.showSuccess(`Download completed: ${archiveName} (${duration}s)`)
         
     } catch (error: any) {
         streamingStore.finishStreaming()
-        operationsStore.displayToast(`Streaming download failed: ${error.message}`, 'error')
+        notificationStore.showError(`Streaming download failed: ${error.message}`)
         console.error('Failed to stream download resource:', error)
     } finally {
         loading.value = false

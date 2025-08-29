@@ -58,29 +58,6 @@
             />
         </Teleport>
 
-        <!-- Operation Feedback Toast -->
-        <div 
-            v-if="operationsStore.showToast && operationsStore.lastOperation"
-            class="toast-container position-fixed bottom-0 end-0 p-3"
-        >
-            <div 
-                class="toast show"
-                :class="operationsStore.lastOperation.success ? 'bg-success' : 'bg-danger'"
-                role="alert"
-            >
-                <div class="d-flex">
-                    <div class="toast-body text-white">
-                        <i :class="operationsStore.lastOperation.success ? 'fas fa-check-circle fa-fw' : 'fas fa-exclamation-triangle fa-fw'"></i>
-                        {{ operationsStore.lastOperation.message }}
-                    </div>
-                    <button 
-                        type="button" 
-                        class="btn-close btn-close-white me-2 m-auto"
-                        @click="operationsStore.clearToast()"
-                    ></button>
-                </div>
-            </div>
-        </div>
     </div>
 </template>
 
@@ -96,11 +73,13 @@ import ProjectSummaryWidget from '@/components/monitor/ProjectSummaryWidget.vue'
 import { useMonitorStore } from '@/store/MonitorStore'
 import { useOperationsStore } from '@/store/OperationsStore'
 import { useArchiveStore } from '@/store/ArchiveStore'
+import { useNotificationStore } from '@/store/NotificationStore'
 import type { ArchiveCreateOptions } from '@/models/Archive'
 
 const monitorStore = useMonitorStore()
 const operationsStore = useOperationsStore()
 const archiveStore = useArchiveStore()
+const notificationStore = useNotificationStore()
 
 // Modal refs
 const addMrnModal = ref<InstanceType<typeof AddMrnModal> | null>(null)
@@ -155,9 +134,9 @@ const showAddMrnModal = async () => {
         if (mrn) {
             try {
                 await monitorStore.addMrn(mrn)
-                operationsStore.recordOperation('add-mrn', true, 'MRN added successfully')
+                notificationStore.showSuccess('MRN added successfully')
             } catch (error) {
-                operationsStore.recordOperation('add-mrn', false, 'Failed to add MRN')
+                notificationStore.showError('Failed to add MRN')
             }
         }
     }
@@ -178,15 +157,15 @@ const handleArchiveCreate = async (options: ArchiveCreateOptions, type: 'selecte
             // Show creation modal with result
             archiveCreationModal.value?.show(result)
             
-            operationsStore.recordOperation(
-                'archive-create', 
-                result.success, 
-                result.message
-            )
+            if (result.success) {
+                notificationStore.showSuccess(result.message)
+            } else {
+                notificationStore.showError(result.message)
+            }
         }
     } catch (error) {
         console.error('Failed to create archive:', error)
-        operationsStore.recordOperation('archive-create', false, 'Failed to create archive')
+        notificationStore.showError('Failed to create archive')
     }
 }
 
@@ -201,7 +180,7 @@ onMounted(async () => {
         
     } catch (error) {
         console.error('Failed to load initial data:', error)
-        operationsStore.recordOperation('initial-load', false, 'Failed to load initial data')
+        notificationStore.showError('Failed to load initial data')
     }
 })
 

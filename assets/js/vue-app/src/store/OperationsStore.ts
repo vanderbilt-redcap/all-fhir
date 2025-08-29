@@ -26,7 +26,6 @@ export const useOperationsStore = defineStore('operations', () => {
   const loading = ref(false)
   const lastOperation = ref<OperationResult | null>(null)
   const showSummary = ref(false)
-  const showToast = ref(false)
   
   // Archive Modal State
   const archiveModal = ref<ArchiveModalState>({
@@ -55,17 +54,8 @@ export const useOperationsStore = defineStore('operations', () => {
       data,
       timestamp: new Date().toISOString()
     }
-    showToast.value = true
-    
-    // Auto-hide toast after 5 seconds
-    setTimeout(() => {
-      showToast.value = false
-    }, 5000)
   }
 
-  const clearToast = () => {
-    showToast.value = false
-  }
 
   const toggleSummary = () => {
     showSummary.value = !showSummary.value
@@ -113,10 +103,6 @@ export const useOperationsStore = defineStore('operations', () => {
     streamingModal.value.visible = false
   }
 
-  // Helper method for displaying toasts
-  const displayToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
-    recordOperation('Toast', type === 'success', message)
-  }
 
   // Computed properties for modals
   const archiveModalVisible = computed(() => archiveModal.value.visible)
@@ -132,14 +118,11 @@ export const useOperationsStore = defineStore('operations', () => {
     loading,
     lastOperation,
     showSummary,
-    showToast,
     
     // Actions
     setLoading,
     recordOperation,
-    clearToast,
     toggleSummary,
-    displayToast,
     
     // Archive Modal
     archiveModalVisible,

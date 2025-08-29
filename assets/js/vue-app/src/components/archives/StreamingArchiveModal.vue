@@ -107,6 +107,7 @@ import type { StreamingArchiveOptions } from '@/models/Archive'
 import { useMonitorStore } from '@/store/MonitorStore'
 import { useOperationsStore } from '@/store/OperationsStore'
 import { useStreamingStore } from '@/store/StreamingStore'
+import { useNotificationStore } from '@/store/NotificationStore'
 import { api } from '@/API'
 import ArchiveNameInput from './shared/ArchiveNameInput.vue'
 import ResourceTypesSelector from './shared/ResourceTypesSelector.vue'
@@ -123,6 +124,7 @@ const props = withDefaults(defineProps<Props>(), {
 const monitorStore = useMonitorStore()
 const operationsStore = useOperationsStore()
 const streamingStore = useStreamingStore()
+const notificationStore = useNotificationStore()
 
 const streamingArchiveModal = ref<any>(null)
 
@@ -270,7 +272,7 @@ const startStreamingDownload = async (hide: Function) => {
   
   try {
     streamingStore.startStreaming(archiveName)
-    operationsStore.displayToast(`Started streaming download: ${archiveName}`, 'info')
+    notificationStore.showInfo(`Started streaming download: ${archiveName}`)
     
     // Close modal immediately
     hide(true)
@@ -304,14 +306,11 @@ const startStreamingDownload = async (hide: Function) => {
     window.URL.revokeObjectURL(url)
     
     const duration = streamingStore.finishStreaming()
-    operationsStore.displayToast(
-      `Download completed: ${archiveName} (${duration}s)`, 
-      'success'
-    )
+    notificationStore.showSuccess(`Download completed: ${archiveName} (${duration}s)`)
     
   } catch (error: any) {
     streamingStore.finishStreaming()
-    operationsStore.displayToast(`Streaming download failed: ${error.message}`, 'error')
+    notificationStore.showError(`Streaming download failed: ${error.message}`)
   }
 }
 

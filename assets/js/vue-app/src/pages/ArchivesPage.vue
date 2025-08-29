@@ -241,10 +241,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useArchiveStore } from '@/store/ArchiveStore'
+import { useNotificationStore } from '@/store/NotificationStore'
 import type { Archive } from '@/models/Archive'
 import ArchiveDeleteModal from '@/components/archives/ArchiveDeleteModal.vue'
 
 const archiveStore = useArchiveStore()
+const notificationStore = useNotificationStore()
 const deleteModal = ref<any>(null)
 
 // Filter state
@@ -289,7 +291,13 @@ const paginationInfo = computed(() => {
 
 // Methods
 const refreshArchives = async () => {
-  await archiveStore.fetchArchives()
+  try {
+    await archiveStore.fetchArchives()
+    notificationStore.showSuccess('Archives refreshed successfully')
+  } catch (error) {
+    console.error('Failed to refresh archives:', error)
+    notificationStore.showError('Failed to refresh archives')
+  }
 }
 
 // const setupAutoRefresh = () => {
@@ -321,7 +329,13 @@ const clearAllFilters = () => {
 }
 
 const downloadArchive = async (archive: Archive) => {
-  await archiveStore.downloadArchive(archive.archive_id)
+  try {
+    await archiveStore.downloadArchive(archive.archive_id)
+    notificationStore.showSuccess(`Archive ${archive.file_name} downloaded successfully`)
+  } catch (error) {
+    console.error('Failed to download archive:', error)
+    notificationStore.showError(`Failed to download archive ${archive.file_name}`)
+  }
 }
 
 const showDeleteModal = async (archive: Archive) => {
@@ -329,7 +343,13 @@ const showDeleteModal = async (archive: Archive) => {
 }
 
 const handleArchiveDeleted = async (archiveId: string) => {
-  await archiveStore.deleteArchive(archiveId)
+  try {
+    await archiveStore.deleteArchive(archiveId)
+    notificationStore.showSuccess('Archive deleted successfully')
+  } catch (error) {
+    console.error('Failed to delete archive:', error)
+    notificationStore.showError('Failed to delete archive')
+  }
 }
 
 // Utility functions

@@ -304,7 +304,13 @@ const paginationInfo = computed(() => {
 
 // Methods
 const refreshTasks = async () => {
-  await taskStore.fetchTasks()
+  try {
+    await taskStore.fetchTasks()
+    notificationStore.showSuccess('Tasks refreshed successfully')
+  } catch (error) {
+    console.error('Failed to refresh tasks:', error)
+    notificationStore.showError('Failed to refresh tasks')
+  }
 }
 
 const performFullSync = async () => {

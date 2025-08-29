@@ -91,8 +91,10 @@ async function handleAdd() {
 async function handleSave() {
     try {
         await settingsStore.saveProjectSettings()
+        notificationStore.showSuccess('Settings saved successfully')
     } catch (err) {
         console.error('Failed to save settings:', err)
+        notificationStore.showError('Failed to save settings')
     }
 }
 
