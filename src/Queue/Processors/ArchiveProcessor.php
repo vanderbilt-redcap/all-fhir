@@ -135,41 +135,16 @@ class ArchiveProcessor extends AbstractTaskProcessor
             $this->logInfo("Archive created successfully: {$archiveInfo->getFileName()} " .
                           "({$archiveInfo->getFileSize()} bytes, {$processingTime}s)");
 
-            // Prepare comprehensive result data
-            $resultData = [
-                'archive_info' => $archiveInfo,
-                'processing_stats' => [
-                    'processing_time_seconds' => round($processingTime, 3),
-                    'memory_used_bytes' => $memoryUsed,
-                    'memory_peak_mb' => round(memory_get_peak_usage(true) / 1024 / 1024, 2),
-                    'start_time' => date('c', intval($startTime)),
-                    'end_time' => date('c', intval($endTime))
-                ],
-                'resource_summary' => [
-                    'total_requested' => $resourceCount,
-                    'total_processed' => count($resources),
-                    'successful_files' => $archiveInfo->getSuccessfulFiles(),
-                    'failed_files' => $archiveInfo->getFailedFiles(),
-                    'total_size_bytes' => $archiveInfo->getFileSize()
-                ],
-                'download_info' => [
-                    'file_path' => $archiveInfo->getFilePath(),
-                    'file_name' => $archiveInfo->getFileName(),
-                    'file_size' => $archiveInfo->getFileSize(),
-                    'download_url' => $archiveInfo->getDownloadUrl()
-                ]
-            ];
-
-            // Include error details if any files failed
             if ($archiveInfo->getFailedFiles() > 0) {
-                $resultData['errors'] = $archiveInfo->getErrors();
                 $this->logWarning("Archive created with {$archiveInfo->getFailedFiles()} failed files");
             }
 
             return TaskProcessorResult::success(
                 "FHIR archive created successfully: {$archiveInfo->getSuccessfulFiles()} files, " .
                 "{$archiveInfo->getFileSize()} bytes",
-                $resultData
+                [
+                    'archive_info' => $archiveInfo
+                ]
             );
 
         } catch (\Exception $e) {
@@ -179,15 +154,7 @@ class ArchiveProcessor extends AbstractTaskProcessor
             $this->logError("Failed to create FHIR archive: " . $e->getMessage());
 
             return TaskProcessorResult::failure(
-                "Failed to create FHIR archive: " . $e->getMessage(),
-                [
-                    'error_details' => $e->getMessage(),
-                    'exception_type' => get_class($e),
-                    'processing_time_seconds' => round($processingTime, 3),
-                    'resources_attempted' => count($resources),
-                    'project_id' => $projectId,
-                    'archive_name' => $archiveName
-                ]
+                "Failed to create FHIR archive: " . $e->getMessage()
             );
         }
     }

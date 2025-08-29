@@ -128,28 +128,11 @@ class FullSyncProcessor extends AbstractTaskProcessor
 
             $this->logInfo("Full sync completed successfully for project {$projectId} in {$processingTime}s");
 
-            // Prepare comprehensive result data
-            $resultData = [
-                'sync_results' => $syncResults->toArray(),
-                'statistics' => $syncResults->getStatistics(),
-                'summary_message' => $syncResults->getSummaryMessage(),
-                'processing_stats' => [
-                    'processing_time_seconds' => round($processingTime, 3),
-                    'memory_used_bytes' => $memoryUsed,
-                    'memory_peak_mb' => round(memory_get_peak_usage(true) / 1024 / 1024, 2),
-                    'start_time' => date('c', intval($startTime)),
-                    'end_time' => date('c', intval($endTime))
-                ],
-                'resource_summary' => [
-                    'total_configured' => count($configuredResources),
-                    'project_id' => $projectId,
-                    'background_mode' => $metadata['background_mode'] ?? true
-                ]
-            ];
-
             return TaskProcessorResult::success(
                 $syncResults->getSummaryMessage(),
-                $resultData
+                [
+                    'sync_results' => $syncResults->toArray()
+                ]
             );
 
         } catch (\Exception $e) {
@@ -159,14 +142,7 @@ class FullSyncProcessor extends AbstractTaskProcessor
             $this->logError("Failed to perform full sync for project {$projectId}: " . $e->getMessage());
 
             return TaskProcessorResult::failure(
-                "Failed to perform full project synchronization: " . $e->getMessage(),
-                [
-                    'error_details' => $e->getMessage(),
-                    'exception_type' => get_class($e),
-                    'processing_time_seconds' => round($processingTime, 3),
-                    'configured_resources_count' => count($configuredResources),
-                    'project_id' => $projectId
-                ]
+                "Failed to perform full project synchronization: " . $e->getMessage()
             );
         }
     }
