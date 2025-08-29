@@ -61,16 +61,7 @@
                 <i class="fas fa-chart-bar fa-fw"></i> Summary
             </button>
         </div>
-        
-        <!-- Status Information -->
-        <div v-if="projectSummary" class="mt-2">
-            <small class="text-muted">
-                Total MRNs: {{ projectSummary.total_mrns }} | 
-                Queue: {{ projectSummary.sync_status.pending_tasks }} pending, 
-                {{ projectSummary.sync_status.failed_tasks }} failed tasks
-                <span v-if="selectedCount > 0"> | Selected: {{ selectedCount }}</span>
-            </small>
-        </div>
+
     </div>
 </template>
 
