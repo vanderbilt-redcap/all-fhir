@@ -53,6 +53,7 @@ class ArchiveInfo implements JsonSerializable
      * @param int $failedFiles Count of failed file inclusions
      * @param string|null $downloadUrl Complete download URL
      * @param string|null $createdAt ISO 8601 creation timestamp
+     * @param array $errors Array of error messages from processing
      */
     public function __construct(
         private string $archiveId,
@@ -63,7 +64,8 @@ class ArchiveInfo implements JsonSerializable
         private int $successfulFiles,
         private int $failedFiles,
         private ?string $downloadUrl = null,
-        private ?string $createdAt = null
+        private ?string $createdAt = null,
+        private array $errors = []
     ) {
         // Validation
         if (empty($archiveId)) {
@@ -108,7 +110,8 @@ class ArchiveInfo implements JsonSerializable
             successfulFiles: $packagerResult['successful_files'] ?? 0,
             failedFiles: $packagerResult['failed_files'] ?? 0,
             downloadUrl: $packagerResult['download_url'] ?? null,
-            createdAt: $packagerResult['created_at'] ?? null
+            createdAt: $packagerResult['created_at'] ?? null,
+            errors: $packagerResult['errors'] ?? []
         );
     }
 
@@ -130,7 +133,8 @@ class ArchiveInfo implements JsonSerializable
             successfulFiles: $storedData['successful_files'] ?? 0,
             failedFiles: $storedData['failed_files'] ?? 0,
             downloadUrl: null, // Will be set externally using withDownloadUrl()
-            createdAt: $storedData['created_at'] ?? null
+            createdAt: $storedData['created_at'] ?? null,
+            errors: $storedData['errors'] ?? []
         );
     }
 
@@ -152,7 +156,8 @@ class ArchiveInfo implements JsonSerializable
             successfulFiles: $metadata['successful_files'] ?? 0,
             failedFiles: $metadata['failed_files'] ?? 0,
             downloadUrl: $metadata['download_url'] ?? null,
-            createdAt: $metadata['created_at'] ?? null
+            createdAt: $metadata['created_at'] ?? null,
+            errors: $metadata['errors'] ?? []
         );
     }
 
@@ -173,7 +178,8 @@ class ArchiveInfo implements JsonSerializable
             $this->successfulFiles,
             $this->failedFiles,
             $downloadUrl,
-            $this->createdAt
+            $this->createdAt,
+            $this->errors
         );
     }
 
@@ -221,6 +227,11 @@ class ArchiveInfo implements JsonSerializable
     public function getCreatedAt(): ?string
     {
         return $this->createdAt;
+    }
+
+    public function getErrors(): array
+    {
+        return $this->errors;
     }
 
     /**
@@ -279,6 +290,7 @@ class ArchiveInfo implements JsonSerializable
             'failed_files' => $this->failedFiles,
             'download_url' => $this->downloadUrl,
             'created_at' => $this->createdAt,
+            'errors' => $this->errors,
             'formatted_file_size' => $this->getFormattedFileSize(),
             'has_failed_files' => $this->hasFailedFiles(),
             'is_completely_successful' => $this->isCompletelySuccessful()

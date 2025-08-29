@@ -150,7 +150,7 @@ class ArchiveProcessor extends AbstractTaskProcessor
                     'total_processed' => count($resources),
                     'successful_files' => $archiveInfo->getSuccessfulFiles(),
                     'failed_files' => $archiveInfo->getFailedFiles(),
-                    'total_size_bytes' => $archiveInfo['archive_stats']['total_size_bytes']
+                    'total_size_bytes' => $archiveInfo->getFileSize()
                 ],
                 'download_info' => [
                     'file_path' => $archiveInfo->getFilePath(),
@@ -162,7 +162,7 @@ class ArchiveProcessor extends AbstractTaskProcessor
 
             // Include error details if any files failed
             if ($archiveInfo->getFailedFiles() > 0) {
-                $resultData['errors'] = $archiveInfo['archive_stats']['errors'] ?? [];
+                $resultData['errors'] = $archiveInfo->getErrors();
                 $this->logWarning("Archive created with {$archiveInfo->getFailedFiles()} failed files");
             }
 

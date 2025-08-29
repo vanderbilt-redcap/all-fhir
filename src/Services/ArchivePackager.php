@@ -187,7 +187,8 @@ class ArchivePackager
                 successfulFiles: $archiveStats['successful_files'],
                 failedFiles: $archiveStats['failed_files'],
                 downloadUrl: $downloadUrl,
-                createdAt: date('c')
+                createdAt: date('c'),
+                errors: $archiveStats['errors']
             );
 
         } catch (Exception $e) {
