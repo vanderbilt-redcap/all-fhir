@@ -305,6 +305,17 @@ class ArchivePackager
         $mrn = $resource['mrn'];
         $metadata = $resource['metadata'];
 
+        // Handle serialized metadata - convert array back to object if needed
+        if (is_array($metadata)) {
+            try {
+                $metadata = FhirResourceMetadata::fromArray($metadata);
+            } catch (\InvalidArgumentException $e) {
+                $archiveStats['errors'][] = "Invalid metadata structure for record {$recordId}: " . $e->getMessage();
+                $archiveStats['failed_files']++;
+                return;
+            }
+        }
+
         if (!$metadata instanceof FhirResourceMetadata) {
             $archiveStats['errors'][] = "Invalid metadata for record {$recordId}";
             $archiveStats['failed_files']++;
