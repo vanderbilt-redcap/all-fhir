@@ -114,12 +114,12 @@
           <p class="mt-2 mb-0 text-muted">Loading tasks...</p>
         </div>
         
-        <div v-else-if="taskStore.paginatedTasks.length === 0" class="text-center py-5">
+        <div v-else-if="taskStore.paginatedTasks.length === 0" class="d-flex flex-column gap-2 py-5 align-items-center">
           <i class="fas fa-tasks text-muted" style="font-size: 3rem;"></i>
-          <h6 class="mt-3 mb-2">{{ hasActiveFilters ? 'No tasks match your filters' : 'No tasks found' }}</h6>
-          <p class="text-muted mb-0">
+          <h6 class="">{{ hasActiveFilters ? 'No tasks match your filters' : 'No tasks found' }}</h6>
+          <span class="text-muted mb-0">
             {{ hasActiveFilters ? 'Try adjusting your search criteria.' : 'Tasks will appear here when created.' }}
-          </p>
+          </span>
         </div>
 
         <div v-else>

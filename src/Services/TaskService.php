@@ -105,8 +105,21 @@ class TaskService
     public function queueFullSync(): TaskOperationResponse
     {
         try {
-            // Create full sync task and add to queue
-            $task = $this->queueManager->addTask(Constants::TASK_FULL_SYNC, [], [
+            // Get project ID and configured resources (following MrnController::performFullSync pattern)
+            $projectId = $this->module->getProjectId();
+            $configuredResources = $this->module->getAllConfiguredMappingResources();
+            
+            // Convert resources to serializable format
+            $configuredResourcesData = [];
+            foreach ($configuredResources as $resource) {
+                $configuredResourcesData[] = $resource->toArray();
+            }
+            
+            // Create full sync task and add to queue with required parameters
+            $task = $this->queueManager->addTask(Constants::TASK_FULL_SYNC, [
+                'project_id' => $projectId,
+                'configured_resources' => $configuredResourcesData
+            ], [
                 'initiated_by' => 'task_service',
                 'initiated_at' => date('Y-m-d H:i:s')
             ]);
