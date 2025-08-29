@@ -98,14 +98,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useTaskStore } from '@/store/TaskStore'
 
 const taskStore = useTaskStore()
 const loading = ref(false)
-
-// Auto-refresh interval
-let refreshInterval: number | null = null
 
 // Computed properties
 const taskStatusCounts = computed(() => taskStore.taskStatusCounts)
@@ -138,26 +135,9 @@ const refreshStatus = async () => {
     }
 }
 
-const setupAutoRefresh = () => {
-    // Auto-refresh every 30 seconds if there are active tasks
-    refreshInterval = setInterval(async () => {
-        const { pending, processing } = taskStatusCounts.value
-        if (pending > 0 || processing > 0) {
-            await taskStore.refreshTaskStatus()
-        }
-    }, 30000)
-}
-
 // Lifecycle
 onMounted(async () => {
     await refreshStatus()
-    // setupAutoRefresh()
-})
-
-onUnmounted(() => {
-    if (refreshInterval) {
-        clearInterval(refreshInterval)
-    }
 })
 </script>
 

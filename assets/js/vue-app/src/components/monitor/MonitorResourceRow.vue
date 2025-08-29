@@ -85,7 +85,6 @@ import type { MonitoredResource } from '@/models/Mrn'
 import { FetchStatus } from '@/models/Mrn'
 import { useMonitorStore } from '@/store/MonitorStore'
 import { useStreamingStore } from '@/store/StreamingStore'
-import { useOperationsStore } from '@/store/OperationsStore'
 import { useNotificationStore } from '@/store/NotificationStore'
 import { api } from '@/API'
 
@@ -96,7 +95,6 @@ const props = defineProps<{
 
 const monitorStore = useMonitorStore()
 const streamingStore = useStreamingStore()
-const operationsStore = useOperationsStore()
 const notificationStore = useNotificationStore()
 const showFullError = ref(false)
 const loading = ref(false)

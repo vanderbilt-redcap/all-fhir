@@ -105,7 +105,6 @@
 import { ref, computed } from 'vue'
 import type { StreamingArchiveOptions } from '@/models/Archive'
 import { useMonitorStore } from '@/store/MonitorStore'
-import { useOperationsStore } from '@/store/OperationsStore'
 import { useStreamingStore } from '@/store/StreamingStore'
 import { useNotificationStore } from '@/store/NotificationStore'
 import { api } from '@/API'
@@ -122,7 +121,6 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const monitorStore = useMonitorStore()
-const operationsStore = useOperationsStore()
 const streamingStore = useStreamingStore()
 const notificationStore = useNotificationStore()
 
