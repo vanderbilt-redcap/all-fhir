@@ -37,9 +37,11 @@ import ResourcesTable from '@/components/setup/ResourcesTable.vue';
 import ResourceForm from '@/components/setup/ResourceForm.vue';
 import { storeToRefs } from 'pinia'
 import {useSettingsStore} from '@/store/SettingsStore'
+import { useNotificationStore } from '@/store/NotificationStore'
 import { type ResourceFormType, RESOURCE_TYPE } from '@/components/setup/ResourceForm.vue';
 
 const settingsStore = useSettingsStore()
+const notificationStore = useNotificationStore()
 const { settings, loading, selectedMappingResources, selectedCustomMappingResources, selectedFhirSystem } = storeToRefs(settingsStore)
 provide('settings', settings)
 provide('draftResources', { selectedMappingResources, selectedCustomMappingResources, selectedFhirSystem })
@@ -64,20 +66,20 @@ async function handleAdd() {
     if (confirmed) {
         // Validate form data
         if (!form.value.displayName.trim()) {
-            alert('Display Name is required');
+            notificationStore.showError('Display Name is required');
             return;
         }
 
         if (form.value.resourceType === RESOURCE_TYPE.PREDEFINED) {
             if (!form.value.predefinedResource) {
-                alert('Please select a predefined resource');
+                notificationStore.showError('Please select a predefined resource');
                 return;
             }
             // For predefined resources, use the selected predefined resource as resourceSpec
             settingsStore.addPredefinedResource(form.value.displayName, form.value.predefinedResource)
         } else {
             if (!form.value.customResourceSpec.trim()) {
-                alert('Resource Specification is required for custom resources');
+                notificationStore.showError('Resource Specification is required for custom resources');
                 return;
             }
             // For custom resources, use the entered custom resourceSpec

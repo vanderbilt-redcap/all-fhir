@@ -261,10 +261,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useTaskStore } from '@/store/TaskStore'
+import { useNotificationStore } from '@/store/NotificationStore'
 import QueueStatusWidget from '@/components/tasks/QueueStatusWidget.vue'
 import type { Task } from '@/models/Task'
 
 const taskStore = useTaskStore()
+const notificationStore = useNotificationStore()
 
 // Local state
 const searchQuery = ref('')
@@ -306,19 +308,27 @@ const refreshTasks = async () => {
 }
 
 const performFullSync = async () => {
-  if (confirm('Are you sure you want to perform a full synchronization? This will analyze all MRNs and create missing resource instances.')) {
+  const confirmed = await notificationStore.confirmAction(
+    'Full Synchronization',
+    'Are you sure you want to perform a full synchronization? This will analyze all MRNs and create missing resource instances.'
+  )
+  if (confirmed) {
     const result = await taskStore.performFullSync()
     if (result?.success) {
-      alert(`Full sync initiated successfully. Task ID: ${result.task_id}`)
+      notificationStore.showSuccess(`Full sync initiated successfully. Task ID: ${result.task_id}`)
     }
   }
 }
 
 const retryFailed = async () => {
-  if (confirm('Are you sure you want to retry all failed tasks? This will mark them as pending for re-processing.')) {
+  const confirmed = await notificationStore.confirmAction(
+    'Retry Failed Tasks',
+    'Are you sure you want to retry all failed tasks? This will mark them as pending for re-processing.'
+  )
+  if (confirmed) {
     const result = await taskStore.retryFailed()
     if (result?.success) {
-      alert(`Retry operation completed. ${result.statistics?.tasks_created || 0} tasks marked for retry.`)
+      notificationStore.showSuccess(`Retry operation completed. ${result.statistics?.tasks_created || 0} tasks marked for retry.`)
     }
   }
 }
@@ -349,10 +359,14 @@ const showTaskDetails = async (task: Task) => {
 }
 
 const confirmDeleteTask = async (task: Task) => {
-  if (confirm(`Are you sure you want to delete task ${task.id}? This action cannot be undone.`)) {
+  const confirmed = await notificationStore.confirmAction(
+    'Delete Task',
+    `Are you sure you want to delete task ${task.id}? This action cannot be undone.`
+  )
+  if (confirmed) {
     const success = await taskStore.deleteTask(task.id)
     if (success) {
-      alert('Task deleted successfully.')
+      notificationStore.showSuccess('Task deleted successfully.')
     }
   }
 }
