@@ -231,13 +231,36 @@
         <p class="text-muted">Current overview of your FHIR snapshot project</p>
       </div>
       
-      <div class="row g-4">
+      <!-- First Row - Overview Statistics -->
+      <div class="row g-4 mb-4">
         <div class="col-md-3 col-sm-6">
           <div class="stat-card card border-0 bg-primary text-white text-center h-100">
             <div class="card-body">
               <i class="fas fa-user-injured fa-2x mb-2"></i>
               <h3 class="mb-1">{{ totalMrns }}</h3>
               <p class="mb-0 small">Total MRNs</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+          <div class="stat-card card border-0 bg-secondary text-white text-center h-100">
+            <div class="card-body">
+              <i class="fas fa-database fa-2x mb-2"></i>
+              <h3 class="mb-1">{{ totalResources }}</h3>
+              <p class="mb-0 small">Total Resources</p>
+              <p class="mb-0" style="font-size: 0.8rem; opacity: 0.9">includes deleted</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+          <div class="stat-card card border-0 bg-dark text-white text-center h-100">
+            <div class="card-body">
+              <i class="fas fa-play-circle fa-2x mb-2"></i>
+              <h3 class="mb-1">{{ activeResources }}</h3>
+              <p class="mb-0 small">Active Resources</p>
+              <p class="mb-0" style="font-size: 0.8rem; opacity: 0.9">excludes deleted</p>
             </div>
           </div>
         </div>
@@ -251,13 +274,38 @@
             </div>
           </div>
         </div>
+      </div>
 
+      <!-- Second Row - Status Breakdown -->
+      <div class="row g-4">
         <div class="col-md-3 col-sm-6">
-          <div class="stat-card card border-0 bg-info text-white text-center h-100">
+          <div class="stat-card card border-0 bg-success text-white text-center h-100">
             <div class="card-body">
               <i class="fas fa-check-circle fa-2x mb-2"></i>
               <h3 class="mb-1">{{ completedResources }}</h3>
               <p class="mb-0 small">Completed</p>
+              <p v-if="completionRate > 0" class="mb-0" style="font-size: 0.8rem; opacity: 0.9">{{ completionRate }}% complete</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+          <div class="stat-card card border-0 bg-danger text-white text-center h-100">
+            <div class="card-body">
+              <i class="fas fa-exclamation-circle fa-2x mb-2"></i>
+              <h3 class="mb-1">{{ failedResources }}</h3>
+              <p class="mb-0 small">Failed</p>
+              <p v-if="errorRate > 0" class="mb-0" style="font-size: 0.8rem; opacity: 0.9">{{ errorRate }}% error rate</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+          <div class="stat-card card border-0 bg-info text-white text-center h-100">
+            <div class="card-body">
+              <i class="fas fa-sync fa-2x mb-2"></i>
+              <h3 class="mb-1">{{ fetchingResources }}</h3>
+              <p class="mb-0 small">Fetching</p>
             </div>
           </div>
         </div>
@@ -356,13 +404,42 @@ const totalResourceTypes = computed(() => {
 })
 
 const completedResources = computed(() => {
-  return monitorStore.projectSummary?.overall_status_counts?.['Completed'] || 0
+  return monitorStore.projectSummary?.overall_status_counts?.['completed'] || 0
 })
 
 const pendingResources = computed(() => {
-  const pending = monitorStore.projectSummary?.overall_status_counts?.['Pending'] || 0
-  const fetching = monitorStore.projectSummary?.overall_status_counts?.['Fetching'] || 0
-  return pending + fetching
+  return monitorStore.projectSummary?.overall_status_counts?.['pending'] || 0
+})
+
+const fetchingResources = computed(() => {
+  return monitorStore.projectSummary?.overall_status_counts?.['fetching'] || 0
+})
+
+const failedResources = computed(() => {
+  return monitorStore.projectSummary?.overall_status_counts?.['failed'] || 0
+})
+
+const totalResources = computed(() => {
+  if (!monitorStore.projectSummary) return 0
+  return Object.values(monitorStore.projectSummary.overall_status_counts).reduce((sum, count) => sum + count, 0)
+})
+
+const activeResources = computed(() => {
+  if (!monitorStore.projectSummary) return 0
+  const deleted = monitorStore.projectSummary.overall_status_counts?.deleted || 0
+  return totalResources.value - deleted
+})
+
+const errorRate = computed(() => {
+  if (!activeResources.value) return 0
+  const failed = failedResources.value
+  return Math.round((failed / activeResources.value) * 100)
+})
+
+const completionRate = computed(() => {
+  if (!activeResources.value) return 0
+  const completed = completedResources.value
+  return Math.round((completed / activeResources.value) * 100)
 })
 </script>
 
@@ -467,6 +544,11 @@ const pendingResources = computed(() => {
 .status-section .stat-card h3 {
   font-size: 2.5rem;
   font-weight: bold;
+}
+
+.status-section .stat-card .card-body p[style*="font-size: 0.8rem"] {
+  margin-top: 0.25rem !important;
+  font-weight: 500;
 }
 
 .status-section .btn-group {
