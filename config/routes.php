@@ -43,7 +43,7 @@ return function (App $app) {
     // TaskController routes
     $app->get('/tasks', [TaskController::class, 'listTasks']);
     $app->post('/tasks/full-sync', [TaskController::class, 'performFullSync']);
-    $app->post('/tasks/retry-failed', [TaskController::class, 'retryFailedTasks']);
+    $app->post('/tasks/retry-failed', [TaskController::class, 'retryFailedResources']);
     $app->get('/tasks/queue-stats', [TaskController::class, 'getQueueStatistics']);
     $app->post('/tasks/cleanup', [TaskController::class, 'cleanupCompletedTasks']);
     $app->get('/tasks/{id}', [TaskController::class, 'getTaskDetails']);

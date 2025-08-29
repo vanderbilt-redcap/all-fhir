@@ -150,7 +150,7 @@ export const api = {
     return apiClient.post('', {}, { params })
   },
 
-  retryFailedTasks() {
+  retryFailedResources() {
     const params = { route: `tasks/retry-failed` }
     return apiClient.post('', {}, { params })
   },

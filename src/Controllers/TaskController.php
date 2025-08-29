@@ -182,14 +182,14 @@ class TaskController
     }
 
     /**
-     * Queue retry failed tasks operation
+     * Queue retry failed resources operation
      * 
      * POST /tasks/retry-failed
      */
-    public function retryFailedTasks(Request $request, Response $response): Response
+    public function retryFailedResources(Request $request, Response $response): Response
     {
         try {
-            $operationResponse = $this->taskService->queueRetryFailedTasks();
+            $operationResponse = $this->taskService->queueRetryFailedResources();
             
             $response->getBody()->write(json_encode($operationResponse->toArray()));
             return $response
@@ -197,11 +197,11 @@ class TaskController
                 ->withStatus($operationResponse->isSuccess() ? 200 : 500);
                 
         } catch (\Exception $e) {
-            $this->module->log("TaskController::retryFailedTasks error: " . $e->getMessage(), []);
+            $this->module->log("TaskController::retryFailedResources error: " . $e->getMessage(), []);
             
             $errorResponse = [
                 'success' => false,
-                'message' => 'Failed to retry failed tasks: ' . $e->getMessage(),
+                'message' => 'Failed to retry failed resources: ' . $e->getMessage(),
                 'task_id' => null,
                 'statistics' => []
             ];

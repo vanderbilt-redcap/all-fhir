@@ -5,6 +5,7 @@ namespace Vanderbilt\FhirSnapshot\Services;
 use Vanderbilt\FhirSnapshot\Constants;
 use Vanderbilt\FhirSnapshot\FhirSnapshot;
 use Vanderbilt\FhirSnapshot\Queue\QueueManager;
+use Vanderbilt\FhirSnapshot\Services\RepeatedFormDataAccessor;
 use Vanderbilt\FhirSnapshot\ValueObjects\Task;
 use Vanderbilt\FhirSnapshot\ValueObjects\TaskListResponse;
 use Vanderbilt\FhirSnapshot\ValueObjects\TaskOperationResponse;
@@ -37,6 +38,7 @@ class TaskService
     public function __construct(
         private FhirSnapshot $module,
         private QueueManager $queueManager,
+        private RepeatedFormDataAccessor $dataAccessor,
     ) {}
 
     /**
@@ -137,42 +139,50 @@ class TaskService
     }
 
     /**
-     * Queue a retry failed tasks operation for background processing
+     * Queue a retry failed resources operation for background processing
+     * 
+     * Finds all failed FhirResourceMetadata records across the project and creates 
+     * a task to retry their fetch operations using the RetryFailedProcessor.
      */
-    public function queueRetryFailedTasks(): TaskOperationResponse
+    public function queueRetryFailedResources(): TaskOperationResponse
     {
         try {
-            // Get count of failed tasks
-            $failedTasks = $this->queueManager->getTasksByStatus(Task::STATUS_FAILED);
-            $failedCount = count($failedTasks);
+            // Get count of failed FHIR resources (not failed tasks)
+            $failedCount = $this->dataAccessor->countAllFailedResources();
             
             if ($failedCount === 0) {
                 return TaskOperationResponse::success(
                     null,
-                    ['failed_tasks_count' => 0],
-                    'No failed tasks to retry'
+                    ['failed_resources_count' => 0],
+                    'No failed resources to retry'
                 );
             }
             
-            // Create retry failed task and add to queue
-            $task = $this->queueManager->addTask(Constants::TASK_RETRY_FAILED, [], [
+            // Get project ID for the task parameters
+            $projectId = $this->module->getProjectId();
+            
+            // Create retry failed task with proper parameters for RetryFailedProcessor
+            $task = $this->queueManager->addTask(Constants::TASK_RETRY_FAILED, [
+                'project_id' => $projectId,
+                'operation_type' => 'bulk'
+            ], [
                 'initiated_by' => 'task_service',
                 'initiated_at' => date('Y-m-d H:i:s'),
-                'failed_tasks_count' => $failedCount
+                'failed_resources_count' => $failedCount
             ]);
             
             return TaskOperationResponse::taskCreationSuccess(
                 $task->getId(),
                 Constants::TASK_RETRY_FAILED,
                 [
-                    'failed_tasks_count' => $failedCount,
+                    'failed_resources_count' => $failedCount,
                     'queued_at' => date('Y-m-d H:i:s')
                 ]
             );
             
         } catch (\Exception $e) {
-            $this->module->log("Failed to queue retry failed tasks: " . $e->getMessage(), []);
-            return TaskOperationResponse::failure('Failed to queue retry failed tasks: ' . $e->getMessage());
+            $this->module->log("Failed to queue retry failed resources: " . $e->getMessage(), []);
+            return TaskOperationResponse::failure('Failed to queue retry failed resources: ' . $e->getMessage());
         }
     }
 

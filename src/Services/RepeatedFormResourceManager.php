@@ -238,16 +238,11 @@ class RepeatedFormResourceManager
      */
     public function bulkRetryFailed(array $filters = []): int
     {
-        $allMrns = $this->dataAccessor->getAllMrns();
+        $allRecordIds = $this->dataAccessor->getAllRecordIds();
         $resourcesToRetry = [];
         
         // Find all failed resources that match filters
-        foreach ($allMrns as $mrn) {
-            $recordId = $this->dataAccessor->getRecordIdByMrn($mrn);
-            if (!$recordId) {
-                continue;
-            }
-            
+        foreach ($allRecordIds as $recordId) {
             $allMetadata = $this->dataAccessor->getAllResourceMetadata($recordId);
             
             foreach ($allMetadata as $metadata) {

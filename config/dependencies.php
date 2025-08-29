@@ -98,7 +98,8 @@ return function (ContainerBuilder $containerBuilder) {
         // Tasks
         TaskService::class => fn(Container $c) => new TaskService(
             $c->get(FhirSnapshot::class),
-            $c->get(QueueManager::class)
+            $c->get(QueueManager::class),
+            $c->get(RepeatedFormDataAccessor::class)
         ),
 
         // Define how to instantiate queue components

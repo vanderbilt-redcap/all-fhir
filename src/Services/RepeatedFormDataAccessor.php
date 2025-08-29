@@ -2,6 +2,7 @@
 
 namespace Vanderbilt\FhirSnapshot\Services;
 
+use Project;
 use Vanderbilt\FhirSnapshot\Constants;
 use Vanderbilt\FhirSnapshot\Constants\FhirFormFields;
 use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
@@ -383,7 +384,8 @@ class RepeatedFormDataAccessor
      */
     public function getAllRecordIds(): array
     {
-        $recordIdField = REDCap::getRecordIdField($this->projectId);
+        $Proj = new Project($this->projectId);
+        $recordIdField = $Proj->table_pk;
         
         $data = REDCap::getData(
             $this->projectId,
@@ -599,6 +601,31 @@ class RepeatedFormDataAccessor
         }
         
         return $counts;
+    }
+
+    /**
+     * Count failed FHIR resource metadata records across all project records
+     * 
+     * Scans all records in the project to find FhirResourceMetadata with STATUS_FAILED.
+     * Uses record IDs directly to avoid MRN ambiguity issues.
+     * 
+     * @return int Total count of failed resource metadata across all records
+     */
+    public function countAllFailedResources(): int
+    {
+        $allRecordIds = $this->getAllRecordIds();
+        $failedCount = 0;
+        
+        foreach ($allRecordIds as $recordId) {
+            $allMetadata = $this->getAllResourceMetadata($recordId);
+            foreach ($allMetadata as $metadata) {
+                if ($metadata->isFailed()) {
+                    $failedCount++;
+                }
+            }
+        }
+        
+        return $failedCount;
     }
 
     /**

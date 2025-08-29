@@ -169,7 +169,7 @@ export const useTaskStore = defineStore('task', () => {
   const retryFailed = async (): Promise<TaskOperationResponse | null> => {
     try {
       operationLoading.value = true
-      const response = await api.retryFailedTasks()
+      const response = await api.retryFailedResources()
       
       const data: TaskOperationResponse = response.data
       
@@ -179,7 +179,7 @@ export const useTaskStore = defineStore('task', () => {
         return data
       } else {
         errorsStore.addError({
-          message: data.message || 'Failed to retry failed tasks',
+          message: data.message || 'Failed to retry failed resources',
           source: 'TaskStore.retryFailed',
           timestamp: new Date()
         })
@@ -187,7 +187,7 @@ export const useTaskStore = defineStore('task', () => {
       }
     } catch (err) {
       errorsStore.addError({
-        message: `Failed to retry failed tasks: ${err}`,
+        message: `Failed to retry failed resources: ${err}`,
         source: 'TaskStore.retryFailed',
         timestamp: new Date()
       })
