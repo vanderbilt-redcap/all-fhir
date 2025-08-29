@@ -8,6 +8,7 @@ use Vanderbilt\FhirSnapshot\Queue\Processors\TaskProcessorInterface;
 use Vanderbilt\FhirSnapshot\ValueObjects\TaskProcessorResult;
 use Vanderbilt\REDCap\Classes\SystemMonitors\ResourceMonitor;
 use Exception;
+use Throwable;
 
 /**
  * QueueProcessor
@@ -147,7 +148,7 @@ class QueueProcessor
                 $result->setStoppedDueToResources(true);
             }
 
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $this->logError("Exception during queue processing: " . $e->getMessage());
             $result->setException($e);
         }
@@ -185,7 +186,7 @@ class QueueProcessor
 
             return $result;
 
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             $this->logError("Exception while processing task {$task->getId()}: " . $e->getMessage());
             
             // Mark task as failed

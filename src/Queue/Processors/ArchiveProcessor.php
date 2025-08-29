@@ -3,6 +3,7 @@
 namespace Vanderbilt\FhirSnapshot\Queue\Processors;
 
 use Vanderbilt\FhirSnapshot\Constants;
+use Vanderbilt\FhirSnapshot\FhirSnapshot;
 use Vanderbilt\FhirSnapshot\ValueObjects\Task;
 use Vanderbilt\FhirSnapshot\ValueObjects\TaskProcessorResult;
 use Vanderbilt\FhirSnapshot\Services\ArchivePackager;
@@ -71,7 +72,12 @@ use Vanderbilt\FhirSnapshot\Services\ArchivePackager;
 class ArchiveProcessor extends AbstractTaskProcessor
 {
 
-    function __construct(private ArchivePackager $archivePackager) {}
+    function __construct(
+        private FhirSnapshot $module,
+        private ArchivePackager $archivePackager
+    ) {
+        parent::__construct($module);
+    }
 
     public function getTaskKey(): string
     {
@@ -126,8 +132,8 @@ class ArchiveProcessor extends AbstractTaskProcessor
             $processingTime = $endTime - $startTime;
             $memoryUsed = $endMemory - $startMemory;
 
-            $this->logInfo("Archive created successfully: {$archiveInfo['file_name']} " .
-                          "({$archiveInfo['file_size']} bytes, {$processingTime}s)");
+            $this->logInfo("Archive created successfully: {$archiveInfo->getFileName()} " .
+                          "({$archiveInfo->getFileSize()} bytes, {$processingTime}s)");
 
             // Prepare comprehensive result data
             $resultData = [
@@ -142,27 +148,27 @@ class ArchiveProcessor extends AbstractTaskProcessor
                 'resource_summary' => [
                     'total_requested' => $resourceCount,
                     'total_processed' => count($resources),
-                    'successful_files' => $archiveInfo['successful_files'],
-                    'failed_files' => $archiveInfo['failed_files'],
+                    'successful_files' => $archiveInfo->getSuccessfulFiles(),
+                    'failed_files' => $archiveInfo->getFailedFiles(),
                     'total_size_bytes' => $archiveInfo['archive_stats']['total_size_bytes']
                 ],
                 'download_info' => [
-                    'file_path' => $archiveInfo['file_path'],
-                    'file_name' => $archiveInfo['file_name'],
-                    'file_size' => $archiveInfo['file_size'],
-                    'download_url' => $archiveInfo['download_url']
+                    'file_path' => $archiveInfo->getFilePath(),
+                    'file_name' => $archiveInfo->getFileName(),
+                    'file_size' => $archiveInfo->getFileSize(),
+                    'download_url' => $archiveInfo->getDownloadUrl()
                 ]
             ];
 
             // Include error details if any files failed
-            if ($archiveInfo['failed_files'] > 0) {
+            if ($archiveInfo->getFailedFiles() > 0) {
                 $resultData['errors'] = $archiveInfo['archive_stats']['errors'] ?? [];
-                $this->logWarning("Archive created with {$archiveInfo['failed_files']} failed files");
+                $this->logWarning("Archive created with {$archiveInfo->getFailedFiles()} failed files");
             }
 
             return TaskProcessorResult::success(
-                "FHIR archive created successfully: {$archiveInfo['successful_files']} files, " .
-                "{$archiveInfo['file_size']} bytes",
+                "FHIR archive created successfully: {$archiveInfo->getSuccessfulFiles()} files, " .
+                "{$archiveInfo->getFileSize()} bytes",
                 $resultData
             );
 

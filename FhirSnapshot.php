@@ -180,7 +180,7 @@ class FhirSnapshot extends AbstractExternalModule {
                 $results[] = $result;
             }
             return $results;
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->log("Error in processQueue: ", ['message' => $e->getMessage()]);
             throw $e;
         }

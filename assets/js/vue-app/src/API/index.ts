@@ -129,6 +129,17 @@ export const api = {
     return apiClient.post('', payload, { params })
   },
 
+  retryFailed(options: { 
+    record_ids?: number[], 
+    mrn?: string, 
+    resource_type?: string, 
+    repeat_instance?: number,
+    bulk?: boolean 
+  }) {
+    const params = { route: `retry-failed` }
+    return apiClient.post('', options, { params })
+  },
+
   // Task management API methods
   listTasks(page?: number, limit?: number, filters?: any) {
     const params: any = { route: `tasks` }
@@ -162,7 +173,7 @@ export const api = {
   },
 
   getQueueStatistics() {
-    const params = { route: `tasks/queue-stats` }
+    const params = { route: `tasks/stats` }
     return apiClient.get('', { params })
   },
 

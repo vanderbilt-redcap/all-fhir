@@ -289,7 +289,7 @@ const retryFailedResources = async () => {
     
     try {
         operationLoading.value = true
-        await api.retryFailedResources({ record_ids: [props.item.id] })
+        await api.retryFailed({ record_ids: [props.item.id] })
         
         // Refresh monitor data after successful retry
         await monitorStore.getProjectSummary()

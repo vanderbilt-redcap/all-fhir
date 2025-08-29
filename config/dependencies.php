@@ -86,7 +86,10 @@ return function (ContainerBuilder $containerBuilder) {
             $c->get(FhirSnapshot::class),
             $c->get(ArchiveUrlService::class)
         ),
-        ArchiveProcessor::class => fn(Container $c) => new ArchiveProcessor($c->get(ArchivePackager::class)),
+        ArchiveProcessor::class => fn(Container $c) => new ArchiveProcessor(
+            $c->get(FhirSnapshot::class),
+            $c->get(ArchivePackager::class)
+        ),
         ResourceArchiveService::class => fn(Container $c) => new ResourceArchiveService(
             $c->get(FhirSnapshot::class),
             $c->get(RepeatedFormDataAccessor::class),
@@ -122,8 +125,6 @@ return function (ContainerBuilder $containerBuilder) {
                 $processorFactories
             );
         }),
-        
-        ArchiveProcessor::class => fn(Container $c) => new ArchiveProcessor($c->get(FhirSnapshot::class)),
         EmailNotificationProcessor::class => fn(Container $c) => new EmailNotificationProcessor($c->get(FhirSnapshot::class)),
         FullSyncProcessor::class => fn(Container $c) => new FullSyncProcessor(
             $c->get(FhirSnapshot::class),
