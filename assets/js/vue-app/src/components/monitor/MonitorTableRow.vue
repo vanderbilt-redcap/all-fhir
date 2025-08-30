@@ -77,6 +77,23 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Dev Mode Toggle for Status Display -->
+            <!--
+            <div class="ms-2" v-if="showDevControls">
+                <select 
+                    v-model="statusDisplayMode" 
+                    class="form-select form-select-sm"
+                    style="width: 100px; font-size: 0.75em;"
+                    title="Status Display Mode (Dev)"
+                >
+                    <option value="smart">Smart</option>
+                    <option value="progress">Progress</option>
+                    <option value="badges">Badges</option>
+                    <option value="legacy">Legacy</option>
+                </select>
+            </div> 
+            -->
             
         </td>
         <td>
@@ -85,20 +102,6 @@
                 <button class="btn btn-sm btn-light ms-2" @click="toggleExpand" :aria-expanded="expanded">
                     <i :class="`fas fa-chevron-${expanded ? 'up' : 'down'} fa-fw`"></i>
                 </button>
-                <!-- Dev Mode Toggle for Status Display -->
-                <div class="ms-2" v-if="showDevControls">
-                    <select 
-                        v-model="statusDisplayMode" 
-                        class="form-select form-select-sm"
-                        style="width: 100px; font-size: 0.75em;"
-                        title="Status Display Mode (Dev)"
-                    >
-                        <option value="smart">Smart</option>
-                        <option value="progress">Progress</option>
-                        <option value="badges">Badges</option>
-                        <option value="legacy">Legacy</option>
-                    </select>
-                </div>
             </div>
         </td>
         <td>
@@ -129,21 +132,23 @@
                         <i class="fas fa-spinner fa-spin fa-fw"></i> Retry
                     </template>
                 </button>
+                <!--
+                    <button 
+                        :class="`btn btn-sm btn-info`"
+                        :disabled="archiveButtonConfig.disabled"
+                        @click="showArchiveModal"
+                        :title="archiveButtonConfig.tooltip"
+                    >
+                        <i class="fas fa-download fa-fw"></i>
+                    </button>
+                -->
                 <button 
-                    :class="`btn btn-sm btn-${archiveButtonConfig.variant}`"
-                    :disabled="archiveButtonConfig.disabled"
-                    @click="showArchiveModal"
-                    :title="archiveButtonConfig.tooltip"
-                >
-                    <i class="fas fa-download fa-fw"></i>
-                </button>
-                <button 
-                    class="btn btn-sm btn-info"
+                    class="btn btn-sm btn-success"
                     :disabled="streamButtonDisabled || operationLoading || streamingStore.isStreamingActive"
                     @click="streamDownloadMrn"
                     :title="streamButtonTooltip"
                 >
-                    <i class="fas fa-bolt fa-fw"></i>
+                    <i class="fas fa-download fa-fw"></i>
                 </button>
             </div>
         </td>

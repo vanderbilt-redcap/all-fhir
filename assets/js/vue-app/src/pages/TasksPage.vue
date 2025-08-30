@@ -306,7 +306,7 @@ const paginationInfo = computed(() => {
 const refreshTasks = async () => {
   try {
     await taskStore.fetchTasks()
-    notificationStore.showSuccess('Tasks refreshed successfully')
+    // notificationStore.showSuccess('Tasks refreshed successfully')
   } catch (error) {
     console.error('Failed to refresh tasks:', error)
     notificationStore.showError('Failed to refresh tasks')

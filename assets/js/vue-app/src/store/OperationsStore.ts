@@ -25,7 +25,7 @@ export const useOperationsStore = defineStore('operations', () => {
   // State
   const loading = ref(false)
   const lastOperation = ref<OperationResult | null>(null)
-  const showSummary = ref(false)
+  const showSummary = ref(true)
   
   // Archive Modal State
   const archiveModal = ref<ArchiveModalState>({

@@ -22,32 +22,33 @@
             </div>
 
             <!-- Archive Actions -->
-            <div class="btn-group" role="group">
-                <button 
-                    class="btn btn-success"
-                    @click="createArchiveSelected"
-                    :disabled="selectionDisabled"
-                    title="Create archive for selected completed MRNs"
-                >
-                    <i class="fas fa-archive fa-fw"></i> Create Archive
-                </button>
-                <button 
-                    class="btn btn-outline-success"
-                    @click="createArchiveAll"
-                    title="Create archive for all completed resources"
-                >
-                    <i class="fas fa-archive fa-fw"></i> Archive All
-                </button>
-            </div>
+            <!--
+                <div class="btn-group" role="group">
+                    <button 
+                        class="btn btn-success"
+                        @click="createArchiveSelected"
+                        :disabled="selectionDisabled"
+                        title="Create archive for selected completed MRNs"
+                    >
+                        <i class="fas fa-archive fa-fw"></i> Create Archive
+                    </button>
+                    <button 
+                        class="btn btn-outline-success"
+                        @click="createArchiveAll"
+                        title="Create archive for all completed resources"
+                    >
+                        <i class="fas fa-archive fa-fw"></i> Archive All
+                    </button>
+                </div>
+            -->
 
             <!-- Streaming Archive Actions -->
             <b-dropdown 
-                text="Stream Download"
-                variant="info"
+                variant="success"
                 title="Stream download archives"
             >
                 <template #button>
-                    <i class="fas fa-bolt fa-fw me-1"></i>Stream Download
+                    <i class="fas fa-download fa-fw me-1"></i>Download
                 </template>
                 
                 <b-dropdown-item 
@@ -55,14 +56,14 @@
                     :class="{ disabled: selectionDisabled }"
                     :prevent-close="false"
                 >
-                    <i class="fas fa-bolt me-2"></i>Stream Selected Records
+                    <i class="fas fa-download me-2"></i>Download Selected Records
                 </b-dropdown-item>
                 
                 <b-dropdown-item 
                     @click="createStreamingArchiveAll"
                     :prevent-close="false"
                 >
-                    <i class="fas fa-bolt me-2"></i>Stream All Records
+                    <i class="fas fa-download me-2"></i>Download All Records
                 </b-dropdown-item>
             </b-dropdown>
 
@@ -77,13 +78,16 @@
             </button>
 
             <!-- Project Summary Toggle -->
-            <button 
-                class="btn btn-outline-info"
-                @click="operationsStore.toggleSummary()"
-                title="Toggle project summary"
-            >
-                <i class="fas fa-chart-bar fa-fw"></i> Summary
-            </button>
+            
+            <!--
+                <button 
+                    class="btn btn-outline-info"
+                    @click="operationsStore.toggleSummary()"
+                    title="Toggle project summary"
+                >
+                    <i class="fas fa-chart-bar fa-fw"></i> Summary
+                </button>
+            -->
         </div>
 
     </div>

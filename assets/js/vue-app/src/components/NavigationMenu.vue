@@ -29,8 +29,8 @@
                 :class="{ active: $route.name === 'monitor' }"
                 :aria-current="$route.name === 'monitor' ? 'page' : undefined"
             >
-                <i class="fas fa-search me-2"></i>
-                Monitor
+                <i class="fas fa-database me-2"></i>
+                Resources
             </router-link>
         </li>
         <li class="nav-item">
@@ -44,17 +44,19 @@
                 Tasks
             </router-link>
         </li>
+        <!--
         <li class="nav-item">
             <router-link 
                 to="/archives" 
                 class="nav-link"
                 :class="{ active: $route.name === 'archives' }"
                 :aria-current="$route.name === 'archives' ? 'page' : undefined"
-            >
+                >
                 <i class="fas fa-archive me-2"></i>
                 Archives
             </router-link>
         </li>
+        -->
     </ul>
 </template>
 
