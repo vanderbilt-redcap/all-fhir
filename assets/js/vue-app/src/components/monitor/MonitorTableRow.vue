@@ -204,7 +204,7 @@ const operationLoading = ref(false)
 const showTooltip = ref(false)
 
 // Status display mode - can be controlled by props, store, or environment variable
-const statusDisplayMode = ref<'smart' | 'progress' | 'badges' | 'legacy'>('smart')
+const statusDisplayMode = ref<'smart' | 'progress' | 'badges' | 'legacy'>('progress')
 
 // Dev controls visibility - can be controlled by environment or dev mode
 const showDevControls = ref(import.meta.env?.DEV ?? false)
