@@ -411,15 +411,15 @@ class RepeatedFormDataAccessor
             $this->projectId,
             'array',
             null,
-            'mrn'
+            FhirFormFields::MRN
         );
         
         $mrns = [];
         
         foreach ($data as $recordId => $recordData) {
             $eventData = reset($recordData);
-            if (isset($eventData['mrn']) && !empty($eventData['mrn'])) {
-                $mrns[] = $eventData['mrn'];
+            if (isset($eventData[FhirFormFields::MRN]) && !empty($eventData[FhirFormFields::MRN])) {
+                $mrns[] = $eventData[FhirFormFields::MRN];
             }
         }
         
@@ -441,12 +441,12 @@ class RepeatedFormDataAccessor
             $this->projectId,
             'array',
             null,
-            'mrn'
+            FhirFormFields::MRN
         );
         
         foreach ($data as $recordId => $recordData) {
             $eventData = reset($recordData);
-            if (isset($eventData['mrn']) && $eventData['mrn'] === $mrn) {
+            if (isset($eventData[FhirFormFields::MRN]) && $eventData[FhirFormFields::MRN] === $mrn) {
                 return $recordId;
             }
         }
@@ -469,7 +469,7 @@ class RepeatedFormDataAccessor
             $this->projectId,
             'array',
             $recordId,
-            'mrn'
+            FhirFormFields::MRN
         );
         
         if (empty($data[$recordId])) {
@@ -477,7 +477,7 @@ class RepeatedFormDataAccessor
         }
         
         $eventData = reset($data[$recordId]);
-        return $eventData['mrn'] ?? null;
+        return $eventData[FhirFormFields::MRN] ?? null;
     }
 
     /**

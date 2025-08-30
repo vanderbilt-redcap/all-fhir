@@ -15,6 +15,7 @@ namespace Vanderbilt\FhirSnapshot\Constants;
  * - Document field purposes and data types
  * 
  * FIELD DESCRIPTIONS:
+ * - MRN: Medical Record Number field in REDCap (primary identifier for patients)
  * - RESOURCE_NAME: Display name for the mapping resource (e.g., "Demographics", "Vital Signs")
  * - RESOURCE_SPEC: Technical specification - predefined key OR custom URL
  * - RESOURCE_TYPE: Mapping type - "predefined" or "custom"
@@ -26,6 +27,7 @@ namespace Vanderbilt\FhirSnapshot\Constants;
  */
 class FhirFormFields
 {
+    public const MRN = 'mrn';
     public const RESOURCE_NAME = 'all_fhir_resource_name';
     public const RESOURCE_SPEC = 'all_fhir_resource_spec';
     public const RESOURCE_TYPE = 'all_fhir_resource_type';
