@@ -59,12 +59,12 @@
                 </button>
                 <button 
                     v-if="resource.status === 'Completed'"
-                    class="btn btn-sm btn-info"
+                    class="btn btn-sm btn-success"
                     @click="streamDownload"
                     :disabled="loading || streamingStore.isStreamingActive"
                     title="Stream download this resource"
                 >
-                    <i class="fas fa-bolt fa-fw"></i>
+                    <i class="fas fa-download fa-fw"></i>
                 </button>
             </div>
         </td>

@@ -5,7 +5,7 @@
       <div class="d-flex flex-column gap-2 align-items-center">
         <img :src="ALL_FHIR_LOGO" title="ALL FHIR" style="height: 200px"/>
         <p class="text-muted mb-4">
-          Fetch, archive, and download FHIR resources from your configured healthcare systems
+          Automatically fetch and stream download FHIR resources from configured healthcare systems
         </p>
       </div>
 
@@ -15,24 +15,24 @@
             <div class="row text-center">
               <div class="col-md-4">
                 <div class="d-flex gap-2 align-items-start">
-                  <i class="fas fa-cloud-download-alt fa-2x text-success mb-2"></i>
-                  <h6>Background Processing</h6>
+                  <i class="fas fa-robot fa-2x text-primary mb-2"></i>
+                  <h6>Background Automation</h6>
                 </div>
-                <small class="text-muted">Reliable queue-based fetching</small>
+                <small class="text-muted">Silent cron-based fetching</small>
               </div>
               <div class="col-md-4">
                 <div class="d-flex gap-2 align-items-start">
-                  <i class="fas fa-shield-alt fa-2x text-info mb-2"></i>
-                  <h6>Secure Storage</h6>
+                  <i class="fas fa-stream fa-2x text-success mb-2"></i>
+                  <h6>Zero Storage</h6>
                 </div>
-                <small class="text-muted">REDCap-native data security</small>
+                <small class="text-muted">Direct streaming, no archives</small>
               </div>
               <div class="col-md-4">
                 <div class="d-flex gap-2 align-items-start">
-                  <i class="fas fa-file-archive fa-2x text-warning mb-2"></i>
-                  <h6>Easy Downloads</h6>
+                  <i class="fas fa-sliders-h fa-2x text-info mb-2"></i>
+                  <h6>Selective Downloads</h6>
                 </div>
-                <small class="text-muted">ZIP archives for research</small>
+                <small class="text-muted">Custom MRN & resource combinations</small>
               </div>
             </div>
           </div>
@@ -44,7 +44,7 @@
     <div class="features-section mb-5">
       <h2 class="text-center mb-4">Key Features</h2>
       <div class="row g-4">
-        <div class="col-md-6 col-lg-3">
+        <div class="col-md-6 col-lg-4">
           <div class="card h-100 border-0 shadow-sm">
             <div class="card-body text-center d-flex flex-column">
               <div class="feature-icon mb-3">
@@ -52,69 +52,52 @@
               </div>
               <h5 class="card-title">Setup & Configuration</h5>
               <p class="card-text text-muted">
-                Select your FHIR system and configure which resource types to fetch from predefined options or custom queries.
+                Select your FHIR system and configure resource types to fetch using predefined categories or custom FHIR queries.
               </p>
               <router-link to="/setup" class="btn btn-outline-primary btn-sm mt-auto">
-                <i class="fas fa-arrow-right me-1"></i>
+                <i class="fas fa-cogs me-1"></i>
                 Configure
               </router-link>
             </div>
           </div>
         </div>
 
-        <div class="col-md-6 col-lg-3">
+        <div class="col-md-6 col-lg-4">
           <div class="card h-100 border-0 shadow-sm">
             <div class="card-body text-center d-flex flex-column">
               <div class="feature-icon mb-3">
-                <i class="fas fa-search fa-3x text-success"></i>
+                <i class="fas fa-database fa-3x text-success"></i>
               </div>
-              <h5 class="card-title">Monitor & Track</h5>
+              <h5 class="card-title">Resources & Downloads</h5>
               <p class="card-text text-muted">
-                Add MRNs, trigger fetches, and monitor real-time status per resource with detailed progress tracking.
+                Manage patient MRNs, monitor FHIR resource status, and stream download customized ZIP archives with selective MRN and resource type combinations.
               </p>
-              <router-link to="/monitor" class="btn btn-outline-success btn-sm mt-auto">
-                <i class="fas fa-arrow-right me-1"></i>
-                Monitor
+              <router-link to="/resources" class="btn btn-outline-success btn-sm mt-auto">
+                <i class="fas fa-database me-1"></i>
+                View Resources
               </router-link>
             </div>
           </div>
         </div>
 
-        <div class="col-md-6 col-lg-3">
+        <div class="col-md-6 col-lg-4">
           <div class="card h-100 border-0 shadow-sm">
             <div class="card-body text-center d-flex flex-column">
               <div class="feature-icon mb-3">
                 <i class="fas fa-tasks fa-3x text-info"></i>
               </div>
-              <h5 class="card-title">Background Processing</h5>
+              <h5 class="card-title">Task Management</h5>
               <p class="card-text text-muted">
-                Robust queue-based system manages large-scale FHIR fetching with automatic retry, task monitoring, and resource management.
+                Queue manual operations like full sync and retry failed resources. Automatic fetching runs invisibly in background.
               </p>
               <router-link to="/tasks" class="btn btn-outline-info btn-sm mt-auto">
-                <i class="fas fa-arrow-right me-1"></i>
-                View Tasks
+                <i class="fas fa-tasks me-1"></i>
+                Manage Tasks
               </router-link>
             </div>
           </div>
         </div>
 
-        <div class="col-md-6 col-lg-3">
-          <div class="card h-100 border-0 shadow-sm">
-            <div class="card-body text-center d-flex flex-column">
-              <div class="feature-icon mb-3">
-                <i class="fas fa-archive fa-3x text-warning"></i>
-              </div>
-              <h5 class="card-title">Archive & Download</h5>
-              <p class="card-text text-muted">
-                Create ZIP archives of completed FHIR resources with flexible filtering and background processing options.
-              </p>
-              <router-link to="/archives" class="btn btn-outline-warning btn-sm mt-auto">
-                <i class="fas fa-arrow-right me-1"></i>
-                Archives
-              </router-link>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -122,7 +105,7 @@
     <div class="getting-started-section mb-5">
       <div class="text-center mb-4">
         <h2>Getting Started</h2>
-        <p class="text-muted">Follow these simple steps to start fetching and archiving FHIR resources</p>
+        <p class="text-muted">Follow these steps to start fetching and streaming FHIR resources</p>
       </div>
       
       <div class="row align-items-center">
@@ -136,7 +119,7 @@
               </div>
               <div class="step-content flex-grow-1">
                 <h5>Configure Your Setup</h5>
-                <p class="text-muted mb-2">Select your FHIR system and choose which resource types to fetch</p>
+                <p class="text-muted mb-2">Select FHIR system and resource types to fetch</p>
                 <router-link to="/setup" class="btn btn-primary btn-sm">
                   <i class="fas fa-cogs me-1"></i>
                   Go to Setup
@@ -155,10 +138,10 @@
               </div>
               <div class="step-content flex-grow-1">
                 <h5>Add Patient MRNs</h5>
-                <p class="text-muted mb-2">Input the patient identifiers you want to fetch FHIR data for</p>
-                <router-link to="/monitor" class="btn btn-success btn-sm">
-                  <i class="fas fa-plus me-1"></i>
-                  Add MRNs
+                <p class="text-muted mb-2">Add patient identifiers to fetch FHIR resources</p>
+                <router-link to="/resources" class="btn btn-success btn-sm">
+                  <i class="fas fa-database me-1"></i>
+                  Manage MRNs
                 </router-link>
               </div>
               <div class="step-icon ms-3">
@@ -173,30 +156,11 @@
                 </div>
               </div>
               <div class="step-content flex-grow-1">
-                <h5>Trigger Data Fetch</h5>
-                <p class="text-muted mb-2">Start the background processing to retrieve FHIR resources</p>
-                <router-link to="/monitor" class="btn btn-info btn-sm">
-                  <i class="fas fa-play me-1"></i>
-                  Start Fetch
-                </router-link>
-              </div>
-              <div class="step-icon ms-3">
-                <i class="fas fa-arrow-right text-muted fa-2x d-none d-md-block"></i>
-              </div>
-            </div>
-
-            <div class="step d-flex align-items-center mb-4">
-              <div class="step-number me-4">
-                <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center">
-                  <span class="fw-bold">4</span>
-                </div>
-              </div>
-              <div class="step-content flex-grow-1">
-                <h5>Monitor Tasks</h5>
-                <p class="text-muted mb-2">Track background processing and manage synchronization tasks</p>
-                <router-link to="/tasks" class="btn btn-secondary btn-sm">
+                <h5>Automatic Processing</h5>
+                <p class="text-muted mb-2">Resources fetch automatically in background; optionally queue manual operations</p>
+                <router-link to="/tasks" class="btn btn-info btn-sm">
                   <i class="fas fa-tasks me-1"></i>
-                  View Tasks
+                  Queue Operations
                 </router-link>
               </div>
               <div class="step-icon ms-3">
@@ -207,15 +171,15 @@
             <div class="step d-flex align-items-center">
               <div class="step-number me-4">
                 <div class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center">
-                  <span class="fw-bold">5</span>
+                  <span class="fw-bold">4</span>
                 </div>
               </div>
               <div class="step-content flex-grow-1">
-                <h5>Download Archives</h5>
-                <p class="text-muted mb-2">Create and download ZIP files containing your FHIR resources</p>
-                <router-link to="/archives" class="btn btn-warning btn-sm">
+                <h5>Stream Download</h5>
+                <p class="text-muted mb-2">Generate and download ZIP files on-demand with filtering</p>
+                <router-link to="/resources" class="btn btn-warning btn-sm">
                   <i class="fas fa-download me-1"></i>
-                  View Archives
+                  Stream Download
                 </router-link>
               </div>
             </div>
@@ -324,17 +288,13 @@
       <!-- Quick Actions for Configured Projects -->
       <div v-if="isConfigured" class="mt-4 text-center">
         <div class="btn-group gap-2" role="group">
-          <router-link to="/monitor" class="btn btn-primary">
-            <i class="fas fa-plus me-1"></i>
-            Add MRNs
+          <router-link to="/resources" class="btn btn-primary">
+            <i class="fas fa-database me-1"></i>
+            Manage Resources
           </router-link>
           <router-link to="/tasks" class="btn btn-outline-secondary">
             <i class="fas fa-tasks me-1"></i>
             View Tasks
-          </router-link>
-          <router-link to="/archives" class="btn btn-outline-primary">
-            <i class="fas fa-archive me-1"></i>
-            View Archives
           </router-link>
         </div>
       </div>
