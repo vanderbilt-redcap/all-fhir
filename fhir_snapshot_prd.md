@@ -10,10 +10,10 @@
 ## 1. Overview
 
 **Purpose:**  
-This REDCap External Module enables users to fetch FHIR resources from a configured FHIR system using the existing CDIS tools in REDCap. The module retrieves and stores JSON payloads for specific MRNs in structured directories without altering REDCap project data.
+This REDCap External Module enables users to fetch FHIR resources from configured FHIR systems using existing CDIS tools in REDCap. The module retrieves and stores JSON payloads for specific MRNs, then provides on-demand streaming downloads without requiring server-side archive storage.
 
 **Background/Context:**  
-While REDCap’s CDIS tools allow for real-time FHIR integration by storing data directly into REDCap project instruments, this module takes a different approach. Instead of populating project fields, it stores the raw FHIR payloads in structured directories and enables users to download them. This makes it particularly useful for research workflows or audits that require archived, unaltered FHIR data.
+While REDCap's CDIS tools allow for real-time FHIR integration by storing data directly into REDCap project instruments, this External Module takes a different approach. Instead of populating project fields, it stores raw FHIR payloads using REDCap's repeated forms and file storage, then provides on-demand streaming downloads of ZIP archives. This makes it particularly useful for research workflows or audits that require unaltered FHIR data without server storage overhead.
 
 **Stakeholders:**  
 - REDCap Administrators  
@@ -38,7 +38,7 @@ While REDCap’s CDIS tools allow for real-time FHIR integration by storing data
 **FR3**  
 *Requirement:* Allow users to add/remove MRNs  
 *Priority:* High  
-*Notes:* Via monitor page
+*Notes:* Via resources page
 
 **FR4**  
 *Requirement:* Fetch FHIR resources in background using queue-based processing  
@@ -51,9 +51,9 @@ While REDCap’s CDIS tools allow for real-time FHIR integration by storing data
 *Notes:* Use repeated forms with `all_fhir_` prefixed fields for metadata and edoc file storage for JSON payloads. Each resource instance is stored in a separate repeat instance with complete metadata tracking including resource name, specification, mapping type, status, and file references.
 
 **FR6**  
-*Requirement:* Allow packaging of completed payloads into ZIP files for download  
-*Priority:* Medium  
-*Notes:* Multi-select support on monitor page
+*Requirement:* Provide on-demand streaming downloads of FHIR resources  
+*Priority:* High  
+*Notes:* Real-time ZIP generation without server storage using OnDemandStreamingPackager
 
 **FR7**  
 *Requirement:* Track fetch status and errors per MRN  
@@ -80,6 +80,15 @@ While REDCap’s CDIS tools allow for real-time FHIR integration by storing data
 *Priority:* High  
 *Notes:* Support for both predefined REDCap FHIR categories and custom FHIR query specifications. Separates display names from technical specifications for better user experience.
 
+**FR12**  
+*Requirement:* On-demand streaming archive generation  
+*Priority:* High  
+*Notes:* Generate ZIP archives on-the-fly with zero server-side storage, memory-efficient processing, and direct browser streaming using ZipStream library.
+
+**FR13**  
+*Requirement:* Dual cron job architecture for automated processing  
+*Priority:* High  
+*Notes:* Separate cron jobs: (1) Resource Fetching Cron - automatically processes FhirResourceMetadata instances marked as pending, (2) Task Processing Cron - handles queued operations like full sync and retry failed operations.
 
 ---
 
@@ -101,12 +110,21 @@ While REDCap’s CDIS tools allow for real-time FHIR integration by storing data
 - Dropdown to select FHIR system (pulled dynamically from CDIS config)
 - Checklist or multi-select input for available FHIR resource types,including the ability to specify custom resource queries using the `{resource.search}` syntax (e.g., `/Observation?category=social-history`)
 
-### 4.2 Monitor Page
-- The module will identify which resources have already been downloaded for each MRN. This allows for partial fetching and ensures that newly added MRNs or resources will not re-download existing data, optimizing performance and preventing duplication.
+### 4.2 Resources Page
+- The module identifies which resources have been downloaded for each MRN, allowing for partial fetching and ensuring newly added MRNs or resources won't re-download existing data.
 - List of MRNs with individual statuses per resource type (e.g., Patient, Observation), such as Pending, Fetching, Completed, or Failed
-- Add/Remove MRNs (uses redcap_data)
-- Button to trigger fetch for all or selected MRNs, including resource-specific status updates per MRN
-- Option to select completed MRNs and generate downloadable ZIP archive
+- Add/Remove MRNs (uses REDCap data storage)
+- Real-time status monitoring with automatic updates
+- On-demand streaming download functionality with flexible filtering options (MRNs, resource types, date ranges)
+- Direct ZIP streaming to browser without server-side archive creation
+
+### 4.3 Tasks Page
+- View and manage background processing tasks queue
+- Monitor task status (pending, processing, completed, failed)
+- Manual trigger for "Full Sync" operations (creates resource placeholders)
+- Manual trigger for "Retry Failed" operations (resets failed resources to pending)
+- Task execution history and logging
+- Real-time progress tracking for active tasks
 
 ---
 
