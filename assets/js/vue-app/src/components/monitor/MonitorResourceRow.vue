@@ -77,6 +77,9 @@
             </div>
         </td>
     </tr>
+    
+    <!-- Resource Content Modal -->
+    <ResourceContentModal />
 </template>
 
 <script setup lang="ts">
@@ -86,16 +89,20 @@ import { FetchStatus } from '@/models/Mrn'
 import { useMonitorStore } from '@/store/MonitorStore'
 import { useStreamingStore } from '@/store/StreamingStore'
 import { useNotificationStore } from '@/store/NotificationStore'
+import { useResourceContentStore } from '@/store/ResourceContentStore'
+import ResourceContentModal from '@/components/shared/ResourceContentModal.vue'
 import { api } from '@/API'
 
 const props = defineProps<{
     resource: MonitoredResource
     mrn: string
+    recordId: string
 }>()
 
 const monitorStore = useMonitorStore()
 const streamingStore = useStreamingStore()
 const notificationStore = useNotificationStore()
+const resourceContentStore = useResourceContentStore()
 const showFullError = ref(false)
 const loading = ref(false)
 
@@ -154,9 +161,20 @@ const retryResource = async () => {
     }
 }
 
-const viewDetails = () => {
-    // TODO: Implement resource details modal or navigation
-    console.log('View details for resource:', props.resource)
+const viewDetails = async () => {
+    try {
+        loading.value = true
+        await resourceContentStore.showResourceContent(
+            props.recordId,
+            props.resource.name,
+            props.resource.repeat_instance || 1
+        )
+    } catch (error) {
+        console.error('Failed to load resource content:', error)
+        notificationStore.showError('Failed to load resource content')
+    } finally {
+        loading.value = false
+    }
 }
 
 const streamDownload = async () => {

@@ -200,5 +200,14 @@ export const api = {
       responseType: 'blob',
       timeout: 0 
     })
+  },
+
+  // Resource content viewing API method
+  getResourceContent(recordId: string, resourceName: string, repeatInstance: number, previewLimit?: number) {
+    const params: any = { route: `records/${recordId}/resources/${resourceName}/content/${repeatInstance}` }
+    if (previewLimit) {
+      params.preview_limit = previewLimit
+    }
+    return apiClient.get('', { params })
   }
 }

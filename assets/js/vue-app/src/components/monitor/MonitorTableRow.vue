@@ -174,6 +174,7 @@
                             :key="`${resource.name}-${resource.repeat_instance}`" 
                             :resource="resource" 
                             :mrn="item.mrn"
+                            :recordId="item.id.toString()"
                         />
                     </tbody>
                 </table>

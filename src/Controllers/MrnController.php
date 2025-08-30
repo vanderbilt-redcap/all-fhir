@@ -6,6 +6,8 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Vanderbilt\FhirSnapshot\Constants;
 use Vanderbilt\FhirSnapshot\Services\RepeatedFormResourceManager;
+use Vanderbilt\FhirSnapshot\Services\ResourceContentService;
+use Vanderbilt\FhirSnapshot\Services\RepeatedFormDataAccessor;
 use Vanderbilt\FhirSnapshot\Queue\QueueManager;
 use REDCap;
 
@@ -39,6 +41,8 @@ class MrnController extends AbstractController
     public function __construct(
         protected \Vanderbilt\FhirSnapshot\FhirSnapshot $module,
         private RepeatedFormResourceManager $resourceManager,
+        private ResourceContentService $contentService,
+        private RepeatedFormDataAccessor $dataAccessor,
         private QueueManager $queueManager
     ) {
         parent::__construct($module);
@@ -512,6 +516,82 @@ class MrnController extends AbstractController
             
         } catch (\Exception $e) {
             $response->getBody()->write(json_encode(['error' => 'Failed to get project summary: ' . $e->getMessage()]));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
+        }
+    }
+
+    /**
+     * View resource content by record ID, resource name and repeat instance
+     * 
+     * Retrieves the stored FHIR resource file content from REDCap edocs system.
+     * Handles large files with content truncation and provides file metadata.
+     * 
+     * @param Request $request HTTP request with path parameters
+     * @param Response $response HTTP response
+     * @param string $recordId The REDCap record ID
+     * @param string $resourceName The FHIR resource name
+     * @param string $repeatInstance The repeat instance number
+     * @return Response JSON response with content and metadata
+     */
+    public function viewResourceContent(Request $request, Response $response, string $recordId, string $resourceName, string $repeatInstance): Response
+    {
+        try {
+            $repeatInstanceInt = (int) $repeatInstance;
+            
+            // Optional query parameter for preview size limit
+            $queryParams = $request->getQueryParams();
+            $previewLimit = isset($queryParams['preview_limit']) ? (int) $queryParams['preview_limit'] : null;
+            
+            // Validate required parameters
+            if (!$recordId || !$resourceName || $repeatInstanceInt < 1) {
+                $response->getBody()->write(json_encode([
+                    'error' => 'Invalid parameters: Record ID, resource name, and repeat instance are required'
+                ]));
+                return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
+            }
+            
+            // Get MRN for response (user-friendly display)
+            $mrn = $this->dataAccessor->getMrnByRecordId($recordId);
+            if (!$mrn) {
+                $response->getBody()->write(json_encode([
+                    'error' => 'Record not found or access denied'
+                ]));
+                return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
+            }
+            
+            // Retrieve resource content
+            $contentData = $this->contentService->getResourceContent(
+                $recordId, 
+                $resourceName, 
+                $repeatInstanceInt, 
+                $previewLimit
+            );
+            
+            $responseData = [
+                'success' => true,
+                'record_id' => $recordId,
+                'mrn' => $mrn,
+                'resource_name' => $resourceName,
+                'repeat_instance' => $repeatInstanceInt,
+                'content' => $contentData['content'],
+                'metadata' => $contentData['metadata']
+            ];
+            
+            $response->getBody()->write(json_encode($responseData));
+            return $response->withHeader('Content-Type', 'application/json');
+            
+        } catch (\InvalidArgumentException $e) {
+            $response->getBody()->write(json_encode([
+                'error' => $e->getMessage(),
+                'success' => false
+            ]));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
+            
+        } catch (\Exception $e) {
+            $response->getBody()->write(json_encode([
+                'error' => 'Failed to retrieve resource content: ' . $e->getMessage(),
+                'success' => false
+            ]));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
         }
     }

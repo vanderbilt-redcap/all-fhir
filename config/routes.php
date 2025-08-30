@@ -30,6 +30,7 @@ return function (App $app) {
     $app->post('/mrns', [MrnController::class, 'addMrn']);
     $app->delete('/mrns/{id}', [MrnController::class, 'removeMrn']);
     $app->get('/mrns/{mrn}/resources', [MrnController::class, 'getMrnResources']);
+    $app->get('/records/{recordId}/resources/{resourceName}/content/{repeatInstance}', [MrnController::class, 'viewResourceContent']);
     $app->post('/trigger-fetch', [MrnController::class, 'triggerFetch']);
     $app->post('/perform-full-sync', [MrnController::class, 'performFullSync']);
     $app->post('/retry-failed', [MrnController::class, 'retryFailed']);

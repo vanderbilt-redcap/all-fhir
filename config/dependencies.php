@@ -21,6 +21,7 @@ use Vanderbilt\FhirSnapshot\Services\ArchivePackager;
 use Vanderbilt\FhirSnapshot\Services\OnDemandStreamingPackager;
 use Vanderbilt\FhirSnapshot\Services\ArchiveUrlService;
 use Vanderbilt\FhirSnapshot\Services\ResourceFetcher;
+use Vanderbilt\FhirSnapshot\Services\ResourceContentService;
 use Vanderbilt\FhirSnapshot\Queue\QueueManager;
 use Vanderbilt\FhirSnapshot\Queue\QueueProcessor;
 use Vanderbilt\FhirSnapshot\Queue\Processors\ArchiveProcessor;
@@ -80,6 +81,12 @@ return function (ContainerBuilder $containerBuilder) {
             $c->get(RepeatedFormDataAccessor::class),
             $c->get(RepeatedFormResourceManager::class),
             $c->get(ResourceMonitor::class)
+        ),
+        
+        // Resource content service (FHIR resource file content retrieval)
+        ResourceContentService::class => fn(Container $c) => new ResourceContentService(
+            $c->get(FhirSnapshot::class),
+            $c->get(RepeatedFormDataAccessor::class)
         ),
         
         // Archive services
@@ -156,6 +163,8 @@ return function (ContainerBuilder $containerBuilder) {
         MrnController::class => fn(Container $c) => new MrnController(
             $c->get(FhirSnapshot::class),
             $c->get(RepeatedFormResourceManager::class),
+            $c->get(ResourceContentService::class),
+            $c->get(RepeatedFormDataAccessor::class),
             $c->get(QueueManager::class)
         ),
         ProjectSettingsController::class => fn(Container $c) => new ProjectSettingsController(
