@@ -9,6 +9,13 @@ export const useSettingsStore = defineStore('settings', () => {
   const errorsStore = useErrorsStore()
   const toaster = useToaster()
 
+  /**
+   * Version tag for the Resources import/export JSON schema.
+   * Bump this when the payload structure changes, and update
+   * `importResources` to handle backward compatibility as needed.
+   */
+  const RESOURCES_EXPORT_VERSION = '1' as const
+
   // Holds the last saved state from the server
   const settings = reactive<ProjectSettings>({
     fhir_system: null,
@@ -106,6 +113,92 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   }
 
+  // ----- Import/Export of selected resources -----
+  type ExportPayload = {
+    version: string
+    exportedAt: string
+    items: MappingResource[]
+  }
+
+  const exportResources = (): ExportPayload => {
+    const items: MappingResource[] = [
+      ...selectedMappingResources.value,
+      ...selectedCustomMappingResources.value,
+    ]
+    return {
+      version: RESOURCES_EXPORT_VERSION,
+      exportedAt: new Date().toISOString(),
+      items,
+    }
+  }
+
+  type ImportMode = 'merge' | 'replace'
+  type ImportResult = { added: number; updated: number; skipped: number; total: number }
+
+  const importResources = (data: unknown, options: { mode?: ImportMode } = {}): ImportResult => {
+    const mode: ImportMode = options.mode ?? 'merge'
+
+    // Basic schema validation
+    if (!data || typeof data !== 'object') {
+      throw new Error('Invalid JSON payload')
+    }
+    const payload = data as Partial<ExportPayload>
+    if (!payload.version || payload.version !== RESOURCES_EXPORT_VERSION) {
+      throw new Error('Unsupported or missing version')
+    }
+    if (!Array.isArray(payload.items)) {
+      throw new Error('Invalid payload: items must be an array')
+    }
+
+    // Type guard for MappingResource
+    const isValidResource = (r: any): r is MappingResource => {
+      return r && typeof r.name === 'string' && typeof r.resourceSpec === 'string' && (r.type === 'predefined' || r.type === 'custom')
+    }
+
+    const incoming: MappingResource[] = []
+    for (const item of payload.items) {
+      if (isValidResource(item)) incoming.push({ name: item.name, resourceSpec: item.resourceSpec, type: item.type })
+    }
+
+    const result: ImportResult = { added: 0, updated: 0, skipped: 0, total: incoming.length }
+
+    if (mode === 'replace') {
+      const predef = incoming.filter(i => i.type === 'predefined')
+      const custom = incoming.filter(i => i.type === 'custom')
+      selectedMappingResources.value = [...predef]
+      selectedCustomMappingResources.value = [...custom]
+      result.added = incoming.length
+      return result
+    }
+
+    // merge mode
+    for (const res of incoming) {
+      const list = res.type === 'predefined' ? selectedMappingResources.value : selectedCustomMappingResources.value
+      // Match by resourceSpec primarily; update name if resourceSpec exists with different name
+      const bySpecIdx = list.findIndex(r => r.resourceSpec === res.resourceSpec)
+      if (bySpecIdx > -1) {
+        const existing = list[bySpecIdx]
+        if (existing.name !== res.name) {
+          list[bySpecIdx] = { ...existing, name: res.name }
+          result.updated += 1
+        } else {
+          result.skipped += 1
+        }
+        continue
+      }
+      // Otherwise, add if exact duplicate not present
+      const exists = list.some(r => r.name === res.name && r.resourceSpec === res.resourceSpec)
+      if (exists) {
+        result.skipped += 1
+      } else {
+        list.push(res)
+        result.added += 1
+      }
+    }
+
+    return result
+  }
+
   const showSyncResultsToast = (syncResults: any) => {
     const { 
       resources_added,
@@ -162,5 +255,7 @@ export const useSettingsStore = defineStore('settings', () => {
     removeResource,
     updateSelectedFhirSystem,
     saveProjectSettings,
+    exportResources,
+    importResources,
   }
 })
