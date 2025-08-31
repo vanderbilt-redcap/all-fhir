@@ -25,6 +25,27 @@ const init = (target: string|HTMLElement) => {
         })
     }
 
+    if (import.meta.env.MODE === 'development') {
+        const origWarn = console.warn
+            console.warn = (...args) => {
+            if (String(args[0]).includes('Set operation on key "value" failed')) {
+                console.group('[readonly write]')
+                console.trace()
+                console.groupEnd()
+            }
+            return origWarn.apply(console, args)
+        }
+
+        app.config.warnHandler = (msg, instance, trace) => {
+            console.groupCollapsed('[Vue warn]', msg)
+            console.log('Component:', instance ?? '(anonymous)')
+            console.log(trace)
+            console.groupEnd()
+            // pause execution so devtools shows a stack into *your* code
+            throw new Error(String(msg))
+        }
+    }
+
 
     const pinia = createPinia()
     app.use(BootstrapVue)

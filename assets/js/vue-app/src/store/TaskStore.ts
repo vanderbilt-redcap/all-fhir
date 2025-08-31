@@ -67,12 +67,6 @@ export const useTaskStore = defineStore('task', () => {
     const startIndex = (pagination.value.page - 1) * pagination.value.limit
     const endIndex = startIndex + pagination.value.limit
     const filtered = filteredTasks.value
-    
-    // Update pagination totals based on filtered results
-    pagination.value.total = filtered.length
-    pagination.value.total_pages = Math.ceil(filtered.length / pagination.value.limit)
-    pagination.value.has_next = pagination.value.page < pagination.value.total_pages
-    pagination.value.has_previous = pagination.value.page > 1
 
     return filtered.slice(startIndex, endIndex)
   })
@@ -118,6 +112,7 @@ export const useTaskStore = defineStore('task', () => {
         if (data.pagination) {
           pagination.value = { ...pagination.value, ...data.pagination }
         }
+        updatePagination()
       } else {
         errorsStore.addError({
           message: data.message || 'Failed to fetch tasks',
@@ -274,6 +269,19 @@ export const useTaskStore = defineStore('task', () => {
     }
   }
 
+  const updatePagination = () => {
+    const filtered = filteredTasks.value
+    pagination.value.total = filtered.length
+    pagination.value.total_pages = Math.ceil(filtered.length / pagination.value.limit)
+    pagination.value.has_next = pagination.value.page < pagination.value.total_pages
+    pagination.value.has_previous = pagination.value.page > 1
+    
+    // Ensure current page is valid
+    if (pagination.value.page > pagination.value.total_pages && pagination.value.total_pages > 0) {
+      pagination.value.page = pagination.value.total_pages
+    }
+  }
+
   const refreshTaskStatus = async () => {
     // If specific task ID provided, we could add individual refresh logic
     // For now, refresh all tasks
@@ -289,11 +297,13 @@ export const useTaskStore = defineStore('task', () => {
   const setLimit = (limit: number) => {
     pagination.value.limit = limit
     pagination.value.page = 1 // Reset to first page when changing limit
+    updatePagination()
   }
 
   const setFilter = (filterType: keyof TaskFilterState, value: string) => {
     filters.value[filterType] = value
     pagination.value.page = 1 // Reset to first page when filtering
+    updatePagination()
   }
 
   const clearFilters = () => {
@@ -301,6 +311,7 @@ export const useTaskStore = defineStore('task', () => {
     filters.value.task_type = ''
     filters.value.search_query = ''
     pagination.value.page = 1
+    updatePagination()
   }
 
   const isTaskDeleting = (taskId: string): boolean => {
@@ -332,6 +343,7 @@ export const useTaskStore = defineStore('task', () => {
     getTaskDetails,
     deleteTask,
     refreshTaskStatus,
+    updatePagination,
     setPage,
     setLimit,
     setFilter,
