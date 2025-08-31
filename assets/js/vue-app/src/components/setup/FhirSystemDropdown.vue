@@ -4,7 +4,7 @@
     <select 
       class="form-select form-select-sm" 
       id="ehr-dropdown"
-      :value="draftResources?.selectedFhirSystem.value || ''"
+      :value="selectedFhirSystem || ''"
       @change="handleSystemChange"
     >
       <option value="">Select a FHIR System</option>
@@ -20,17 +20,11 @@
 </template>
 
 <script setup lang="ts">
-import { inject, type Ref } from 'vue'
 import { useSettingsStore } from '@/store/SettingsStore'
-import type { ProjectSettings, MappingResource } from '@/models/ProjectSettings'
+import { storeToRefs } from 'pinia'
 
-const settings = inject<ProjectSettings>('settings')!
-const draftResources = inject<{
-  selectedFhirSystem: Ref<number | null>
-  selectedMappingResources: Ref<MappingResource[]>
-  selectedCustomMappingResources: Ref<MappingResource[]>
-}>('draftResources')
 const settingsStore = useSettingsStore()
+const { settings, selectedFhirSystem } = storeToRefs(settingsStore)
 
 const handleSystemChange = (event: Event) => {
   const target = event.target as HTMLSelectElement

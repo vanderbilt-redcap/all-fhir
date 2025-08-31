@@ -7,13 +7,6 @@
                     <ResourcesToolbar @add="handleAdd"/>
                 </div>
                 <ResourcesTable />
-
-                <Teleport to="body">
-                    <b-modal ref="resourceModal" >
-                        <template #title>Resource</template>
-                        <ResourceForm v-model="form"/>
-                    </b-modal>
-                </Teleport>
             </div>
         </div>
         <div class="d-flex gap-2 justify-content-end">
@@ -26,11 +19,17 @@
                 <span>Save</span>
             </button>
         </div>
+        <Teleport to="body">
+            <b-modal ref="resourceModal" >
+                <template #title>Resource</template>
+                <ResourceForm v-model="form"/>
+            </b-modal>
+        </Teleport>
     </div>
 </template>
 
 <script setup lang="ts">
-import { computed, provide, ref, useTemplateRef } from 'vue';
+import { computed, ref, useTemplateRef } from 'vue';
 import FhirSystemDropdown from '@/components/setup/FhirSystemDropdown.vue';
 import ResourcesToolbar from '@/components/setup/ResourcesToolbar.vue';
 import ResourcesTable from '@/components/setup/ResourcesTable.vue';
@@ -38,17 +37,16 @@ import ResourceForm from '@/components/setup/ResourceForm.vue';
 import { storeToRefs } from 'pinia'
 import {useSettingsStore} from '@/store/SettingsStore'
 import { useNotificationStore } from '@/store/NotificationStore'
-import { type ResourceFormType, RESOURCE_TYPE } from '@/components/setup/ResourceForm.vue';
+import { type ResourceFormType, RESOURCE_TYPE } from '@/types/ResourceForm';
+import type { BootstrapVueModal } from '@/types/Modal';
 
 const settingsStore = useSettingsStore()
 const notificationStore = useNotificationStore()
-const { settings, loading, selectedMappingResources, selectedCustomMappingResources, selectedFhirSystem } = storeToRefs(settingsStore)
-provide('settings', settings)
-provide('draftResources', { selectedMappingResources, selectedCustomMappingResources, selectedFhirSystem })
+const { loading } = storeToRefs(settingsStore)
 
 const anyLoading = computed(() => loading.value.fetch || loading.value.save)
 
-const resourceModal = useTemplateRef<any>('resourceModal')
+const resourceModal = useTemplateRef<BootstrapVueModal>('resourceModal')
 
 const getNewForm = (): ResourceFormType => ({
     displayName: '',

@@ -34,21 +34,9 @@
     </div>
 </template>
 
-<script lang="ts">
-export type ResourceFormType = {
-    displayName: string
-    predefinedResource: string
-    resourceType: string
-    customResourceSpec: string
-}
-
-export const RESOURCE_TYPE = Object.freeze({
-    PREDEFINED: 'PREDEFINED',
-    CUSTOM: 'CUSTOM',
-})
-</script>
 <script setup lang="ts">
 import { useSettingsStore } from '@/store/SettingsStore'
+import { RESOURCE_TYPE, type ResourceFormType } from '@/types/ResourceForm';
 import { storeToRefs } from 'pinia'
 import { computed } from 'vue'
 

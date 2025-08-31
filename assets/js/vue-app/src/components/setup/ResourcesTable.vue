@@ -31,21 +31,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject, type Ref } from 'vue'
+import { computed } from 'vue'
 import { useSettingsStore } from '@/store/SettingsStore'
+import { storeToRefs } from 'pinia'
 import type { MappingResource } from '@/models/ProjectSettings'
 
 const settingsStore = useSettingsStore()
-const draftResources = inject<{
-    selectedMappingResources: Ref<MappingResource[]>
-    selectedCustomMappingResources: Ref<MappingResource[]>
-}>('draftResources')
+const { selectedMappingResources, selectedCustomMappingResources } = storeToRefs(settingsStore)
 
 const allResources = computed(() => {
-    if (!draftResources) return []
     return [
-        ...draftResources.selectedMappingResources.value,
-        ...draftResources.selectedCustomMappingResources.value,
+        ...selectedMappingResources.value,
+        ...selectedCustomMappingResources.value,
     ]
 })
 
