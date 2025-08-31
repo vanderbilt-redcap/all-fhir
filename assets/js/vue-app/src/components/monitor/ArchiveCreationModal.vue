@@ -100,8 +100,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { ArchiveCreateResponse } from '@/models/Archive'
+import type { ModalRef } from '@/types/Modal'
 
-const archiveCreationModal = ref<any>(null)
+const archiveCreationModal = ref<ModalRef>(null)
 const archiveResult = ref<ArchiveCreateResponse | null>(null)
 
 const show = (result: ArchiveCreateResponse) => {

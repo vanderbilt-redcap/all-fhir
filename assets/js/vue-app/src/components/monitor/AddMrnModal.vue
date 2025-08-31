@@ -38,8 +38,9 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import type { ModalRef } from '@/types/Modal'
 
-const addMrnModal = ref<any>(null)
+const addMrnModal = ref<ModalRef>(null)
 const mrn = ref('')
 
 const show = async (): Promise<string | null> => {

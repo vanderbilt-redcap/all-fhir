@@ -244,10 +244,11 @@ import { useArchiveStore } from '@/store/ArchiveStore'
 import { useNotificationStore } from '@/store/NotificationStore'
 import type { Archive } from '@/models/Archive'
 import ArchiveDeleteModal from '@/components/archives/ArchiveDeleteModal.vue'
+import type { ModalRef } from '@/types/Modal'
 
 const archiveStore = useArchiveStore()
 const notificationStore = useNotificationStore()
-const deleteModal = ref<any>(null)
+const deleteModal = ref<ModalRef>(null)
 
 // Filter state
 const searchQuery = ref('')

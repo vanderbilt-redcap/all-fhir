@@ -20580,7 +20580,7 @@ const hR = {
       }, 512);
     };
   }
-}), IP = /* @__PURE__ */ ms(RP, [["__scopeId", "data-v-9e1ff485"]]), PP = { class: "mb-3" }, VP = ["placeholder"], MP = { class: "mb-3" }, LP = {
+}), IP = /* @__PURE__ */ ms(RP, [["__scopeId", "data-v-8148176a"]]), PP = { class: "mb-3" }, VP = ["placeholder"], MP = { class: "mb-3" }, LP = {
   key: 0,
   class: "text-center text-muted py-3"
 }, FP = {
@@ -20635,7 +20635,7 @@ const hR = {
       resource_types: [],
       background_mode: !1
       // Will be calculated dynamically
-    }, a.value.background_mode = u.value > 50, await i.value?.show()), m = (g) => {
+    }, a.value.background_mode = u.value > 50, await i.value?.show() ?? !1), m = (g) => {
       if (!p.value) return;
       const _ = { ...a.value };
       _.archive_name && (_.archive_name = _.archive_name.trim()), _.resource_types && _.resource_types.length === 0 && delete _.resource_types, r("create", _, s.archiveType, s.selectedMrns), g(!0);
@@ -21089,7 +21089,7 @@ const hR = {
       mrns: n.archiveType === "selected" ? n.selectedMrns : [],
       archive_name: "",
       resource_types: []
-    }, await i.value?.show()), g = () => a.value.archive_name || f.value, _ = async (y) => {
+    }, await i.value?.show() ?? !1), g = () => a.value.archive_name || f.value, _ = async (y) => {
       if (!p.value) return;
       const E = g();
       try {
@@ -22449,7 +22449,7 @@ const hR = {
   __name: "ArchiveDeleteModal",
   emits: ["deleted"],
   setup(e, { expose: t, emit: n }) {
-    const s = n, o = z(null), r = z(null), i = z(!1), a = async (h) => (r.value = h, i.value = !1, await o.value?.show()), c = async (h) => {
+    const s = n, o = z(null), r = z(null), i = z(!1), a = async (h) => (r.value = h, i.value = !1, await o.value?.show() ?? !1), c = async (h) => {
       if (!(!r.value || i.value)) {
         i.value = !0;
         try {

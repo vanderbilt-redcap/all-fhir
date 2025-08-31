@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useErrorsStore } from './ErrorsStore'
 import { api } from '@/API'
+import type { ModalRef } from '@/types/Modal'
 
 export interface ResourceContentMetadata {
   file_name: string
@@ -30,7 +31,7 @@ export const useResourceContentStore = defineStore('resourceContent', () => {
 
   const loading = ref(false)
   const currentContent = ref<ResourceContentData | null>(null)
-  const modalRef = ref<any>(null)
+  const modalRef = ref<ModalRef>(null)
 
   const fetchResourceContent = async (
     recordId: string, 
@@ -77,7 +78,7 @@ export const useResourceContentStore = defineStore('resourceContent', () => {
     return modalRef.value?.show()
   }
 
-  const setModalRef = (ref: any) => {
+  const setModalRef = (ref: ModalRef) => {
     modalRef.value = ref
   }
 

@@ -95,14 +95,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, useTemplateRef } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useResourceContentStore } from '@/store/ResourceContentStore'
 import { useNotificationStore } from '@/store/NotificationStore'
+import type { ModalRef } from '@/types/Modal'
 
 const resourceContentStore = useResourceContentStore()
 const notificationStore = useNotificationStore()
 
-const resourceContentModal = useTemplateRef('resourceContentModal')
+const resourceContentModal = ref<ModalRef>(null)
 const copying = ref(false)
 const copySuccess = ref(false)
 

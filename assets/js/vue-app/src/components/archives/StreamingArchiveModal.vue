@@ -107,6 +107,7 @@ import type { StreamingArchiveOptions } from '@/models/Archive'
 import { useMonitorStore } from '@/store/MonitorStore'
 import { useStreamingStore } from '@/store/StreamingStore'
 import { useNotificationStore } from '@/store/NotificationStore'
+import type { ModalRef } from '@/types/Modal'
 import { api } from '@/API'
 import ArchiveNameInput from './shared/ArchiveNameInput.vue'
 import ResourceTypesSelector from './shared/ResourceTypesSelector.vue'
@@ -124,7 +125,7 @@ const monitorStore = useMonitorStore()
 const streamingStore = useStreamingStore()
 const notificationStore = useNotificationStore()
 
-const streamingArchiveModal = ref<any>(null)
+const streamingArchiveModal = ref<ModalRef>(null)
 
 const options = ref<StreamingArchiveOptions>({
   mrns: [],
@@ -256,7 +257,7 @@ const show = async (): Promise<boolean> => {
     resource_types: []
   }
   
-  return await streamingArchiveModal.value?.show()
+  return await streamingArchiveModal.value?.show() ?? false
 }
 
 const generateStreamingArchiveName = (): string => {

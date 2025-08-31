@@ -73,19 +73,20 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { Archive } from '@/models/Archive'
+import type { ModalRef } from '@/types/Modal'
 
 const emit = defineEmits<{
   deleted: [archiveId: string]
 }>()
 
-const deleteModal = ref<any>(null)
+const deleteModal = ref<ModalRef>(null)
 const archive = ref<Archive | null>(null)
 const isDeleting = ref(false)
 
 const show = async (archiveToDelete: Archive): Promise<boolean> => {
   archive.value = archiveToDelete
   isDeleting.value = false
-  return await deleteModal.value?.show()
+  return await deleteModal.value?.show() ?? false
 }
 
 const confirmDelete = async (hide: Function) => {

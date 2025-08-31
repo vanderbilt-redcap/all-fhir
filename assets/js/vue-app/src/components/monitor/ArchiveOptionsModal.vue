@@ -126,6 +126,7 @@
 import { ref, computed } from 'vue'
 import type { ArchiveCreateOptions } from '@/models/Archive'
 import { useMonitorStore } from '@/store/MonitorStore'
+import type { ModalRef } from '@/types/Modal'
 
 interface Props {
   selectedMrns?: string[]
@@ -144,7 +145,7 @@ const emit = defineEmits<{
   create: [options: ArchiveCreateOptions, archiveType: 'selected' | 'all', selectedMrns?: string[]]
 }>()
 
-const archiveOptionsModal = ref<any>(null)
+const archiveOptionsModal = ref<ModalRef>(null)
 
 const options = ref<ArchiveCreateOptions>({
   archive_name: '',
@@ -275,7 +276,7 @@ const show = async (): Promise<boolean> => {
   // Auto-suggest background mode for large collections after reset
   options.value.background_mode = estimatedResources.value > 50
   
-  return await archiveOptionsModal.value?.show()
+  return await archiveOptionsModal.value?.show() ?? false
 }
 
 const createArchive = (hide: Function) => {
