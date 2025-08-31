@@ -19,26 +19,21 @@
                 <span>Save</span>
             </button>
         </div>
-        <Teleport to="body">
-            <b-modal ref="resourceModal" >
-                <template #title>Resource</template>
-                <ResourceForm v-model="form"/>
-            </b-modal>
-        </Teleport>
+        <!-- Resource Form Modal -->
+        <ResourceFormModal ref="resourceFormModal" />
     </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, useTemplateRef } from 'vue';
+import { computed, ref } from 'vue';
 import FhirSystemDropdown from '@/components/setup/FhirSystemDropdown.vue';
 import ResourcesToolbar from '@/components/setup/ResourcesToolbar.vue';
 import ResourcesTable from '@/components/setup/ResourcesTable.vue';
-import ResourceForm from '@/components/setup/ResourceForm.vue';
+import ResourceFormModal from '@/components/setup/ResourceFormModal.vue';
 import { storeToRefs } from 'pinia'
 import {useSettingsStore} from '@/store/SettingsStore'
 import { useNotificationStore } from '@/store/NotificationStore'
-import { type ResourceFormType, RESOURCE_TYPE } from '@/types/ResourceForm';
-import type { BootstrapVueModal } from '@/types/Modal';
+import { RESOURCE_TYPE } from '@/types/ResourceForm';
 
 const settingsStore = useSettingsStore()
 const notificationStore = useNotificationStore()
@@ -46,43 +41,21 @@ const { loading } = storeToRefs(settingsStore)
 
 const anyLoading = computed(() => loading.value.fetch || loading.value.save)
 
-const resourceModal = useTemplateRef<BootstrapVueModal>('resourceModal')
-
-const getNewForm = (): ResourceFormType => ({
-    displayName: '',
-    customResourceSpec: '',
-    predefinedResource: '',
-    resourceType: RESOURCE_TYPE.PREDEFINED
-})
-
-const form = ref<ResourceFormType>(getNewForm())
+const resourceFormModal = ref<InstanceType<typeof ResourceFormModal> | null>(null)
 
 async function handleAdd() {
-    if(!resourceModal.value) return
-    form.value = getNewForm() // Reset form before showing
-    const confirmed = await resourceModal.value.show()
-    if (confirmed) {
-        // Validate form data
-        if (!form.value.displayName.trim()) {
-            notificationStore.showError('Display Name is required');
-            return;
-        }
-
-        if (form.value.resourceType === RESOURCE_TYPE.PREDEFINED) {
-            if (!form.value.predefinedResource) {
-                notificationStore.showError('Please select a predefined resource');
-                return;
-            }
+    if (!resourceFormModal.value) return
+    
+    const formData = await resourceFormModal.value.show()
+    if (formData) {
+        if (formData.resourceType === RESOURCE_TYPE.PREDEFINED) {
             // For predefined resources, use the selected predefined resource as resourceSpec
-            settingsStore.addPredefinedResource(form.value.displayName, form.value.predefinedResource)
+            settingsStore.addPredefinedResource(formData.displayName, formData.predefinedResource)
         } else {
-            if (!form.value.customResourceSpec.trim()) {
-                notificationStore.showError('Resource Specification is required for custom resources');
-                return;
-            }
             // For custom resources, use the entered custom resourceSpec
-            settingsStore.addCustomResource(form.value.displayName, form.value.customResourceSpec)
+            settingsStore.addCustomResource(formData.displayName, formData.customResourceSpec)
         }
+        notificationStore.showSuccess('Resource added successfully')
     }
 }
 

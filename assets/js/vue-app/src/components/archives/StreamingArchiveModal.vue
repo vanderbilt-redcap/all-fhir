@@ -1,17 +1,16 @@
 <template>
   <b-modal ref="streamingArchiveModal" size="lg">
     <template #title>
-      <i class="fas fa-bolt text-primary me-2"></i>
-      Streaming Archive Download
+      <i class="fas fa-download text-primary me-2"></i>
+      Archive Download
     </template>
     
     <div>
       <div class="alert alert-info mb-4">
         <i class="fas fa-info-circle me-2"></i>
-        <strong>Streaming Download</strong>
+        <strong>Download</strong>
         <div class="small">
           Your archive will be generated and downloaded immediately without storing on the server.
-          Perfect for one-time downloads or when server storage is limited.
         </div>
       </div>
 
@@ -94,7 +93,7 @@
           :disabled="!isValid || streamingStore.isStreamingActive"
         >
           <i class="fas fa-download fa-fw me-1"></i>
-          {{ streamingStore.isStreamingActive ? 'Downloading...' : 'Start Streaming Download' }}
+          {{ streamingStore.isStreamingActive ? 'Downloading...' : 'Download' }}
         </button>
       </div>
     </template>
