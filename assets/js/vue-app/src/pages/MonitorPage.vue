@@ -42,6 +42,9 @@
         <!-- Add MRN Modal -->
         <AddMrnModal ref="addMrnModal" />
 
+        <!-- Resource Content Modal -->
+        <ResourceContentModal />
+
         <!-- Archive Modals -->
         <Teleport to="body">
             <ArchiveOptionsModal 
@@ -66,6 +69,7 @@ import { ref, onMounted, computed, watch } from 'vue'
 import MonitorToolbar from '@/components/monitor/MonitorToolbar.vue'
 import MonitorTable from '@/components/monitor/MonitorTable.vue'
 import AddMrnModal from '@/components/monitor/AddMrnModal.vue'
+import ResourceContentModal from '@/components/shared/ResourceContentModal.vue'
 import ArchiveOptionsModal from '@/components/monitor/ArchiveOptionsModal.vue'
 import ArchiveCreationModal from '@/components/monitor/ArchiveCreationModal.vue'
 import StreamingArchiveModal from '@/components/archives/StreamingArchiveModal.vue'

@@ -53,9 +53,10 @@
                     v-if="resource.status === 'Completed'"
                     class="btn btn-sm btn-outline-primary"
                     @click="viewDetails"
+                    :disabled="viewDetailsLoading"
                     title="View resource details"
                 >
-                    <i class="fas fa-eye fa-fw"></i>
+                    <i :class="`fas fa-fw ${viewDetailsLoading ? 'fa-spinner fa-spin' : 'fa-eye'}`"></i>
                 </button>
                 <button 
                     v-if="resource.status === 'Completed'"
@@ -78,8 +79,6 @@
         </td>
     </tr>
     
-    <!-- Resource Content Modal -->
-    <ResourceContentModal />
 </template>
 
 <script setup lang="ts">
@@ -90,7 +89,6 @@ import { useMonitorStore } from '@/store/MonitorStore'
 import { useStreamingStore } from '@/store/StreamingStore'
 import { useNotificationStore } from '@/store/NotificationStore'
 import { useResourceContentStore } from '@/store/ResourceContentStore'
-import ResourceContentModal from '@/components/shared/ResourceContentModal.vue'
 import { api } from '@/API'
 
 const props = defineProps<{
@@ -105,6 +103,7 @@ const notificationStore = useNotificationStore()
 const resourceContentStore = useResourceContentStore()
 const showFullError = ref(false)
 const loading = ref(false)
+const viewDetailsLoading = ref(false)
 
 const statusClass = (status: FetchStatus) => {
     const baseClass = 'badge'
@@ -163,7 +162,7 @@ const retryResource = async () => {
 
 const viewDetails = async () => {
     try {
-        loading.value = true
+        viewDetailsLoading.value = true
         await resourceContentStore.showResourceContent(
             props.recordId,
             props.resource.name,
@@ -173,7 +172,7 @@ const viewDetails = async () => {
         console.error('Failed to load resource content:', error)
         notificationStore.showError('Failed to load resource content')
     } finally {
-        loading.value = false
+        viewDetailsLoading.value = false
     }
 }
 

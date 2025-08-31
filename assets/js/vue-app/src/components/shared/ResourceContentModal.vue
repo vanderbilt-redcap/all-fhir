@@ -1,30 +1,15 @@
 <template>
-  <div 
-    class="modal fade"
-    :class="{ show: resourceContentStore.isModalVisible }"
-    :style="{ display: resourceContentStore.isModalVisible ? 'block' : 'none' }"
-    tabindex="-1"
-    role="dialog"
-    aria-labelledby="resourceContentModalLabel"
-    aria-hidden="true"
-    @click.self="closeModal"
+  <b-modal
+    ref="resourceContentModal"
+    size="xl" 
+    @hidden="onModalHidden"
   >
-    <div class="modal-dialog modal-xl" role="document">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="resourceContentModalLabel">
-            <i class="fas fa-file-alt fa-fw me-2"></i>
-            {{ resourceContentStore.getDisplayTitle() }}
-          </h5>
-          <button 
-            type="button" 
-            class="btn-close" 
-            @click="closeModal"
-            aria-label="Close"
-          ></button>
-        </div>
-        
-        <div class="modal-body p-0">
+    <template #title>
+      <i class="fas fa-file-alt fa-fw me-2"></i>
+      {{ resourceContentStore.getDisplayTitle() }}
+    </template>
+    
+    <div class="p-0">
           <!-- Loading State -->
           <div v-if="resourceContentStore.loading" class="d-flex justify-content-center align-items-center py-5">
             <div class="spinner-border text-primary" role="status">
@@ -86,7 +71,6 @@
             <!-- Content Area -->
             <div class="content-display">
               <pre 
-                ref="contentPre"
                 class="content-pre"
                 :class="{ 'json-content': resourceContentStore.isJsonContent() }"
               ><code>{{ resourceContentStore.currentContent.content }}</code></pre>
@@ -100,42 +84,40 @@
               No content available or failed to load.
             </div>
           </div>
-        </div>
-
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" @click="closeModal">
-            Close
-          </button>
-        </div>
-      </div>
     </div>
-  </div>
 
-  <!-- Modal Backdrop -->
-  <div 
-    v-if="resourceContentStore.isModalVisible"
-    class="modal-backdrop fade show"
-    @click="closeModal"
-  ></div>
+    <template #footer="{ hide }">
+      <button type="button" class="btn btn-secondary" @click="hide()">
+        Close
+      </button>
+    </template>
+  </b-modal>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, useTemplateRef } from 'vue'
 import { useResourceContentStore } from '@/store/ResourceContentStore'
 import { useNotificationStore } from '@/store/NotificationStore'
 
 const resourceContentStore = useResourceContentStore()
 const notificationStore = useNotificationStore()
 
-const contentPre = ref<HTMLElement | null>(null)
+const resourceContentModal = useTemplateRef('resourceContentModal')
 const copying = ref(false)
 const copySuccess = ref(false)
 
 const contentStats = computed(() => resourceContentStore.getContentStats())
 
-const closeModal = () => {
-  resourceContentStore.hideModal()
+const onModalHidden = () => {
+  // Clean up when modal is hidden
 }
+
+// Register modal reference with store on mount
+onMounted(() => {
+  if (resourceContentModal.value) {
+    resourceContentStore.setModalRef(resourceContentModal.value)
+  }
+})
 
 const copyContent = async () => {
   if (!resourceContentStore.currentContent) return
@@ -167,21 +149,6 @@ const copyContent = async () => {
   }
 }
 
-// Handle escape key to close modal
-const handleKeydown = (event: KeyboardEvent) => {
-  if (event.key === 'Escape' && resourceContentStore.isModalVisible) {
-    closeModal()
-  }
-}
-
-// Add event listener when component mounts
-document.addEventListener('keydown', handleKeydown)
-
-// Remove event listener when component unmounts
-import { onUnmounted } from 'vue'
-onUnmounted(() => {
-  document.removeEventListener('keydown', handleKeydown)
-})
 </script>
 
 <style scoped>
@@ -213,17 +180,8 @@ onUnmounted(() => {
   color: #0d6efd;
 }
 
-/* Modal styling adjustments */
-.modal-xl {
-  max-width: 90%;
-}
-
+/* Responsive content display */
 @media (max-width: 768px) {
-  .modal-xl {
-    max-width: 95%;
-    margin: 0.5rem;
-  }
-  
   .content-display {
     max-height: 50vh;
   }

@@ -30,7 +30,7 @@ export const useResourceContentStore = defineStore('resourceContent', () => {
 
   const loading = ref(false)
   const currentContent = ref<ResourceContentData | null>(null)
-  const isModalVisible = ref(false)
+  const modalRef = ref<any>(null)
 
   const fetchResourceContent = async (
     recordId: string, 
@@ -58,23 +58,35 @@ export const useResourceContentStore = defineStore('resourceContent', () => {
     }
   }
 
+  const loadResourceContent = async (
+    recordId: string, 
+    resourceName: string, 
+    repeatInstance: number,
+    previewLimit?: number
+  ) => {
+    return await fetchResourceContent(recordId, resourceName, repeatInstance, previewLimit)
+  }
+
   const showResourceContent = async (
     recordId: string, 
     resourceName: string, 
     repeatInstance: number,
     previewLimit?: number
   ) => {
-    await fetchResourceContent(recordId, resourceName, repeatInstance, previewLimit)
-    isModalVisible.value = true
+    await loadResourceContent(recordId, resourceName, repeatInstance, previewLimit)
+    return modalRef.value?.show()
+  }
+
+  const setModalRef = (ref: any) => {
+    modalRef.value = ref
   }
 
   const hideModal = () => {
-    isModalVisible.value = false
+    modalRef.value?.hide()
   }
 
   const clearContent = () => {
     currentContent.value = null
-    isModalVisible.value = false
   }
 
   const copyToClipboard = async (content: string): Promise<boolean> => {
@@ -134,11 +146,12 @@ export const useResourceContentStore = defineStore('resourceContent', () => {
     // State
     loading,
     currentContent,
-    isModalVisible,
     
     // Actions
     fetchResourceContent,
+    loadResourceContent,
     showResourceContent,
+    setModalRef,
     hideModal,
     clearContent,
     copyToClipboard,
