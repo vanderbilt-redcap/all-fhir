@@ -1,7 +1,11 @@
 <template>
   <div class="mb-3">
     <label class="form-label">Resource Types</label>
-    <div class="form-text mb-2">Select which resource types to include</div>
+    <div class="form-text mb-2">
+      Select which resource types to include
+      <br>
+      <small class="text-muted">Note: No selection will download all available resources</small>
+    </div>
     
     <div v-if="availableTypes.length === 0" class="text-center text-muted py-3">
       <i class="fas fa-info-circle me-2"></i>
@@ -13,9 +17,11 @@
         <input 
           class="form-check-input" 
           type="checkbox" 
-          :checked="isAllSelected"
+          :checked="selectAllState.checked"
+          :indeterminate="selectAllState.indeterminate"
           @change="toggleAll"
           id="select-all-types"
+          ref="selectAllCheckbox"
         />
         <label class="form-check-label fw-bold" for="select-all-types">
           Select All
@@ -41,7 +47,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, nextTick, watch, onMounted } from 'vue'
 
 interface ResourceType {
   name: string
@@ -62,19 +68,43 @@ const emit = defineEmits<{
   'update:selectedTypes': [types: string[]]
 }>()
 
-const isAllSelected = computed(() => {
+const selectAllCheckbox = ref<HTMLInputElement | null>(null)
+
+const selectAllState = computed(() => {
   const availableTypeNames = props.availableTypes
     .filter(t => t.isAvailable)
     .map(t => t.name)
   
-  return availableTypeNames.length > 0 && 
-         availableTypeNames.every(name => props.selectedTypes.includes(name))
+  if (availableTypeNames.length === 0) {
+    return { checked: false, indeterminate: false }
+  }
+  
+  const selectedAvailableTypes = availableTypeNames.filter(name => 
+    props.selectedTypes.includes(name)
+  )
+  
+  if (selectedAvailableTypes.length === 0) {
+    return { checked: false, indeterminate: false }
+  } else if (selectedAvailableTypes.length === availableTypeNames.length) {
+    return { checked: true, indeterminate: false }
+  } else {
+    return { checked: false, indeterminate: true }
+  }
 })
+
+// Watch for changes to update the indeterminate property on the DOM element
+watch(selectAllState, (newState) => {
+  nextTick(() => {
+    if (selectAllCheckbox.value) {
+      selectAllCheckbox.value.indeterminate = newState.indeterminate
+    }
+  })
+}, { immediate: true })
 
 const toggleAll = (event: Event) => {
   const target = event.target as HTMLInputElement
   
-  if (target.checked) {
+  if (target.checked || selectAllState.value.indeterminate) {
     // Select all available types
     const allAvailableTypes = props.availableTypes
       .filter(t => t.isAvailable)
@@ -102,4 +132,16 @@ const updateSelection = (event: Event) => {
   
   emit('update:selectedTypes', newSelection)
 }
+
+// Initialize with all available types selected
+onMounted(() => {
+  if (props.selectedTypes.length === 0 && props.availableTypes.length > 0) {
+    const allAvailableTypes = props.availableTypes
+      .filter(t => t.isAvailable)
+      .map(t => t.name)
+    if (allAvailableTypes.length > 0) {
+      emit('update:selectedTypes', allAvailableTypes)
+    }
+  }
+})
 </script>
