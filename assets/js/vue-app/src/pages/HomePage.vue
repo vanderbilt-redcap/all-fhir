@@ -125,9 +125,6 @@
                   Go to Setup
                 </router-link>
               </div>
-              <div class="step-icon ms-3">
-                <i class="fas fa-arrow-right text-muted fa-2x d-none d-md-block"></i>
-              </div>
             </div>
 
             <div class="step d-flex align-items-center mb-4">
@@ -144,9 +141,6 @@
                   Manage MRNs
                 </router-link>
               </div>
-              <div class="step-icon ms-3">
-                <i class="fas fa-arrow-right text-muted fa-2x d-none d-md-block"></i>
-              </div>
             </div>
 
             <div class="step d-flex align-items-center mb-4">
@@ -162,9 +156,6 @@
                   <i class="fas fa-tasks me-1"></i>
                   Queue Operations
                 </router-link>
-              </div>
-              <div class="step-icon ms-3">
-                <i class="fas fa-arrow-right text-muted fa-2x d-none d-md-block"></i>
               </div>
             </div>
 

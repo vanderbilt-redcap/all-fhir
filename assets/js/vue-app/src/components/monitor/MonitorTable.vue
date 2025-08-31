@@ -5,7 +5,7 @@
                 <span class="visually-hidden">Loading...</span>
             </div>
         </div>
-        <table v-else class="table table-striped table-hover">
+        <table v-else class="table table-bordered table-striped table-hover">
             <thead class="table-light">
                 <tr>
                     <th scope="col">

@@ -140,22 +140,22 @@ const refreshData = async () => {
 }
 
 // Archive methods that use store directly
-const createArchiveSelected = () => {
-    if (selectionDisabled.value) {
-        notificationStore.showWarning('No MRNs selected for archive')
-        return
-    }
+// const createArchiveSelected = () => {
+//     if (selectionDisabled.value) {
+//         notificationStore.showWarning('No MRNs selected for archive')
+//         return
+//     }
     
-    const selectedMrnsStrings = monitorStore.mrns
-        .filter(mrn => monitorStore.selectedMrns.includes(mrn.id))
-        .map(mrn => mrn.mrn)
+//     const selectedMrnsStrings = monitorStore.mrns
+//         .filter(mrn => monitorStore.selectedMrns.includes(mrn.id))
+//         .map(mrn => mrn.mrn)
     
-    operationsStore.showArchiveModalSelected(selectedMrnsStrings)
-}
+//     operationsStore.showArchiveModalSelected(selectedMrnsStrings)
+// }
 
-const createArchiveAll = () => {
-    operationsStore.showArchiveModalAll()
-}
+// const createArchiveAll = () => {
+//     operationsStore.showArchiveModalAll()
+// }
 
 // Streaming archive methods
 const createStreamingArchiveSelected = () => {

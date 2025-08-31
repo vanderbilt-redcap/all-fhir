@@ -1,14 +1,14 @@
 <template>
-    <div class="p-3">
-        <!-- Enhanced Toolbar with Full Sync and Retry Options -->
-        <MonitorToolbar 
-            @add-mrn="showAddMrnModal"
-        />
-
+    <div class="p-0">
         <!-- Project Summary Widget (collapsible) -->
         <div v-if="operationsStore.showSummary" class="mb-4">
             <ProjectSummaryWidget />
         </div>
+        
+        <!-- Enhanced Toolbar with Full Sync and Retry Options -->
+        <MonitorToolbar 
+            @add-mrn="showAddMrnModal"
+        />
 
         <!-- Enhanced Monitor Table with Detailed Resource Information -->
         <MonitorTable

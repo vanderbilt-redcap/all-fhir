@@ -189,13 +189,13 @@ import type { Mrn } from '@/models/Mrn'
 import { FetchStatus } from '@/models/Mrn'
 import MonitorResourceRow from './MonitorResourceRow.vue'
 import { useMonitorStore } from '@/store/MonitorStore'
-import { useOperationsStore } from '@/store/OperationsStore'
+// import { useOperationsStore } from '@/store/OperationsStore'
 import { useStreamingStore } from '@/store/StreamingStore'
 import { useNotificationStore } from '@/store/NotificationStore'
 import { api } from '@/API'
 
 const monitorStore = useMonitorStore()
-const operationsStore = useOperationsStore()
+// const operationsStore = useOperationsStore()
 const streamingStore = useStreamingStore()
 const notificationStore = useNotificationStore()
 
@@ -213,7 +213,7 @@ const showTooltip = ref(false)
 const statusDisplayMode = ref<'smart' | 'progress' | 'badges' | 'legacy'>('progress')
 
 // Dev controls visibility - can be controlled by environment or dev mode
-const showDevControls = ref(import.meta.env?.DEV ?? false)
+// const showDevControls = ref(import.meta.env?.DEV ?? false)
 
 const toggleExpand = () => {
     expanded.value = !expanded.value
@@ -240,9 +240,9 @@ const progressConfig = computed(() => {
     return monitorStore.getProgressBarConfig(props.item)
 })
 
-const archiveButtonConfig = computed(() => {
-    return monitorStore.getArchiveButtonConfig(props.item)
-})
+// const archiveButtonConfig = computed(() => {
+//     return monitorStore.getArchiveButtonConfig(props.item)
+// })
 
 // Retry button computed properties
 const hasFailedResources = computed(() => {
@@ -310,13 +310,13 @@ const triggerFetchMrn = async () => {
     }
 }
 
-const showArchiveModal = async () => {
-    try {
-        operationsStore.showArchiveModalSelected([props.item.mrn])
-    } catch (error) {
-        console.error('Failed to show archive modal:', error)
-    }
-}
+// const showArchiveModal = async () => {
+//     try {
+//         operationsStore.showArchiveModalSelected([props.item.mrn])
+//     } catch (error) {
+//         console.error('Failed to show archive modal:', error)
+//     }
+// }
 
 const retryFailedResources = async () => {
     if (!hasFailedResources.value) {
