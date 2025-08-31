@@ -1,28 +1,18 @@
 /**
- * Bootstrap Vue Modal Interface
+ * Bootstrap Vue Modal Types
  * 
- * Defines the interface for bootstrap-vue modal component instances.
- * Based on the bootstrap-vue Modal component type definitions.
+ * Proper typing for bootstrap-vue modal component instances using Vue's ComponentPublicInstance.
+ * This follows Vue.js best practices for typing component template refs.
  */
-export interface BootstrapVueModal {
-  /**
-   * Shows the modal
-   * @param args Optional arguments to pass to show method
-   * @returns Promise that resolves with boolean indicating modal result
-   */
-  show(...args: any[]): Promise<boolean>
-  
-  /**
-   * Hides the modal
-   * @param status Optional status to pass when hiding
-   */
-  hide(status?: boolean): void
-  
-  /**
-   * Toggles the modal visibility
-   */
-  toggle(): void
-}
+
+import type { ComponentPublicInstance } from 'vue'
+import { Modal } from 'bootstrap-vue'
+
+/**
+ * Type for bootstrap-vue modal component instances
+ * Uses Vue's ComponentPublicInstance to get the proper typing
+ */
+export type BootstrapVueModal = ComponentPublicInstance<typeof Modal>
 
 /**
  * Type for modal template refs
