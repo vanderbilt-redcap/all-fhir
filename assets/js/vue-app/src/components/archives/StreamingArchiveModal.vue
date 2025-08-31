@@ -21,6 +21,7 @@
         :show-help="true"
         help-text="Archive will be downloaded immediately as [name].zip"
         input-id="streaming-archive-name"
+        :error-message="archiveNameError"
       />
 
       <ResourceTypesSelector 
@@ -229,11 +230,28 @@ const availabilitySummary = computed(() => {
   }
 })
 
+const archiveNameError = computed(() => {
+  if (!options.value.archive_name) {
+    return '' // No error if empty (optional field)
+  }
+  
+  const trimmedName = options.value.archive_name.trim()
+  if (trimmedName.length === 0) {
+    return '' // No error if only whitespace (treated as empty)
+  }
+  
+  const validName = /^[a-zA-Z0-9_-]+$/.test(trimmedName)
+  if (!validName) {
+    return 'Archive name contains invalid characters. Only letters, numbers, hyphens, and underscores are allowed.'
+  }
+  
+  return ''
+})
+
 const isValid = computed(() => {
   // Archive name validation (optional but if provided, must be valid)
-  if (options.value.archive_name) {
-    const validName = /^[a-zA-Z0-9_-]+$/.test(options.value.archive_name.trim())
-    if (!validName) return false
+  if (archiveNameError.value) {
+    return false
   }
   
   // For selected archives, must have MRNs
