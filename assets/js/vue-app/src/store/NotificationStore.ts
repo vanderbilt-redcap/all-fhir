@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { useModal, useToaster } from 'bootstrap-vue'
+import type { BulkAddFailure } from '@/models/Mrn'
 
 const TOAST_POSITION = {
     TOP_LEFT: 'top left',
@@ -79,12 +80,27 @@ export const useNotificationStore = defineStore('notifications', () => {
     }
   }
 
+  const showMrnErrors = async (failures: BulkAddFailure[], title: string = 'Some MRNs could not be added') => {
+    const lines = failures.map(f => `${f.mrn} — ${f.error}`)
+    const body = lines.join('\n')
+    try {
+      await modal.alert({
+        title,
+        body,
+        textOk: 'OK'
+      })
+    } catch {
+      // dismissed
+    }
+  }
+
   return {
     showSuccess,
     showError,
     showWarning,
     showInfo,
     confirmAction,
-    alertUser
+    alertUser,
+    showMrnErrors
   }
 })
