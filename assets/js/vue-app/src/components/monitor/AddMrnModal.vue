@@ -73,8 +73,5 @@ const submit = (hide: Function) => {
   }
 }
 
-// Enter key no longer auto-submits because textarea is multiline
-const submitOnEnter = () => {}
-
 defineExpose({ show })
 </script>

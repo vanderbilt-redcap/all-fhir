@@ -46,15 +46,15 @@
     "links": {
         "project": [
             {
-                "name": "FHIR Snapshot",
-                "icon": "fas fa-camera",
+                "name": "ALL FHIR",
+                "icon": "fas fa-fire-flame-curved",
                 "url": "pages/project/index.php"
             }
         ],
         "control-center": [
             {
-                "name": "FHIR Snapshot",
-                "icon": "fas fa-camera",
+                "name": "ALL FHIR",
+                "icon": "fas fa-fire-flame-curved",
                 "url": "pages/control-center/index.php"
             }
         ]
