@@ -59,6 +59,7 @@
                 :selected-mrns="operationsStore.streamingModalSelectedMrns"
                 :archive-type="operationsStore.streamingModalType"
             />
+            <BulkMrnErrorsModal ref="bulkMrnErrorsModal" />
         </Teleport>
 
     </div>
@@ -73,6 +74,7 @@ import ResourceContentModal from '@/components/shared/ResourceContentModal.vue'
 import ArchiveOptionsModal from '@/components/monitor/ArchiveOptionsModal.vue'
 import ArchiveCreationModal from '@/components/monitor/ArchiveCreationModal.vue'
 import StreamingArchiveModal from '@/components/archives/StreamingArchiveModal.vue'
+import BulkMrnErrorsModal from '@/components/monitor/BulkMrnErrorsModal.vue'
 import ProjectSummaryWidget from '@/components/monitor/ProjectSummaryWidget.vue'
 import { useMonitorStore } from '@/store/MonitorStore'
 import { useOperationsStore } from '@/store/OperationsStore'
@@ -90,6 +92,7 @@ const addMrnModal = ref<InstanceType<typeof AddMrnModal> | null>(null)
 const archiveOptionsModal = ref<InstanceType<typeof ArchiveOptionsModal> | null>(null)
 const archiveCreationModal = ref<InstanceType<typeof ArchiveCreationModal> | null>(null)
 const streamingArchiveModal = ref<InstanceType<typeof StreamingArchiveModal> | null>(null)
+const bulkMrnErrorsModal = ref<InstanceType<typeof BulkMrnErrorsModal> | null>(null)
 
 // Watch for store-controlled modal visibility
 watch(() => operationsStore.archiveModalVisible, async (visible) => {
@@ -133,17 +136,23 @@ const paginationInfo = computed(() => {
 
 // Methods
 const showAddMrnModal = async () => {
-    if (addMrnModal.value) {
-        const mrn = await addMrnModal.value.show()
-        if (mrn) {
-            try {
-                await monitorStore.addMrn(mrn)
-                notificationStore.showSuccess('MRN added successfully')
-            } catch (error) {
-                notificationStore.showError('Failed to add MRN')
-            }
+  if (addMrnModal.value) {
+    const input = await addMrnModal.value.show()
+    if (input) {
+      try {
+        const result = await monitorStore.addMrnsFromString(input)
+        const added = result.added_count || 0
+        const failed = result.failed_count || 0
+        if (failed === 0) {
+          notificationStore.showSuccess(`Added ${added} MRN(s).`)
+        } else {
+          bulkMrnErrorsModal.value?.show(result.failures, added, failed)
         }
+      } catch (error) {
+        notificationStore.showError('Failed to add MRNs')
+      }
     }
+  }
 }
 
 

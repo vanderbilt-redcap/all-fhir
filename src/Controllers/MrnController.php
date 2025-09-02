@@ -10,6 +10,8 @@ use Vanderbilt\FhirSnapshot\Services\ResourceContentService;
 use Vanderbilt\FhirSnapshot\Services\RepeatedFormDataAccessor;
 use Vanderbilt\FhirSnapshot\Queue\QueueManager;
 use REDCap;
+use Vanderbilt\FhirSnapshot\FhirSnapshot;
+use Vanderbilt\FhirSnapshot\Services\MrnService;
 
 /**
  * MrnController
@@ -39,11 +41,12 @@ use REDCap;
 class MrnController extends AbstractController
 {
     public function __construct(
-        protected \Vanderbilt\FhirSnapshot\FhirSnapshot $module,
+        protected FhirSnapshot $module,
         private RepeatedFormResourceManager $resourceManager,
         private ResourceContentService $contentService,
         private RepeatedFormDataAccessor $dataAccessor,
-        private QueueManager $queueManager
+        private QueueManager $queueManager,
+        private MrnService $mrnService
     ) {
         parent::__construct($module);
     }
@@ -163,75 +166,35 @@ class MrnController extends AbstractController
     public function addMrn(Request $request, Response $response): Response
     {
         $params = (array) $request->getParsedBody();
-        $mrn = $params['mrn'] ?? null;
 
-        if (!$mrn) {
-            $response->getBody()->write(json_encode(['error' => 'MRN is required']));
+        // Accept either { mrns: [...] } or { mrn: "a, b\nc" }
+        $incomingMrns = [];
+        if (isset($params['mrns']) && is_array($params['mrns'])) {
+            $incomingMrns = $params['mrns'];
+        } elseif (isset($params['mrn']) && is_string($params['mrn'])) {
+            $incomingMrns = preg_split('/[\s,]+/', $params['mrn']);
+        }
+
+        // Normalize, trim, filter empties, dedupe
+        $normalized = array_values(array_unique(array_filter(array_map(fn($m) => trim((string)$m), $incomingMrns), fn($m) => $m !== '')));
+
+        if (empty($normalized)) {
+            $response->getBody()->write(json_encode(['error' => 'At least one MRN is required']));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
         }
 
-        try {
-            $projectId = $this->module->getProjectId();
-            $recordId = REDCap::reserveNewRecordId($projectId);
-            $eventId = $this->module->getEventId();
-
-            // Save the MRN to REDCap
-            $data = [
-                $recordId => [
-                    $eventId => [
-                        'mrn' => $mrn
-                    ],
-                ]
-            ];
-
-            $result = REDCap::saveData([
-                'project_id' => $projectId,
-                'dataFormat' => 'array',
-                'data' => $data,
-                'skipFileUploadFields' => false,
-                'overwriteBehavior' => 'overwrite',
-            ]);
-
-            if (!empty($result['errors'])) {
-                $response->getBody()->write(json_encode(['error' => 'Failed to save MRN', 'details' => $result]));
-                return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
-            }
-
-            // Use resource manager to handle MRN addition with configured resources
-            $configuredResources = $this->module->getAllConfiguredMappingResources();
-            $this->resourceManager->addMrn($mrn, $configuredResources);
-
-            // Get the newly created resource status
-            $resourceStatus = $this->resourceManager->getResourceStatus($mrn);
-            $resources = [];
-            foreach ($resourceStatus as $resource) {
-                $resources[] = [
-                    'name' => $resource['resource_name'],
-                    'resource_spec' => $resource['resource_spec'],
-                    'mapping_type' => $resource['mapping_type'],
-                    'repeat_instance' => $resource['repeat_instance'],
-                    'status' => ucfirst($resource['status']),
-                    'fetch_date' => $resource['fetch_date'],
-                    'error_message' => $resource['error_message']
-                ];
-            }
-
-            $newMrn = [
-                'id' => $recordId,
-                'mrn' => $mrn,
-                'status' => 'Pending',
-                'resources' => $resources,
-                'status_counts' => ['pending' => count($resources)],
-                'total_resources' => count($resources),
-            ];
-
-            $response->getBody()->write(json_encode($newMrn));
-            return $response->withHeader('Content-Type', 'application/json');
-            
-        } catch (\Exception $e) {
-            $response->getBody()->write(json_encode(['error' => 'Failed to add MRN: ' . $e->getMessage()]));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
+        // Enforce max batch size
+        $max = 500;
+        if (count($normalized) > $max) {
+            $response->getBody()->write(json_encode(['error' => "Too many MRNs; maximum is {$max}"]));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
         }
+
+        // Delegate to service for bulk add
+        $summary = $this->mrnService->addMany($normalized);
+
+        $response->getBody()->write(json_encode($summary));
+        return $response->withHeader('Content-Type', 'application/json');
     }
 
     public function removeMrn(Request $request, Response $response, $args): Response

@@ -88,6 +88,19 @@ export interface Mrn {
     status_summary?: MrnStatusSummary               // comprehensive status data
 }
 
+// Bulk add response types
+export interface BulkAddFailure {
+  mrn: string
+  error: string
+}
+
+export interface BulkAddResult {
+  added_count: number
+  failed_count: number
+  success: string[]
+  failures: BulkAddFailure[]
+}
+
 export interface ProjectSummary {
     total_mrns: number
     overall_status_counts: Record<string, number>   // project-wide status counts

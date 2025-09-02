@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useErrorsStore } from './ErrorsStore'
-import type { Mrn, ProjectSummary, ArchiveButtonConfig, ProgressBarConfig, ResourceTypeStatus } from '@/models/Mrn'
+import type { Mrn, ProjectSummary, ArchiveButtonConfig, ProgressBarConfig, ResourceTypeStatus, BulkAddResult } from '@/models/Mrn'
 import { FetchStatus } from '@/models/Mrn'
 import { api } from '@/API'
 
@@ -57,15 +57,40 @@ export const useMonitorStore = defineStore('monitor', () => {
     }
   }
 
-  const addMrn = async (mrn: string) => {
+  const parseMrnsFromInput = (input: string): string[] => {
+    return Array.from(new Set(
+      (input || '')
+        .split(/[\s,]+/)
+        .map(s => s.trim())
+        .filter(Boolean)
+    ))
+  }
+
+  const addMrns = async (mrnList: string[]): Promise<BulkAddResult> => {
     try {
-      await api.addMrn(mrn)
-      // After adding, refresh the current page to show updated data
+      operationLoading.value = true
+      const response = await api.addMrns(mrnList)
       await fetchMrns()
+      return response.data as BulkAddResult
     } catch (err) {
       errorsStore.addError(err as Error, 'monitorStore')
-      console.error('Failed to add MRN:', err)
+      console.error('Failed to add MRNs:', err)
+      throw err
+    } finally {
+      operationLoading.value = false
     }
+  }
+
+  const addMrnsFromString = async (input: string): Promise<BulkAddResult> => {
+    const list = parseMrnsFromInput(input)
+    if (list.length === 0) {
+      throw new Error('No MRNs provided')
+    }
+    return await addMrns(list)
+  }
+
+  const addMrn = async (mrn: string): Promise<BulkAddResult> => {
+    return await addMrns([mrn])
   }
 
   const fetchMrn = async (id: number) => {
@@ -442,6 +467,9 @@ export const useMonitorStore = defineStore('monitor', () => {
     // Basic methods
     fetchMrns,
     addMrn,
+    addMrns,
+    addMrnsFromString,
+    parseMrnsFromInput,
     fetchMrn,
     fetchSelected,
     toggleSelectAll,

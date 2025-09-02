@@ -24,9 +24,15 @@ export const api = {
     return apiClient.get('', { params })
   },
 
+  addMrns(mrns: string[]) {
+    const params = { route: `mrns` }
+    return apiClient.post('', { mrns }, { params })
+  },
+
   addMrn(mrn: string) {
     const params = { route: `mrns` }
-    return apiClient.post('', { mrn }, { params })
+    // Route is bulk-capable; standardize to array payload
+    return apiClient.post('', { mrns: [mrn] }, { params })
   },
 
   removeMrn(mrn: string) {

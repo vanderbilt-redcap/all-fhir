@@ -3,15 +3,15 @@
     <template #title>Add MRN</template>
     
     <div class="mb-3">
-      <label for="mrn-input" class="form-label">MRN</label>
-      <input 
-        type="text" 
-        class="form-control" 
-        id="mrn-input" 
-        v-model="mrn" 
-        @keyup.enter="submitOnEnter"
-        placeholder="Enter MRN"
+      <label for="mrn-input" class="form-label">MRN(s)</label>
+      <textarea
+        class="form-control"
+        id="mrn-input"
+        v-model="mrn"
+        rows="6"
+        placeholder="Enter MRNs separated by commas, spaces, or new lines"
       />
+      <small class="text-muted">Examples: 12345, 67890 or one per line</small>
     </div>
 
     <template #footer="{ hide }">
@@ -55,11 +55,8 @@ const submit = (hide: Function) => {
   }
 }
 
-const submitOnEnter = () => {
-  if (mrn.value.trim()) {
-    addMrnModal.value?.hide(true)
-  }
-}
+// Enter key no longer auto-submits because textarea is multiline
+const submitOnEnter = () => {}
 
 defineExpose({ show })
 </script>
