@@ -11,7 +11,20 @@
         rows="6"
         placeholder="Enter MRNs separated by commas, spaces, or new lines"
       />
-      <small class="text-muted">Examples: 12345, 67890 or one per line</small>
+      <small class="text-muted d-block">Examples: 12345, 67890 or one per line</small>
+      <div class="mt-2 small">
+        <div>
+          Parsed: <strong>{{ metrics.unique }}</strong> unique
+          <span v-if="metrics.duplicates > 0">(<strong>{{ metrics.duplicates }}</strong> duplicates ignored)</span>
+          <span v-if="metrics.empties > 0">, <strong>{{ metrics.empties }}</strong> empty tokens</span>
+        </div>
+        <div v-if="metrics.overLimit" class="text-danger">
+          Limit exceeded: {{ metrics.unique }} › {{ metrics.limit }}. Please reduce the list.
+        </div>
+        <div v-if="metrics.sample.length" class="text-muted">
+          Sample: <code>{{ metrics.sample.join(', ') }}</code>
+        </div>
+      </div>
     </div>
 
     <template #footer="{ hide }">
@@ -27,9 +40,9 @@
           type="button" 
           class="btn btn-sm btn-primary" 
           @click="submit(hide)"
-          :disabled="!mrn.trim()"
+          :disabled="addDisabled"
         >
-          <i class="fas fa-plus fa-fw me-1"></i>Add
+          <i class="fas fa-plus fa-fw me-1"></i>{{ addButtonText }}
         </button>
       </div>
     </template>
@@ -37,11 +50,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import type { ModalRef } from '@/types/Modal'
+import { useMonitorStore } from '@/store/MonitorStore'
 
 const addMrnModal = ref<ModalRef>(null)
 const mrn = ref('')
+const monitorStore = useMonitorStore()
+const metrics = computed(() => monitorStore.analyzeMrnInput(mrn.value))
+const addDisabled = computed(() => metrics.value.unique === 0 || metrics.value.overLimit)
+const addButtonText = computed(() => metrics.value.unique > 0 ? `Add ${metrics.value.unique}` : 'Add')
 
 const show = async (): Promise<string | null> => {
   mrn.value = ''
@@ -50,7 +68,7 @@ const show = async (): Promise<string | null> => {
 }
 
 const submit = (hide: Function) => {
-  if (mrn.value.trim()) {
+  if (!addDisabled.value) {
     hide(true)
   }
 }

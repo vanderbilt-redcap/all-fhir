@@ -13,6 +13,7 @@ export const useMonitorStore = defineStore('monitor', () => {
   const selectedMrns = ref<number[]>([])
   const projectSummary = ref<ProjectSummary | null>(null)
   const operationLoading = ref(false)
+  const MRN_ADD_LIMIT = 500
   
   // Pagination state
   const pagination = ref({
@@ -64,6 +65,26 @@ export const useMonitorStore = defineStore('monitor', () => {
         .map(s => s.trim())
         .filter(Boolean)
     ))
+  }
+
+  const analyzeMrnInput = (input: string) => {
+    const rawTokens = (input || '').length ? (input || '').split(/[\s,]+/) : []
+    const trimmed = rawTokens.map(t => t.trim())
+    const empties = trimmed.filter(t => !t).length
+    const parsed = parseMrnsFromInput(input)
+    const uniqueCount = parsed.length
+    const duplicates = Math.max(0, trimmed.filter(Boolean).length - uniqueCount)
+    const sample = parsed.slice(0, 10)
+    return {
+      tokens: rawTokens.length,
+      unique: uniqueCount,
+      duplicates,
+      empties,
+      overLimit: uniqueCount > MRN_ADD_LIMIT,
+      limit: MRN_ADD_LIMIT,
+      parsed,
+      sample,
+    }
   }
 
   const addMrns = async (mrnList: string[]): Promise<BulkAddResult> => {
@@ -470,6 +491,7 @@ export const useMonitorStore = defineStore('monitor', () => {
     addMrns,
     addMrnsFromString,
     parseMrnsFromInput,
+    analyzeMrnInput,
     fetchMrn,
     fetchSelected,
     toggleSelectAll,
