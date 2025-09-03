@@ -4,10 +4,12 @@ import { api } from '@/API'
 import { useErrorsStore } from './ErrorsStore'
 import { useToaster } from 'bootstrap-vue'
 import type { MappingResource, ProjectSettings } from '@/models/ProjectSettings'
+import { useNotificationStore } from './NotificationStore'
 
 export const useSettingsStore = defineStore('settings', () => {
   const errorsStore = useErrorsStore()
   const toaster = useToaster()
+  const notificationStore = useNotificationStore()
 
   /**
    * Version tag for the Resources import/export JSON schema.
@@ -57,61 +59,43 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   }
 
-  const addPredefinedResource = (name: string, resourceSpec: string) => {
-    const resource: MappingResource = { name, resourceSpec, type: 'predefined' }
-    selectedMappingResources.value.push(resource)
+  const addPredefinedResource = async (name: string, resourceSpec: string) => {
+    const res = await api.createMappingResource({ name, resourceSpec, type: 'predefined' })
+    await fetchProjectSettings()
+    notificationStore.showSuccess(`${name} added`, 'Resource Added')
+    return res
   }
 
-  const addCustomResource = (name: string, resourceSpec: string) => {
-    const resource: MappingResource = {
-      name,
-      resourceSpec,
-      type: 'custom',
-    }
-    selectedCustomMappingResources.value.push(resource)
+  const addCustomResource = async (name: string, resourceSpec: string) => {
+    const res = await api.createMappingResource({ name, resourceSpec, type: 'custom' })
+    await fetchProjectSettings()
+    notificationStore.showSuccess(`${name} added`, 'Resource Added')
+    return res
   }
 
-  const removeResource = (resource: MappingResource, type: 'predefined' | 'custom') => {
-    if (type === 'predefined') {
-      const index = selectedMappingResources.value.findIndex(r => 
-        r.name === resource.name && r.resourceSpec === resource.resourceSpec)
-      if (index > -1) selectedMappingResources.value.splice(index, 1)
-    } else {
-      const index = selectedCustomMappingResources.value.findIndex(r => 
-        r.name === resource.name && r.resourceSpec === resource.resourceSpec)
-      if (index > -1) selectedCustomMappingResources.value.splice(index, 1)
-    }
+  const softDeleteResource = async (resource: MappingResource) => {
+    if (!resource.id) return
+    await api.softDeleteMappingResource(resource.id)
+    await fetchProjectSettings()
+    notificationStore.showWarning(`${resource.name} soft-deleted`, 'Resource Deleted')
   }
 
-  const updateSelectedFhirSystem = (fhirSystemId: number) => {
+  const restoreResource = async (resource: MappingResource) => {
+    if (!resource.id) return
+    await api.restoreMappingResource(resource.id)
+    await fetchProjectSettings()
+    notificationStore.showSuccess(`${resource.name} restored`, 'Resource Restored')
+  }
+
+  const updateSelectedFhirSystem = async (fhirSystemId: number) => {
+    // This method is now expected to be called once the user confirmed (if needed)
+    await api.updateFhirSystem(fhirSystemId)
     selectedFhirSystem.value = fhirSystemId
+    settings.fhir_system = fhirSystemId
+    notificationStore.showSuccess('FHIR system changed', 'FHIR System Updated')
   }
 
-  const saveProjectSettings = async () => {
-    try {
-      loading.save = true
-      const payload = {
-        fhir_system: selectedFhirSystem.value,
-        selected_mapping_resources: selectedMappingResources.value,
-        selected_custom_mapping_resources: selectedCustomMappingResources.value,
-      }
-      const response = await api.updateProjectSettings(payload)
-      
-      // Show sync results in toaster
-      if (response.data.sync_results) {
-        showSyncResultsToast(response.data.sync_results)
-      }
-      
-      // Re-fetch to sync saved and draft states
-      await fetchProjectSettings() 
-    } catch (err) {
-      errorsStore.addError(err as Error, 'settingsStore')
-      console.error('Failed to save project settings:', err)
-      throw err // Re-throw to be caught in the component
-    } finally {
-      loading.save = false
-    }
-  }
+  // Removed saveProjectSettings: updates are now route-based and immediate
 
   // ----- Import/Export of selected resources -----
   type ExportPayload = {
@@ -252,9 +236,9 @@ export const useSettingsStore = defineStore('settings', () => {
     fetchProjectSettings,
     addPredefinedResource,
     addCustomResource,
-    removeResource,
+    softDeleteResource,
+    restoreResource,
     updateSelectedFhirSystem,
-    saveProjectSettings,
     exportResources,
     importResources,
   }

@@ -41,7 +41,7 @@ use Vanderbilt\FhirSnapshot\Constants\FhirFormFields;
  * - Compatible with REDCap::saveData operations
  * 
  * USAGE PATTERNS:
- * - Create: FhirResourceMetadata::create($resourceName, $resourceSpec, $mappingType, $repeatInstance)
+ * - Create: FhirResourceMetadata::create($resourceName, $resourceSpec, $mappingType, $repeatInstance, $mappingResourceId = null)
  * - Update status: $metadata->withStatus(STATUS_COMPLETED)
  * - Add file: $metadata->withEdocId($edocId)
  * - REDCap save: $metadata->toRedCapData($recordId, $eventId, $instrumentName)
@@ -83,6 +83,7 @@ class FhirResourceMetadata implements JsonSerializable
     private ?string $errorMessage;
     private ?array $paginationInfo;
     private int $repeatInstance;
+    private ?string $mappingResourceId;
     
     public const MAPPING_TYPE_PREDEFINED = 'predefined';
     public const MAPPING_TYPE_CUSTOM = 'custom';
@@ -101,7 +102,8 @@ class FhirResourceMetadata implements JsonSerializable
         ?string $fetchDate = null,
         ?string $errorMessage = null,
         ?array $paginationInfo = null,
-        int $repeatInstance = 1
+        int $repeatInstance = 1,
+        ?string $mappingResourceId = null
     ) {
         $this->validateResourceName($resourceName);
         $this->validateResourceSpec($resourceSpec);
@@ -118,11 +120,12 @@ class FhirResourceMetadata implements JsonSerializable
         $this->errorMessage = $errorMessage;
         $this->paginationInfo = $paginationInfo;
         $this->repeatInstance = $repeatInstance;
+        $this->mappingResourceId = $mappingResourceId;
     }
 
-    public static function create(string $resourceName, string $resourceSpec, string $mappingType, int $repeatInstance = 1): self
+    public static function create(string $resourceName, string $resourceSpec, string $mappingType, int $repeatInstance = 1, ?string $mappingResourceId = null): self
     {
-        return new self($resourceName, $resourceSpec, $mappingType, self::STATUS_PENDING, null, null, null, null, $repeatInstance);
+        return new self($resourceName, $resourceSpec, $mappingType, self::STATUS_PENDING, null, null, null, null, $repeatInstance, $mappingResourceId);
     }
 
     public static function fromArray(array $data): self
@@ -143,7 +146,8 @@ class FhirResourceMetadata implements JsonSerializable
             $data['fetch_date'] ?? null,
             $data['error_message'] ?? null,
             $data['pagination_info'] ?? null,
-            $data['repeat_instance'] ?? 1
+            $data['repeat_instance'] ?? 1,
+            $data['mapping_resource_id'] ?? null
         );
     }
 
@@ -158,7 +162,8 @@ class FhirResourceMetadata implements JsonSerializable
             $this->fetchDate,
             $this->errorMessage,
             $this->paginationInfo,
-            $this->repeatInstance
+            $this->repeatInstance,
+            $this->mappingResourceId
         );
     }
 
@@ -173,7 +178,8 @@ class FhirResourceMetadata implements JsonSerializable
             $this->fetchDate,
             $this->errorMessage,
             $this->paginationInfo,
-            $this->repeatInstance
+            $this->repeatInstance,
+            $this->mappingResourceId
         );
     }
 
@@ -188,7 +194,8 @@ class FhirResourceMetadata implements JsonSerializable
             $fetchDate,
             $this->errorMessage,
             $this->paginationInfo,
-            $this->repeatInstance
+            $this->repeatInstance,
+            $this->mappingResourceId
         );
     }
 
@@ -203,7 +210,8 @@ class FhirResourceMetadata implements JsonSerializable
             $this->fetchDate,
             $errorMessage,
             $this->paginationInfo,
-            $this->repeatInstance
+            $this->repeatInstance,
+            $this->mappingResourceId
         );
     }
 
@@ -218,7 +226,8 @@ class FhirResourceMetadata implements JsonSerializable
             $this->fetchDate,
             $this->errorMessage,
             $paginationInfo,
-            $this->repeatInstance
+            $this->repeatInstance,
+            $this->mappingResourceId
         );
     }
 
@@ -277,6 +286,27 @@ class FhirResourceMetadata implements JsonSerializable
         return $this->repeatInstance;
     }
 
+    public function getMappingResourceId(): ?string
+    {
+        return $this->mappingResourceId;
+    }
+
+    public function withMappingResourceId(?string $mappingResourceId): self
+    {
+        return new self(
+            $this->resourceName,
+            $this->resourceSpec,
+            $this->mappingType,
+            $this->status,
+            $this->edocId,
+            $this->fetchDate,
+            $this->errorMessage,
+            $this->paginationInfo,
+            $this->repeatInstance,
+            $mappingResourceId
+        );
+    }
+
     public function isPending(): bool
     {
         return $this->status === self::STATUS_PENDING;
@@ -322,7 +352,8 @@ class FhirResourceMetadata implements JsonSerializable
                                 FhirFormFields::FILE_UPLOAD => $this->edocId,
                                 FhirFormFields::FETCH_DATE => $this->fetchDate,
                                 FhirFormFields::ERROR_MESSAGE => $this->errorMessage,
-                                FhirFormFields::PAGINATION_INFO => $this->paginationInfo ? json_encode($this->paginationInfo) : null
+                                FhirFormFields::PAGINATION_INFO => $this->paginationInfo ? json_encode($this->paginationInfo) : null,
+                                FhirFormFields::MAPPING_RESOURCE_ID => $this->mappingResourceId
                             ]
                         ]
                     ]
@@ -342,7 +373,8 @@ class FhirResourceMetadata implements JsonSerializable
             'fetch_date' => $this->fetchDate,
             'error_message' => $this->errorMessage,
             'pagination_info' => $this->paginationInfo,
-            'repeat_instance' => $this->repeatInstance
+            'repeat_instance' => $this->repeatInstance,
+            'mapping_resource_id' => $this->mappingResourceId
         ];
     }
 

@@ -147,7 +147,8 @@ class ResourceSynchronizationService
                 $resource->getName(),
                 $resource->getResourceSpec(),
                 $resource->getType(),
-                $nextInstance
+                $nextInstance,
+                $resource->getId()
             );
             $this->dataAccessor->saveResourceMetadata($recordId, $metadata);
             $createdInstances++;
@@ -177,11 +178,17 @@ class ResourceSynchronizationService
                 continue;
             }
             
-            // Mark existing instances as outdated
-            $existingMetadata = $this->dataAccessor->getResourceMetadataByType($recordId, $resource->getName());
+            // Mark existing instances as outdated (prefer mapping id if available, else fallback to name)
+            $existingMetadata = [];
+            if ($resource->getId()) {
+                $existingMetadata = $this->dataAccessor->getResourceMetadataByMappingId($recordId, $resource->getId());
+            }
+            if (empty($existingMetadata)) {
+                $existingMetadata = $this->dataAccessor->getResourceMetadataByType($recordId, $resource->getName());
+            }
             foreach ($existingMetadata as $metadata) {
                 if (!$metadata->isDeleted()) {
-                    $updatedMetadata = $metadata->withStatus(FhirResourceMetadata::STATUS_OUTDATED);
+                    $updatedMetadata = $metadata->withStatus(FhirResourceMetadata::STATUS_OUTDATED)->withMappingResourceId($resource->getId());
                     $this->dataAccessor->saveResourceMetadata($recordId, $updatedMetadata);
                     $updatedInstances++;
                 }
@@ -193,7 +200,8 @@ class ResourceSynchronizationService
                 $resource->getName(),
                 $resource->getResourceSpec(),
                 $resource->getType(),
-                $nextInstance
+                $nextInstance,
+                $resource->getId()
             );
             $this->dataAccessor->saveResourceMetadata($recordId, $newMetadata);
             $newInstances++;
@@ -222,11 +230,17 @@ class ResourceSynchronizationService
                 continue;
             }
             
-            $existingMetadata = $this->dataAccessor->getResourceMetadataByType($recordId, $resource->getName());
+            $existingMetadata = [];
+            if ($resource->getId()) {
+                $existingMetadata = $this->dataAccessor->getResourceMetadataByMappingId($recordId, $resource->getId());
+            }
+            if (empty($existingMetadata)) {
+                $existingMetadata = $this->dataAccessor->getResourceMetadataByType($recordId, $resource->getName());
+            }
             
             foreach ($existingMetadata as $metadata) {
                 if (!$metadata->isDeleted()) {
-                    $archivedMetadata = $metadata->withStatus(FhirResourceMetadata::STATUS_DELETED);
+                    $archivedMetadata = $metadata->withStatus(FhirResourceMetadata::STATUS_DELETED)->withMappingResourceId($resource->getId());
                     $this->dataAccessor->saveResourceMetadata($recordId, $archivedMetadata);
                     
                     $archivedInstances[] = [
@@ -278,7 +292,8 @@ class ResourceSynchronizationService
                 $resource->getName(),
                 $resource->getResourceSpec(),
                 $resource->getType(),
-                $nextInstance
+                $nextInstance,
+                $resource->getId()
             );
             $this->dataAccessor->saveResourceMetadata($recordId, $metadata);
             $createdInstances++;
@@ -384,6 +399,67 @@ class ResourceSynchronizationService
 
 
     /**
+     * Restore a previously soft-deleted mapping resource
+     * 
+     * For each MRN:
+     * - If there are instances marked as DELETED for this resource name, set them back to PENDING
+     *   and clear fetch-related metadata so they will be reprocessed by the cron job.
+     * - If no deleted instances exist, create a fresh PENDING instance (fallback for consistency).
+     * 
+     * @param MappingResource $resource
+     * @param array $existingMrns
+     * @return int Number of instances updated or created
+     */
+    public function syncMappingResourceRestored(MappingResource $resource, array $existingMrns): int
+    {
+        $affected = 0;
+        foreach ($existingMrns as $mrn) {
+            $recordId = $this->dataAccessor->getRecordIdByMrn($mrn);
+            if (!$recordId) {
+                continue;
+            }
+
+            $existingMetadata = [];
+            if ($resource->getId()) {
+                $existingMetadata = $this->dataAccessor->getResourceMetadataByMappingId($recordId, $resource->getId());
+            }
+            if (empty($existingMetadata)) {
+                $existingMetadata = $this->dataAccessor->getResourceMetadataByType($recordId, $resource->getName());
+            }
+            $deletedFound = false;
+            foreach ($existingMetadata as $metadata) {
+                if ($metadata->isDeleted()) {
+                    $deletedFound = true;
+                    $updated = $metadata
+                        ->withStatus(FhirResourceMetadata::STATUS_PENDING)
+                        ->withErrorMessage(null)
+                        ->withPaginationInfo([])
+                        ->withMappingResourceId($resource->getId());
+                    $this->dataAccessor->saveResourceMetadata($recordId, $updated);
+                    $affected++;
+                }
+            }
+
+            if (!$deletedFound && empty($existingMetadata)) {
+                // Fallback: create a new instance if none exist at all
+                $nextInstance = $this->dataAccessor->getNextRepeatInstance($recordId);
+                $newMetadata = FhirResourceMetadata::create(
+                    $resource->getName(),
+                    $resource->getResourceSpec(),
+                    $resource->getType(),
+                    $nextInstance,
+                    $resource->getId()
+                );
+                $this->dataAccessor->saveResourceMetadata($recordId, $newMetadata);
+                $affected++;
+            }
+        }
+
+        return $affected;
+    }
+
+
+    /**
      * Generate comprehensive project synchronization status report
      * 
      * Aggregates data across all MRNs and provides overview of project health,
@@ -426,5 +502,41 @@ class ResourceSynchronizationService
             'resource_status_counts' => $statusCounts,
             'sync_timestamp' => date('Y-m-d H:i:s')
         ];
+    }
+
+    /**
+     * Permanently delete repeated-form instances that are marked as DELETED for a mapping
+     *
+     * Looks up instances by mapping id when available, otherwise falls back to name.
+     * Only instances with STATUS_DELETED are removed; other statuses are left intact.
+     *
+     * @param MappingResource $resource
+     * @param array $existingMrns
+     * @return int number of instances purged
+     */
+    public function purgeDeletedInstances(MappingResource $resource, array $existingMrns): int
+    {
+        $purged = 0;
+        foreach ($existingMrns as $mrn) {
+            $recordId = $this->dataAccessor->getRecordIdByMrn($mrn);
+            if (!$recordId) continue;
+
+            $metadataList = [];
+            if ($resource->getId()) {
+                $metadataList = $this->dataAccessor->getResourceMetadataByMappingId($recordId, $resource->getId());
+            }
+            if (empty($metadataList)) {
+                $metadataList = $this->dataAccessor->getResourceMetadataByType($recordId, $resource->getName());
+            }
+
+            foreach ($metadataList as $meta) {
+                if ($meta->isDeleted()) {
+                    if ($this->dataAccessor->deleteRepeatedFormInstance($recordId, $meta->getRepeatInstance())) {
+                        $purged++;
+                    }
+                }
+            }
+        }
+        return $purged;
     }
 }

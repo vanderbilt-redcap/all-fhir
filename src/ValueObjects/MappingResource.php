@@ -88,6 +88,8 @@ class MappingResource implements JsonSerializable
     private string $name;
     private string $resourceSpec;
     private string $type;
+    private bool $deleted = false;
+    private ?string $deletedAt = null;
 
     /**
      * Constructor for MappingResource
@@ -102,7 +104,9 @@ class MappingResource implements JsonSerializable
         string $id,
         string $name,
         string $resourceSpec,
-        string $type
+        string $type,
+        bool $deleted = false,
+        ?string $deletedAt = null
     ) {
         $this->validateId($id);
         $this->validateName($name);
@@ -113,6 +117,8 @@ class MappingResource implements JsonSerializable
         $this->name = $name;
         $this->resourceSpec = $resourceSpec;
         $this->type = $type;
+        $this->deleted = $deleted;
+        $this->deletedAt = $deletedAt;
     }
 
     /**
@@ -129,7 +135,9 @@ class MappingResource implements JsonSerializable
             self::generateId(),
             $name,
             $resourceSpec,
-            $type
+            $type,
+            false,
+            null
         );
     }
 
@@ -160,7 +168,9 @@ class MappingResource implements JsonSerializable
                 $data['id'] ?? self::generateId(),
                 $data['name'],
                 $data['resourceSpec'],
-                $data['type']
+                $data['type'],
+                (bool)($data['deleted'] ?? false),
+                $data['deletedAt'] ?? null
             );
         }
         
@@ -181,7 +191,9 @@ class MappingResource implements JsonSerializable
             $data['id'] ?? self::generateId(),
             $name,
             $resourceSpec,
-            $data['type']
+            $data['type'],
+            (bool)($data['deleted'] ?? false),
+            $data['deletedAt'] ?? null
         );
     }
 
@@ -256,7 +268,9 @@ class MappingResource implements JsonSerializable
             'id' => $this->id,
             'name' => $this->name,
             'resourceSpec' => $this->resourceSpec,
-            'type' => $this->type
+            'type' => $this->type,
+            'deleted' => $this->deleted,
+            'deletedAt' => $this->deletedAt
         ];
     }
 
@@ -281,6 +295,40 @@ class MappingResource implements JsonSerializable
     private static function generateDeterministicId(string $name, string $type): string
     {
         return 'resource_' . md5($name . '_' . $type);
+    }
+
+    public function isDeleted(): bool
+    {
+        return $this->deleted === true;
+    }
+
+    public function withDeleted(bool $deleted): self
+    {
+        return new self(
+            $this->id,
+            $this->name,
+            $this->resourceSpec,
+            $this->type,
+            $deleted,
+            $this->deletedAt
+        );
+    }
+
+    public function getDeletedAt(): ?string
+    {
+        return $this->deletedAt;
+    }
+
+    public function withDeletedAt(?string $deletedAt): self
+    {
+        return new self(
+            $this->id,
+            $this->name,
+            $this->resourceSpec,
+            $this->type,
+            $this->deleted,
+            $deletedAt
+        );
     }
 
     /**

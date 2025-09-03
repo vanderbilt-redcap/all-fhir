@@ -115,28 +115,49 @@ class ProjectSettingsController extends AbstractController
         $currentByKey = [];
         $newByKey = [];
         
-        // Index resources by a unique key (resourceSpec + type)
+        // Index resources by a unique key (prefer id; fallback to resourceSpec + type)
         foreach ($currentResources as $resource) {
-            $key = $resource->getResourceSpec() . '|' . $resource->getType();
+            $key = method_exists($resource, 'getId') && $resource->getId() ? $resource->getId() : ($resource->getResourceSpec() . '|' . $resource->getType());
             $currentByKey[$key] = $resource;
         }
         
         foreach ($newResources as $resource) {
-            $key = $resource->getResourceSpec() . '|' . $resource->getType();
+            $key = method_exists($resource, 'getId') && $resource->getId() ? $resource->getId() : ($resource->getResourceSpec() . '|' . $resource->getType());
             $newByKey[$key] = $resource;
         }
         
         $added = [];
         $modified = [];
         $removed = [];
+        $softDeleted = [];
+        $restored = [];
         
         // Find added resources (in new but not in current)
         foreach ($newByKey as $key => $resource) {
             if (!isset($currentByKey[$key])) {
+                // brand new resource (consider only if not soft-deleted)
+                if (method_exists($resource, 'isDeleted') && $resource->isDeleted()) {
+                    // new but immediately deleted: treat as no-op for sync
+                    continue;
+                }
                 $added[] = $resource;
-            } elseif ($currentByKey[$key]->getName() !== $resource->getName()) {
-                // Same resourceSpec but different display name = modification
-                $modified[] = $resource;
+            } else {
+                $old = $currentByKey[$key];
+                // Handle soft-delete/restore detection first
+                $oldDeleted = method_exists($old, 'isDeleted') ? $old->isDeleted() : false;
+                $newDeleted = method_exists($resource, 'isDeleted') ? $resource->isDeleted() : false;
+                if ($oldDeleted === false && $newDeleted === true) {
+                    $softDeleted[] = $resource;
+                    continue;
+                }
+                if ($oldDeleted === true && $newDeleted === false) {
+                    $restored[] = $resource;
+                    continue;
+                }
+                // Same resourceSpec but different display name = modification (only when active)
+                if ($old->getName() !== $resource->getName() && !$newDeleted) {
+                    $modified[] = $resource;
+                }
             }
         }
         
@@ -150,7 +171,9 @@ class ProjectSettingsController extends AbstractController
         return [
             'added' => $added,
             'modified' => $modified,
-            'removed' => $removed
+            'removed' => $removed,
+            'soft_deleted' => $softDeleted,
+            'restored' => $restored
         ];
     }
 
@@ -166,13 +189,15 @@ class ProjectSettingsController extends AbstractController
             'resources_added' => 0,
             'resources_modified' => 0, 
             'resources_removed' => 0,
+            'resources_soft_deleted' => 0,
+            'resources_restored' => 0,
             'tasks_created' => 0,
             'instances_updated' => 0,
             'total_mrns' => 0
         ];
         
         // Skip sync if no changes detected
-        if (empty($changeResults['added']) && empty($changeResults['modified']) && empty($changeResults['removed'])) {
+        if (empty($changeResults['added']) && empty($changeResults['modified']) && empty($changeResults['removed']) && empty($changeResults['soft_deleted']) && empty($changeResults['restored'])) {
             return $syncResults;
         }
         
@@ -204,6 +229,20 @@ class ProjectSettingsController extends AbstractController
                 $syncResults['instances_updated'] += $result['instances_affected'] ?? 0;
             }
             
+            // Process soft-deleted resources (toggle to inactive)
+            foreach ($changeResults['soft_deleted'] as $resource) {
+                $result = $this->resourceManager->removeMappingResource($resource);
+                $syncResults['resources_soft_deleted']++;
+                $syncResults['instances_updated'] += $result['instances_affected'] ?? 0;
+            }
+            
+            // Process restored resources (toggle back to active)
+            foreach ($changeResults['restored'] as $resource) {
+                $affected = $this->resourceManager->restoreMappingResource($resource);
+                $syncResults['resources_restored']++;
+                $syncResults['instances_updated'] += $affected;
+            }
+            
         } catch (\Exception $e) {
             // Log error but don't fail the settings update
             error_log("Error during mapping resource synchronization: " . $e->getMessage());
@@ -211,6 +250,22 @@ class ProjectSettingsController extends AbstractController
         }
         
         return $syncResults;
+    }
+
+    /**
+     * Update only the FHIR system setting
+     */
+    public function updateFhirSystem(Request $request, Response $response): Response
+    {
+        $params = (array)$request->getParsedBody();
+        $fhirSystem = $params['fhir_system'] ?? null;
+        $this->module->setProjectSetting(Constants::SETTING_FHIR_SYSTEM, $fhirSystem);
+        $response->getBody()->write(json_encode([
+            'status' => 'success',
+            'message' => 'FHIR system updated successfully',
+            'fhir_system' => $fhirSystem
+        ]));
+        return $response->withHeader('Content-Type', 'application/json');
     }
 
 }

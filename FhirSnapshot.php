@@ -287,9 +287,10 @@ class FhirSnapshot extends AbstractExternalModule {
         // Use the service to convert to MappingResource objects
         $predefinedResources = $mappingResourceService->convertToMappingResources($predefinedData, 'predefined');
         $customResources = $mappingResourceService->convertToMappingResources($customData, 'custom');
-        
-        // Combine both types
-        return array_merge($predefinedResources, $customResources);
+
+        // Only return active (not soft-deleted) resources
+        $active = array_filter(array_merge($predefinedResources, $customResources), fn($r) => method_exists($r, 'isDeleted') ? !$r->isDeleted() : true);
+        return array_values($active);
     }
 
     /**

@@ -32,6 +32,7 @@ class FhirFormFields
     public const RESOURCE_SPEC = 'all_fhir_resource_spec';
     public const RESOURCE_TYPE = 'all_fhir_resource_type';
     public const RESOURCE_STATUS = 'all_fhir_resource_status';
+    public const MAPPING_RESOURCE_ID = 'all_fhir_mapping_resource_id';
     public const FILE_UPLOAD = 'all_fhir_file_upload';
     public const FETCH_DATE = 'all_fhir_fetch_date';
     public const ERROR_MESSAGE = 'all_fhir_error_message';

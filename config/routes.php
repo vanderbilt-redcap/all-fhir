@@ -8,6 +8,7 @@ use Vanderbilt\FhirSnapshot\Controllers\FetchController;
 use Vanderbilt\FhirSnapshot\Controllers\MrnController;
 use Vanderbilt\FhirSnapshot\Controllers\ProjectSettingsController;
 use Vanderbilt\FhirSnapshot\Controllers\TaskController;
+use Vanderbilt\FhirSnapshot\Controllers\MappingResourcesController;
 
 return function (App $app) {
     // Home route
@@ -24,6 +25,16 @@ return function (App $app) {
     // ProjectSettingsController routes
     $app->get('/project-settings', [ProjectSettingsController::class, 'getSettings']);
     $app->put('/project-settings', [ProjectSettingsController::class, 'updateSettings']);
+    $app->put('/project-settings/fhir-system', [ProjectSettingsController::class, 'updateFhirSystem']);
+
+    // MappingResourcesController routes
+    $app->get('/mapping-resources', [MappingResourcesController::class, 'list']);
+    $app->post('/mapping-resources', [MappingResourcesController::class, 'create']);
+    $app->put('/mapping-resources/{id}', [MappingResourcesController::class, 'update']);
+    $app->post('/mapping-resources/{id}/soft-delete', [MappingResourcesController::class, 'softDelete']);
+    $app->post('/mapping-resources/{id}/restore', [MappingResourcesController::class, 'restore']);
+    $app->post('/mapping-resources/{id}/purge-deleted', [MappingResourcesController::class, 'purgeDeleted']);
+    $app->delete('/mapping-resources/{id}', [MappingResourcesController::class, 'delete']);
 
     // MrnController routes
     $app->get('/mrns', [MrnController::class, 'listMrns']);

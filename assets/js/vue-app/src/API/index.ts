@@ -10,6 +10,10 @@ export const api = {
     const params = { route: `project-settings` }
     return apiClient.get('', { params })
   },
+  updateFhirSystem(fhirSystemId: number) {
+    const params = { route: `project-settings/fhir-system` }
+    return apiClient.put('', { fhir_system: fhirSystemId }, { params })
+  },
   updateProjectSettings(payload: any)
  {
     const params = { route: `project-settings` }
@@ -215,5 +219,35 @@ export const api = {
       params.preview_limit = previewLimit
     }
     return apiClient.get('', { params })
+  },
+
+  // Mapping resources (route-based management)
+  listMappingResources() {
+    const params = { route: `mapping-resources` }
+    return apiClient.get('', { params })
+  },
+  createMappingResource(resource: { name: string; resourceSpec: string; type: 'predefined' | 'custom' }) {
+    const params = { route: `mapping-resources` }
+    return apiClient.post('', resource, { params })
+  },
+  updateMappingResource(id: string, payload: Partial<{ name: string; resourceSpec: string }>) {
+    const params = { route: `mapping-resources/${id}` }
+    return apiClient.put('', payload, { params })
+  },
+  softDeleteMappingResource(id: string) {
+    const params = { route: `mapping-resources/${id}/soft-delete` }
+    return apiClient.post('', {}, { params })
+  },
+  restoreMappingResource(id: string) {
+    const params = { route: `mapping-resources/${id}/restore` }
+    return apiClient.post('', {}, { params })
+  },
+  purgeDeletedMappingResource(id: string) {
+    const params = { route: `mapping-resources/${id}/purge-deleted` }
+    return apiClient.post('', {}, { params })
+  },
+  deleteMappingResource(id: string) {
+    const params = { route: `mapping-resources/${id}` }
+    return apiClient.delete('', { params })
   }
 }

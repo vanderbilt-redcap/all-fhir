@@ -129,7 +129,7 @@ class MappingResourceService
                     
                     // For legacy strings, name and resourceSpec are the same
                     // This maintains exact backward compatibility
-                    $resources[] = new MappingResource($deterministicId, $item, $item, $type);
+                    $resources[] = new MappingResource($deterministicId, $item, $item, $type, false, null);
                 } elseif (is_array($item)) {
                     // Use fromArray which handles both legacy and new formats
                     $resources[] = MappingResource::fromArray($item);
@@ -173,7 +173,7 @@ class MappingResourceService
                 } elseif (is_string($item)) {
                     // Handle legacy string format - name and resourceSpec are the same
                     $deterministicId = $this->generateDeterministicId($item, $defaultType);
-                    $resources[] = new MappingResource($deterministicId, $item, $item, $defaultType);
+                    $resources[] = new MappingResource($deterministicId, $item, $item, $defaultType, false, null);
                 }
             } catch (\InvalidArgumentException $e) {
                 // Log validation errors while continuing bulk processing

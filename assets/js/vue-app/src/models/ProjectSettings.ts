@@ -11,6 +11,8 @@ export interface MappingResource {
   name: string           // User-friendly display name (e.g., "Vital Signs")
   resourceSpec: string   // FHIR query specification (e.g., "Observation?category=vital-signs")
   type: ResourceType     // "predefined" or "custom"
+  deleted?: boolean
+  deletedAt?: string | null
 }
 
 export interface ProjectSettings {

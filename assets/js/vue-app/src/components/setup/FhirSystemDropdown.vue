@@ -21,15 +21,39 @@
 
 <script setup lang="ts">
 import { useSettingsStore } from '@/store/SettingsStore'
+import { useNotificationStore } from '@/store/NotificationStore'
 import { storeToRefs } from 'pinia'
 
 const settingsStore = useSettingsStore()
+const notificationStore = useNotificationStore()
 const { settings, selectedFhirSystem } = storeToRefs(settingsStore)
 
-const handleSystemChange = (event: Event) => {
+const handleSystemChange = async (event: Event) => {
   const target = event.target as HTMLSelectElement
-  const fhirSystemId = parseInt(target.value)
-  settingsStore.updateSelectedFhirSystem(fhirSystemId)
+  const value = target.value
+  const fhirSystemId = value === '' ? null : parseInt(value)
+
+  const current = settings.value.fhir_system
+
+  // If first time selection (current is null), proceed without confirmation
+  if (current === null) {
+    if (fhirSystemId !== null) await settingsStore.updateSelectedFhirSystem(fhirSystemId)
+    return
+  }
+
+  // If changing to a different value, confirm
+  if (fhirSystemId !== current) {
+    const confirmed = await notificationStore.confirmAction(
+      'Change FHIR System',
+      'Changing the FHIR system may affect future fetches. Continue?'
+    )
+    if (!confirmed) {
+      // revert selection
+      target.value = String(current)
+      return
+    }
+    if (fhirSystemId !== null) await settingsStore.updateSelectedFhirSystem(fhirSystemId)
+  }
 }
 </script>
 

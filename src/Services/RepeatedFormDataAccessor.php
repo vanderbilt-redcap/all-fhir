@@ -116,7 +116,8 @@ class RepeatedFormDataAccessor
             'file_upload' => FhirFormFields::FILE_UPLOAD,
             'fetch_date' => FhirFormFields::FETCH_DATE,
             'error_message' => FhirFormFields::ERROR_MESSAGE,
-            'pagination_info' => FhirFormFields::PAGINATION_INFO
+            'pagination_info' => FhirFormFields::PAGINATION_INFO,
+            'mapping_resource_id' => FhirFormFields::MAPPING_RESOURCE_ID
         ];
     }
 
@@ -194,12 +195,15 @@ class RepeatedFormDataAccessor
         }
         
         $instanceData = $data[$recordId]['repeat_instances'][$eventId][$this->instrumentName][$repeatInstance];
-        
-        // For now, we'll match against resource spec since that's what identifies the resource
-        // TODO: Consider updating the method signature to be more specific
-        
+
+        // If resource name is empty (e.g., after hard deletion), treat as non-existent
+        $resourceName = trim($instanceData[$this->fieldMap['resource_name']] ?? '');
+        if ($resourceName === '') {
+            return null;
+        }
+
         return new FhirResourceMetadata(
-            $instanceData[$this->fieldMap['resource_name']] ?? '',
+            $resourceName,
             $instanceData[$this->fieldMap['resource_spec']] ?? '',
             $instanceData[$this->fieldMap['mapping_type']] ?? FhirResourceMetadata::MAPPING_TYPE_CUSTOM,
             $instanceData[$this->fieldMap['status']] ?? FhirResourceMetadata::STATUS_PENDING,
@@ -207,7 +211,8 @@ class RepeatedFormDataAccessor
             $instanceData[$this->fieldMap['fetch_date']] ?? null,
             $instanceData[$this->fieldMap['error_message']] ?? null,
             !empty($instanceData[$this->fieldMap['pagination_info']]) ? json_decode($instanceData[$this->fieldMap['pagination_info']], true) : null,
-            $repeatInstance
+            $repeatInstance,
+            $instanceData[$this->fieldMap['mapping_resource_id']] ?? null
         );
     }
 
@@ -254,7 +259,8 @@ class RepeatedFormDataAccessor
         foreach ($repeatInstances as $repeatInstance => $instanceData) {
             // Match against resource name
             if (isset($instanceData[$this->fieldMap['resource_name']]) &&
-                $instanceData[$this->fieldMap['resource_name']] === $resourceType) {
+                $instanceData[$this->fieldMap['resource_name']] === $resourceType &&
+                trim((string)$instanceData[$this->fieldMap['resource_name']]) !== '') {
                 
                 $metadata[] = new FhirResourceMetadata(
                     $instanceData[$this->fieldMap['resource_name']] ?? '',
@@ -265,7 +271,8 @@ class RepeatedFormDataAccessor
                     $instanceData[$this->fieldMap['fetch_date']] ?? null,
                     $instanceData[$this->fieldMap['error_message']] ?? null,
                     !empty($instanceData[$this->fieldMap['pagination_info']]) ? json_decode($instanceData[$this->fieldMap['pagination_info']], true) : null,
-                    (int) $repeatInstance
+                    (int) $repeatInstance,
+                    $instanceData[$this->fieldMap['mapping_resource_id']] ?? null
                 );
             }
         }
@@ -313,9 +320,59 @@ class RepeatedFormDataAccessor
         $repeatInstances = $data[$recordId]['repeat_instances'][$eventId][$this->instrumentName];
         
         foreach ($repeatInstances as $repeatInstance => $instanceData) {
-            if (isset($instanceData[$this->fieldMap['resource_name']])) {
+            $name = isset($instanceData[$this->fieldMap['resource_name']]) ? trim((string)$instanceData[$this->fieldMap['resource_name']]) : '';
+            if ($name !== '') {
                 
                 $metadata[] = new FhirResourceMetadata(
+                    $name,
+                    $instanceData[$this->fieldMap['resource_spec']] ?? '',
+                    $instanceData[$this->fieldMap['mapping_type']] ?? FhirResourceMetadata::MAPPING_TYPE_CUSTOM,
+                    $instanceData[$this->fieldMap['status']] ?? FhirResourceMetadata::STATUS_PENDING,
+                    !empty($instanceData[$this->fieldMap['file_upload']]) ? (int) $instanceData[$this->fieldMap['file_upload']] : null,
+                    $instanceData[$this->fieldMap['fetch_date']] ?? null,
+                    $instanceData[$this->fieldMap['error_message']] ?? null,
+                    !empty($instanceData[$this->fieldMap['pagination_info']]) ? json_decode($instanceData[$this->fieldMap['pagination_info']], true) : null,
+                    (int) $repeatInstance,
+                    $instanceData[$this->fieldMap['mapping_resource_id']] ?? null
+                );
+            }
+        }
+        
+        return $metadata;
+    }
+
+    /**
+     * Retrieve all FHIR resource metadata instances matching a specific mapping resource id
+     * Falls back to empty if none.
+     */
+    public function getResourceMetadataByMappingId(string $recordId, string $mappingResourceId): array
+    {
+        $eventId = $this->getEventId();
+        $data = REDCap::getData(
+            $this->projectId,
+            'array',
+            $recordId,
+            null,
+            $eventId,
+            null,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            $this->instrumentName
+        );
+        if (empty($data[$recordId]['repeat_instances'][$eventId][$this->instrumentName])) {
+            return [];
+        }
+        $results = [];
+        foreach ($data[$recordId]['repeat_instances'][$eventId][$this->instrumentName] as $repeatInstance => $instanceData) {
+            if (($instanceData[$this->fieldMap['mapping_resource_id']] ?? null) === $mappingResourceId) {
+                $results[] = new FhirResourceMetadata(
                     $instanceData[$this->fieldMap['resource_name']] ?? '',
                     $instanceData[$this->fieldMap['resource_spec']] ?? '',
                     $instanceData[$this->fieldMap['mapping_type']] ?? FhirResourceMetadata::MAPPING_TYPE_CUSTOM,
@@ -324,12 +381,12 @@ class RepeatedFormDataAccessor
                     $instanceData[$this->fieldMap['fetch_date']] ?? null,
                     $instanceData[$this->fieldMap['error_message']] ?? null,
                     !empty($instanceData[$this->fieldMap['pagination_info']]) ? json_decode($instanceData[$this->fieldMap['pagination_info']], true) : null,
-                    (int) $repeatInstance
+                    (int) $repeatInstance,
+                    $instanceData[$this->fieldMap['mapping_resource_id']] ?? null
                 );
             }
         }
-        
-        return $metadata;
+        return $results;
     }
 
     /**

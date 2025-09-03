@@ -121,6 +121,8 @@ class ResourceFetcher
         }
         
         $resources = [];
+        // Build active mapping index to exclude resources without an active mapping
+        $activeIndex = $this->getActiveMappingIndex();
         $allMrns = $this->dataAccessor->getAllMrns();
         
         foreach ($allMrns as $mrn) {
@@ -130,6 +132,10 @@ class ResourceFetcher
             $allMetadata = $this->dataAccessor->getAllResourceMetadata($recordId);
             /** @var FhirResourceMetadata $meta */
             foreach ($allMetadata as $meta) {
+                // Skip if mapping is not active (soft-deleted or removed)
+                if (!$this->isMappingActiveForMetadata($meta, $activeIndex)) {
+                    continue;
+                }
                 if ($this->shouldIncludeResource($meta, $includeStatuses, $excludeStatuses)) {
                     $resources[] = [
                         'mrn' => $mrn,
@@ -164,6 +170,7 @@ class ResourceFetcher
     public function hasPendingResources(): bool
     {
         $allMrns = $this->dataAccessor->getAllMrns();
+        $activeIndex = $this->getActiveMappingIndex();
         
         foreach ($allMrns as $mrn) {
             $recordId = $this->dataAccessor->getRecordIdByMrn($mrn);
@@ -172,6 +179,9 @@ class ResourceFetcher
             $allMetadata = $this->dataAccessor->getAllResourceMetadata($recordId);
             /** @var FhirResourceMetadata $meta */
             foreach ($allMetadata as $meta) {
+                if (!$this->isMappingActiveForMetadata($meta, $activeIndex)) {
+                    continue;
+                }
                 if ($meta->isPending()) {
                     return true; // Found at least one pending resource
                 }
@@ -321,6 +331,39 @@ class ResourceFetcher
         
         // If no filters, include all resources
         return true;
+    }
+
+    /**
+     * Build an index of active mappings for quick lookup.
+     * Returns ['ids' => array<string,bool>, 'nameType' => array<string,bool>]
+     */
+    private function getActiveMappingIndex(): array
+    {
+        $active = $this->module->getAllConfiguredMappingResources(); // filtered to non-deleted
+        $ids = [];
+        $nameType = [];
+        foreach ($active as $r) {
+            if (method_exists($r, 'getId') && $r->getId()) {
+                $ids[$r->getId()] = true;
+            }
+            // Fallback name+type for legacy metadata without id
+            $key = $r->getName() . '|' . $r->getType();
+            $nameType[$key] = true;
+        }
+        return ['ids' => $ids, 'nameType' => $nameType];
+    }
+
+    /**
+     * Determine if a metadata item belongs to an active mapping
+     */
+    private function isMappingActiveForMetadata(FhirResourceMetadata $meta, array $activeIndex): bool
+    {
+        $mappingId = $meta->getMappingResourceId();
+        if (!empty($mappingId)) {
+            return isset($activeIndex['ids'][$mappingId]);
+        }
+        $key = $meta->getResourceName() . '|' . $meta->getMappingType();
+        return isset($activeIndex['nameType'][$key]);
     }
 
     /**

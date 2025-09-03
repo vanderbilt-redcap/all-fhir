@@ -147,6 +147,31 @@ class RepeatedFormResourceManager
     }
 
     /**
+     * Restore a soft-deleted mapping resource by reactivating deleted instances to pending
+     * and creating missing ones if none exist for a record.
+     * 
+     * @param MappingResource $resource
+     * @return int number of instances updated/created
+     */
+    public function restoreMappingResource(MappingResource $resource): int
+    {
+        $existingMrns = $this->dataAccessor->getAllMrns();
+        return $this->syncService->syncMappingResourceRestored($resource, $existingMrns);
+    }
+
+    /**
+     * Permanently delete instances marked as DELETED for a mapping resource
+     *
+     * @param MappingResource $resource
+     * @return int number of instances purged
+     */
+    public function purgeDeletedInstancesForMappingResource(MappingResource $resource): int
+    {
+        $existingMrns = $this->dataAccessor->getAllMrns();
+        return $this->syncService->purgeDeletedInstances($resource, $existingMrns);
+    }
+
+    /**
      * Add a new patient/MRN to the project
      * 
      * Creates resource instances for all currently active mappings. Resources will be
@@ -326,7 +351,8 @@ class RepeatedFormResourceManager
                 $mappingResource->getName(),
                 $mappingResource->getResourceSpec(), 
                 $mappingResource->getType(),
-                $nextInstance
+                $nextInstance,
+                $mappingResource->getId()
             );
             
             $this->dataAccessor->saveResourceMetadata($recordId, $metadata);
@@ -482,6 +508,8 @@ class RepeatedFormResourceManager
         }
         
         $resourcesToFetch = [];
+        // Build active mapping index so we only fetch resources with active mapping
+        $activeIndex = $this->getActiveMappingIndex();
         
         // Build filter lookup for efficient filtering if provided
         $filterLookup = [];
@@ -502,6 +530,13 @@ class RepeatedFormResourceManager
             $allMetadata = $this->dataAccessor->getAllResourceMetadata($recordId);
             
             foreach ($allMetadata as $metadata) {
+                // Skip deleted resources or resources without active mapping
+                if ($metadata->isDeleted()) {
+                    continue;
+                }
+                if (!$this->isMappingActiveForMetadata($metadata, $activeIndex)) {
+                    continue;
+                }
                 // Apply metadata filter if specified
                 if (!empty($filterLookup)) {
                     $key = $metadata->getResourceName() . '|' . $metadata->getRepeatInstance();
@@ -564,6 +599,28 @@ class RepeatedFormResourceManager
                 'max_api_time_ms' => !empty($apiTimes) ? max($apiTimes) : 0
             ]
         ];
+    }
+
+    private function getActiveMappingIndex(): array
+    {
+        $active = $this->module->getAllConfiguredMappingResources();
+        $ids = [];
+        $nameType = [];
+        foreach ($active as $r) {
+            if (method_exists($r, 'getId') && $r->getId()) {
+                $ids[$r->getId()] = true;
+            }
+            $nameType[$r->getName() . '|' . $r->getType()] = true;
+        }
+        return ['ids' => $ids, 'nameType' => $nameType];
+    }
+
+    private function isMappingActiveForMetadata(\Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata $meta, array $activeIndex): bool
+    {
+        $id = $meta->getMappingResourceId();
+        if (!empty($id)) return isset($activeIndex['ids'][$id]);
+        $key = $meta->getResourceName() . '|' . $meta->getMappingType();
+        return isset($activeIndex['nameType'][$key]);
     }
 
     /**

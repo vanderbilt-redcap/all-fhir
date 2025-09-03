@@ -7,6 +7,7 @@ use Vanderbilt\FhirSnapshot\Controllers\FetchController;
 use Vanderbilt\FhirSnapshot\Controllers\MrnController;
 use Vanderbilt\FhirSnapshot\Controllers\ArchiveController;
 use Vanderbilt\FhirSnapshot\Controllers\ProjectSettingsController;
+use Vanderbilt\FhirSnapshot\Controllers\MappingResourcesController;
 use Vanderbilt\FhirSnapshot\Services\FhirCategoryService;
 use Vanderbilt\FhirSnapshot\Services\FhirMetadataService;
 use Vanderbilt\FhirSnapshot\Services\FhirResourceService;
@@ -180,6 +181,11 @@ return function (ContainerBuilder $containerBuilder) {
             $c->get(MappingResourceService::class),
             $c->get(FhirMetadataService::class),
             $c->get(FhirCategoryService::class),
+            $c->get(RepeatedFormResourceManager::class)
+        ),
+        MappingResourcesController::class => fn(Container $c) => new MappingResourcesController(
+            $c->get(FhirSnapshot::class),
+            $c->get(MappingResourceService::class),
             $c->get(RepeatedFormResourceManager::class)
         ),
     ]);
