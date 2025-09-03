@@ -2,13 +2,11 @@ import { defineStore } from 'pinia'
 import { reactive, ref } from 'vue'
 import { api } from '@/API'
 import { useErrorsStore } from './ErrorsStore'
-import { useToaster } from 'bootstrap-vue'
 import type { MappingResource, ProjectSettings } from '@/models/ProjectSettings'
 import { useNotificationStore } from './NotificationStore'
 
 export const useSettingsStore = defineStore('settings', () => {
   const errorsStore = useErrorsStore()
-  const toaster = useToaster()
   const notificationStore = useNotificationStore()
 
   /**
@@ -181,50 +179,6 @@ export const useSettingsStore = defineStore('settings', () => {
     }
 
     return result
-  }
-
-  const showSyncResultsToast = (syncResults: any) => {
-    const { 
-      resources_added,
-      resources_modified,
-      resources_removed,
-      tasks_created,
-      total_mrns,
-      error 
-    } = syncResults
-
-    // Show error toast if sync failed
-    if (error) {
-      toaster.toast({
-        title: 'Sync Warning',
-        body: `Settings saved but sync failed: ${error}`,
-        variant: 'warning',
-        delay: 8000
-      })
-      return
-    }
-
-    // Skip toast if no changes
-    const totalChanges = resources_added + resources_modified + resources_removed
-    if (totalChanges === 0) {
-      return
-    }
-
-    // Build success message
-    const changes = []
-    if (resources_added > 0) changes.push(`${resources_added} added`)
-    if (resources_modified > 0) changes.push(`${resources_modified} modified`) 
-    if (resources_removed > 0) changes.push(`${resources_removed} removed`)
-
-    const title = 'Resources Synchronized'
-    const body = `${changes.join(', ')}. Created ${tasks_created} tasks for ${total_mrns} patients.`
-
-    toaster.toast({
-      title,
-      body,
-      variant: 'success',
-      delay: 6000
-    })
   }
 
   return {
