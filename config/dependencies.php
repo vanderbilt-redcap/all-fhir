@@ -33,6 +33,9 @@ use Vanderbilt\FhirSnapshot\Queue\Processors\RetryFailedProcessor;
 use Vanderbilt\FhirSnapshot\Settings\Settings;
 use Vanderbilt\FhirSnapshot\Constants;
 use Vanderbilt\FhirSnapshot\Controllers\TaskController;
+use Vanderbilt\FhirSnapshot\Controllers\StructureValidationController;
+use Vanderbilt\FhirSnapshot\Services\Contracts\ProjectMetadataProvider as ProjectMetadataProviderContract;
+use Vanderbilt\FhirSnapshot\Services\Redcap\ProjectMetadataProvider as ProjectMetadataProviderImpl;
 use Vanderbilt\FhirSnapshot\Services\ArchiveMetadataService;
 use Vanderbilt\FhirSnapshot\Services\TaskService;
 use Vanderbilt\REDCap\Classes\Fhir\FhirSystem\FhirSystemManager;
@@ -187,6 +190,12 @@ return function (ContainerBuilder $containerBuilder) {
             $c->get(FhirSnapshot::class),
             $c->get(MappingResourceService::class),
             $c->get(RepeatedFormResourceManager::class)
+        ),
+        // Structure validation
+        ProjectMetadataProviderContract::class => fn(Container $c) => new ProjectMetadataProviderImpl(),
+        StructureValidationController::class => fn(Container $c) => new StructureValidationController(
+            $c->get(FhirSnapshot::class),
+            $c->get(ProjectMetadataProviderContract::class)
         ),
     ]);
 };

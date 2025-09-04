@@ -9,6 +9,7 @@ use Vanderbilt\FhirSnapshot\Controllers\MrnController;
 use Vanderbilt\FhirSnapshot\Controllers\ProjectSettingsController;
 use Vanderbilt\FhirSnapshot\Controllers\TaskController;
 use Vanderbilt\FhirSnapshot\Controllers\MappingResourcesController;
+use Vanderbilt\FhirSnapshot\Controllers\StructureValidationController;
 
 return function (App $app) {
     // Home route
@@ -71,6 +72,9 @@ return function (App $app) {
     // On-demand streaming archive routes
     $app->post('/archives/stream/selected', [ArchiveController::class, 'streamSelected']);
     $app->post('/archives/stream/all', [ArchiveController::class, 'streamAll']);
+
+    // Structure Validation routes
+    $app->get('/project-structure/validate', [StructureValidationController::class, 'validate']);
 
     // // Dynamic route
     // $app->get('/user/{id}', function (Request $request, Response $response, array $args) {
