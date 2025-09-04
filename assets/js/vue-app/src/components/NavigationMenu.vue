@@ -24,10 +24,10 @@
         </li>
         <li class="nav-item">
             <router-link 
-                to="/monitor" 
+                to="/resources" 
                 class="nav-link"
-                :class="{ active: $route.name === 'monitor' }"
-                :aria-current="$route.name === 'monitor' ? 'page' : undefined"
+                :class="{ active: $route.name === 'resources' }"
+                :aria-current="$route.name === 'resources' ? 'page' : undefined"
             >
                 <i class="fas fa-database me-2"></i>
                 Resources

@@ -3,7 +3,7 @@ import { createRouter, createWebHashHistory, type Router } from 'vue-router'
 import MainLayout from '@/layouts/MainLayout.vue'
 import HomePage from '@/pages/HomePage.vue'
 import SetupPage from '@/pages/SetupPage.vue'
-import MonitorPage from '@/pages/MonitorPage.vue'
+import ResourcesPage from '@/pages/ResourcesPage.vue'
 import TasksPage from '@/pages/TasksPage.vue'
 import ArchivesPage from '@/pages/ArchivesPage.vue'
 
@@ -21,7 +21,7 @@ const routes = [
         children: [
             { path: '', name: 'home', component: HomePage, },
             { path: 'setup', name: 'setup', component: SetupPage, },
-            { path: 'monitor', name: 'monitor', component: MonitorPage, },
+            { path: 'resources', name: 'resources', component: ResourcesPage, },
             { path: 'tasks', name: 'tasks', component: TasksPage, },
             { path: 'archives', name: 'archives', component: ArchivesPage, },
             { path: 'error', name: 'error', component: ErrorPage, },

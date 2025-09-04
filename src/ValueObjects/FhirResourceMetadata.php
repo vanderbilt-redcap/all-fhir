@@ -345,6 +345,7 @@ class FhirResourceMetadata implements JsonSerializable
                     $eventId => [
                         $instrumentName => [
                             $this->repeatInstance => [
+                                FhirFormFields::MAPPING_RESOURCE_ID => $this->mappingResourceId,
                                 FhirFormFields::RESOURCE_NAME => $this->resourceName,
                                 FhirFormFields::RESOURCE_SPEC => $this->resourceSpec,
                                 FhirFormFields::RESOURCE_TYPE => $this->mappingType,
@@ -353,7 +354,6 @@ class FhirResourceMetadata implements JsonSerializable
                                 FhirFormFields::FETCH_DATE => $this->fetchDate,
                                 FhirFormFields::ERROR_MESSAGE => $this->errorMessage,
                                 FhirFormFields::PAGINATION_INFO => $this->paginationInfo ? json_encode($this->paginationInfo) : null,
-                                FhirFormFields::MAPPING_RESOURCE_ID => $this->mappingResourceId
                             ]
                         ]
                     ]
