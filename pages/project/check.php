@@ -27,8 +27,8 @@ function esc($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 
 <div style="max-width:1000px;">
     <div class="d-flex align-items-center" style="margin-bottom:15px;">
-        <h4 style="margin:0;">Project Structure Check</h4>
-        <div style="margin-left:auto;">
+        <h4 class="m-0;">Project Structure Check</h4>
+        <div class="ms-auto">
             <a class="btn btn-default" href="<?= $module->getUrl('pages/project/index.php') ?>">Home</a>
         </div>
     </div>
@@ -48,11 +48,11 @@ function esc($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
     <div class="panel panel-default">
         <div class="panel-heading"><strong>Validation Results</strong></div>
         <div class="panel-body">
-            <table class="table table-bordered table-condensed">
+            <table class="table table-bordered table-sm table-hover table-condensed">
                 <thead>
                     <tr>
+                        <th>Status</th>
                         <th style="width:20%">Criterion</th>
-                        <th style="width:10%">Status</th>
                         <th>Details</th>
                         <th>Remediation Steps</th>
                     </tr>
@@ -60,14 +60,16 @@ function esc($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
                 <tbody>
                     <?php foreach ($report->getResults() as $result): ?>
                         <tr>
-                            <td><?= esc($result->getLabel()) ?><br><small class="text-muted">Code: <?= esc($result->getCode()) ?></small></td>
                             <td>
-                                <?php if ($result->passed()): ?>
-                                    <span class="label label-success">Passed</span>
-                                <?php else: ?>
-                                    <span class="label label-danger">Failed</span>
-                                <?php endif; ?>
+                                <div class="d-flex flex-column align-items-start">
+                                    <?php if ($result->passed()): ?>
+                                        <span class="label label-success"><i class="fas fa-circle-check fa-fw text-success"></i></span>
+                                    <?php else: ?>
+                                        <span class="label label-danger"><i class="fas fa-ban fa-fw text-danger"></i></span>
+                                    <?php endif; ?>
+                                </div>
                             </td>
+                            <td><?= esc($result->getLabel()) ?><br><small class="text-muted">Code: <?= esc($result->getCode()) ?></small></td>
                             <td>
                                 <?php $details = $result->getDetails(); ?>
                                 <?php if (empty($details)): ?>
@@ -83,7 +85,7 @@ function esc($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
                                 <?php if (empty($steps)): ?>
                                     <em class="text-muted">—</em>
                                 <?php else: ?>
-                                    <ul style="padding-left:18px; margin:0;">
+                                    <ul class="ps-4 m-0">
                                         <?php foreach ($steps as $step): ?>
                                             <li><?= esc($step) ?></li>
                                         <?php endforeach; ?>
@@ -99,11 +101,11 @@ function esc($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 
     <div class="well">
         <strong>Summary</strong>
-        <ul style="margin-top:8px;">
+        <ul class="mt-2">
             <li>Compliant: <?= $isCompliant ? 'Yes' : 'No' ?></li>
             <?php if (!$isCompliant): ?>
                 <li>Missing: 
-                    <ul style="margin-top:5px;">
+                    <ul class="mt-1">
                         <?php foreach ($report->getMissingMessages() as $msg): ?>
                             <li><?= esc($msg) ?></li>
                         <?php endforeach; ?>
@@ -113,8 +115,6 @@ function esc($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
         </ul>
     </div>
 </div>
-
-<link rel="stylesheet" type="text/css" media="screen,print" href="<?= $module->getUrl('assets/js/vue-app/dist/style.css') ?>"/>
 
 <?php require_once APP_PATH_DOCROOT . 'ControlCenter/footer.php'; ?>
 
