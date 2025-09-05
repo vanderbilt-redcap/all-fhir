@@ -163,21 +163,21 @@
                     </span>
                   </td>
                   <td class="text-end">
-                    <div class="btn-group btn-group-sm">
+                    <div class="d-flex gap-2">
                       <button 
-                        class="btn btn-outline-info"
+                        class="btn btn-outline-info btn-sm btn-icon"
                         @click="showTaskDetails(task)"
                         title="View Details"
                       >
                         <i class="fas fa-info-circle"></i>
                       </button>
                       <button 
-                        class="btn btn-outline-danger"
+                        class="btn btn-outline-danger btn-sm btn-icon"
                         title="Delete Task"
                         :disabled="task.status === 'processing' || taskStore.isTaskDeleting(task.id)"
                         @click="confirmDeleteTask(task)"
                       >
-                        <i class="fas" :class="taskStore.isTaskDeleting(task.id) ? 'fa-spinner fa-spin' : 'fa-trash'"></i>
+                        <i class="fas" :class="taskStore.isTaskDeleting(task.id) ? 'fa-spinner fa-spin' : 'fa-trash-can'"></i>
                       </button>
                     </div>
                   </td>

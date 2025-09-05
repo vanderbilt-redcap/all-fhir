@@ -17,6 +17,14 @@ onMounted(() => {
 </div>
 </template>
 
-<style scoped>
-
+<style>
+.btn-icon {
+  width: 1.8rem;
+  height: 1.8rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+}
 </style>

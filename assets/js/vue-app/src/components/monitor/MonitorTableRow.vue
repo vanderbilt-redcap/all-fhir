@@ -105,31 +105,31 @@
             </div>
         </td>
         <td>
-            <div class="btn-group" role="group">
+            <div class="d-flex gap-2" >
                 <button 
-                    class="btn btn-sm btn-primary"
+                    class="btn btn-sm btn-outline-primary btn-icon"
                     @click="triggerFetchMrn"
                     :disabled="operationLoading"
                     title="Trigger fetch for this MRN"
                 >
                     <template v-if="!operationLoading">
-                        <i class="fas fa-cloud-arrow-down fa-fw"></i> Fetch
+                        <i class="fas fa-cloud-arrow-down fa-fw"></i>
                     </template>
                     <template v-else>
-                        <i class="fas fa-spinner fa-spin fa-fw"></i> Fetch
+                        <i class="fas fa-spinner fa-spin fa-fw"></i>
                     </template>
                 </button>
                 <button 
-                    class="btn btn-sm btn-warning"
+                    class="btn btn-sm btn-outline-warning btn-icon"
                     @click="retryFailedResources"
                     :disabled="retryButtonDisabled || operationLoading"
                     :title="retryButtonTooltip"
                 >
                     <template v-if="!operationLoading">
-                        <i class="fas fa-redo fa-fw"></i> Retry
+                        <i class="fas fa-redo fa-fw"></i>
                     </template>
                     <template v-else>
-                        <i class="fas fa-spinner fa-spin fa-fw"></i> Retry
+                        <i class="fas fa-spinner fa-spin fa-fw"></i>
                     </template>
                 </button>
                 <!--
@@ -143,7 +143,7 @@
                     </button>
                 -->
                 <button 
-                    class="btn btn-sm btn-success"
+                    class="btn btn-sm btn-outline-success btn-icon"
                     :disabled="streamButtonDisabled || operationLoading || streamingStore.isStreamingActive"
                     @click="streamDownloadMrn"
                     :title="streamButtonTooltip"

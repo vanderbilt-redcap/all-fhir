@@ -2,12 +2,12 @@
     <div class="mb-3">
         <div class="d-flex flex-wrap gap-2 align-items-center">
             <!-- Primary Actions -->
-            <div class="btn-group" role="group">
-                <button class="btn btn-primary" @click="$emit('addMrn')">
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary btn-sm" @click="$emit('addMrn')">
                     <i class="fas fa-plus-circle fa-fw"></i> Add MRN
                 </button>
                 <button 
-                    class="btn btn-outline-primary"
+                    class="btn btn-outline-primary btn-sm"
                     @click="triggerFetchSelected"
                     :disabled="selectionDisabled || operationLoading"
                     title="Trigger fetch for selected MRNs"
@@ -46,6 +46,7 @@
             <b-dropdown 
                 variant="success"
                 title="Stream download archives"
+                size="sm"
             >
                 <template #button>
                     <i class="fas fa-download fa-fw me-1"></i>Download
@@ -69,7 +70,7 @@
 
             <!-- Refresh Button -->
             <button 
-                class="btn btn-outline-secondary"
+                class="btn btn-outline-secondary btn-sm"
                 @click="refreshData"
                 :disabled="loading"
                 title="Refresh data"

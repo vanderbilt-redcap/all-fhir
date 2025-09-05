@@ -22,17 +22,17 @@
                         <button 
                             v-if="!resource.deleted"
                             type="button" 
-                            class="btn btn-outline-danger btn-sm"
+                            class="btn btn-outline-danger btn-sm btn-icon"
                             @click="handleSoftDelete(resource)"
                             :disabled="isRowLoading(resource)"
                             title="Soft delete"
                         >
-                            <i :class="`fas fa-fw ${isRowLoading(resource) ? 'fa-spinner fa-spin' : 'fa-trash'}`"></i>
+                            <i :class="`fas fa-fw ${isRowLoading(resource) ? 'fa-spinner fa-spin' : 'fa-trash-can'}`"></i>
                         </button>
                         <template v-else>
                           <button 
                               type="button" 
-                              class="btn btn-outline-success btn-sm"
+                              class="btn btn-outline-success btn-sm btn-icon"
                               @click="handleRestore(resource)"
                               :disabled="isRowLoading(resource)"
                               title="Restore"
@@ -41,7 +41,7 @@
                           </button>
                           <button 
                               type="button" 
-                              class="btn btn-danger btn-sm"
+                              class="btn btn-outline-danger btn-sm btn-icon"
                               @click="handlePurge(resource)"
                               :disabled="isRowLoading(resource)"
                               title="Delete forever"
