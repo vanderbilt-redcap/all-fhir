@@ -21,7 +21,7 @@
             
             <!-- Solution B: Progress Bar Visualization -->
             <div v-else-if="statusDisplayMode === 'progress'" class="status-display-progress">
-                <div class="progress position-relative" style="height: 20px;">
+                <div class="progress position-relative" style="height: 6px;">
                     <div
                         v-for="segment in progressConfig.segments"
                         :key="segment.status"

@@ -4,7 +4,6 @@ namespace Vanderbilt\FhirSnapshot\Controllers;
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use Vanderbilt\FhirSnapshot\Constants;
 use Vanderbilt\FhirSnapshot\FhirSnapshot;
 use Vanderbilt\FhirSnapshot\Services\MappingResourceService;
 use Vanderbilt\FhirSnapshot\Services\RepeatedFormResourceManager;
@@ -25,8 +24,7 @@ class MappingResourcesController extends AbstractController
      */
     public function list(Request $request, Response $response): Response
     {
-        $predefinedData = $this->module->getProjectSetting(Constants::SETTING_MAPPING_RESOURCES) ?? [];
-        $customData = $this->module->getProjectSetting(Constants::SETTING_CUSTOM_MAPPING_RESOURCES) ?? [];
+        [$predefinedData, $customData] = $this->mappingResourceService->getStoredResourceArrays($this->module);
 
         $predefined = $this->mappingResourceService->convertToMappingResources($predefinedData, MappingResource::TYPE_PREDEFINED);
         $custom = $this->mappingResourceService->convertToMappingResources($customData, MappingResource::TYPE_CUSTOM);
@@ -54,16 +52,21 @@ class MappingResourcesController extends AbstractController
             return $this->jsonResponse($response, ['status' => 'error', 'message' => 'Missing required fields (name, resourceSpec, type)'], 400);
         }
 
+        // Avoid inserting duplicates (same type + resourceSpec)
+        [$predefinedData, $customData] = $this->mappingResourceService->getStoredResourceArrays($this->module);
+        $existing = $this->mappingResourceService->findDuplicateByTypeAndSpec($predefinedData, $customData, $type, $spec);
+        if ($existing !== null) {
+            return $this->jsonResponse($response, [
+                'status' => 'error',
+                'message' => 'Duplicate mapping resource exists (same type and resourceSpec)',
+                'existing' => $existing[0]->toArray()
+            ], 409);
+        }
         $resource = MappingResource::create($name, $spec, $type);
 
-        // Persist in the proper array
-        [$predefinedData, $customData] = $this->getStoredResourceArrays();
-        if ($type === MappingResource::TYPE_PREDEFINED) {
-            $predefinedData[] = $resource->toArray();
-        } else {
-            $customData[] = $resource->toArray();
-        }
-        $this->saveResourceArrays($predefinedData, $customData);
+        // Persist in the proper array (using service)
+        [$predefinedData, $customData] = $this->mappingResourceService->appendResourceToArrays($resource, $predefinedData, $customData);
+        $this->mappingResourceService->saveResourceArrays($this->module, $predefinedData, $customData);
 
         // Sync
         $allMrns = $this->resourceManager->getAllMrns();
@@ -100,8 +103,8 @@ class MappingResourcesController extends AbstractController
         $spec = $params['resourceSpec'] ?? null;
 
         // Load existing
-        [$predefinedData, $customData] = $this->getStoredResourceArrays();
-        [$resource, $type, $index] = $this->findResourceById($id, $predefinedData, $customData);
+        [$predefinedData, $customData] = $this->mappingResourceService->getStoredResourceArrays($this->module);
+        [$resource, $type, $index] = $this->mappingResourceService->findResourceByIdInArrays($id, $predefinedData, $customData);
         if (!$resource) return $this->jsonResponse($response, ['status' => 'error', 'message' => 'Resource not found'], 404);
 
         // Update fields
@@ -114,12 +117,8 @@ class MappingResourcesController extends AbstractController
             $resource->getDeletedAt()
         );
 
-        if ($type === MappingResource::TYPE_PREDEFINED) {
-            $predefinedData[$index] = $updated->toArray();
-        } else {
-            $customData[$index] = $updated->toArray();
-        }
-        $this->saveResourceArrays($predefinedData, $customData);
+        [$predefinedData, $customData] = $this->mappingResourceService->replaceResourceInArrays($updated, $type, (int)$index, $predefinedData, $customData);
+        $this->mappingResourceService->saveResourceArrays($this->module, $predefinedData, $customData);
 
         // Sync as modified
         $allMrns = $this->resourceManager->getAllMrns();
@@ -150,18 +149,14 @@ class MappingResourcesController extends AbstractController
     {
         if (!$id) return $this->jsonResponse($response, ['status' => 'error', 'message' => 'Missing resource id'], 400);
 
-        [$predefinedData, $customData] = $this->getStoredResourceArrays();
-        [$resource, $type, $index] = $this->findResourceById($id, $predefinedData, $customData);
+        [$predefinedData, $customData] = $this->mappingResourceService->getStoredResourceArrays($this->module);
+        [$resource, $type, $index] = $this->mappingResourceService->findResourceByIdInArrays($id, $predefinedData, $customData);
         if (!$resource) return $this->jsonResponse($response, ['status' => 'error', 'message' => 'Resource not found'], 404);
 
         $now = date('c');
         $updated = $resource->withDeleted(true)->withDeletedAt($now);
-        if ($type === MappingResource::TYPE_PREDEFINED) {
-            $predefinedData[$index] = $updated->toArray();
-        } else {
-            $customData[$index] = $updated->toArray();
-        }
-        $this->saveResourceArrays($predefinedData, $customData);
+        [$predefinedData, $customData] = $this->mappingResourceService->replaceResourceInArrays($updated, $type, (int)$index, $predefinedData, $customData);
+        $this->mappingResourceService->saveResourceArrays($this->module, $predefinedData, $customData);
 
         $result = $this->resourceManager->removeMappingResource($updated);
         $instancesAffected = $result['instances_affected'] ?? 0;
@@ -190,17 +185,13 @@ class MappingResourcesController extends AbstractController
     {
         if (!$id) return $this->jsonResponse($response, ['status' => 'error', 'message' => 'Missing resource id'], 400);
 
-        [$predefinedData, $customData] = $this->getStoredResourceArrays();
-        [$resource, $type, $index] = $this->findResourceById($id, $predefinedData, $customData);
+        [$predefinedData, $customData] = $this->mappingResourceService->getStoredResourceArrays($this->module);
+        [$resource, $type, $index] = $this->mappingResourceService->findResourceByIdInArrays($id, $predefinedData, $customData);
         if (!$resource) return $this->jsonResponse($response, ['status' => 'error', 'message' => 'Resource not found'], 404);
 
         $updated = $resource->withDeleted(false)->withDeletedAt(null);
-        if ($type === MappingResource::TYPE_PREDEFINED) {
-            $predefinedData[$index] = $updated->toArray();
-        } else {
-            $customData[$index] = $updated->toArray();
-        }
-        $this->saveResourceArrays($predefinedData, $customData);
+        [$predefinedData, $customData] = $this->mappingResourceService->replaceResourceInArrays($updated, $type, (int)$index, $predefinedData, $customData);
+        $this->mappingResourceService->saveResourceArrays($this->module, $predefinedData, $customData);
 
         $affected = $this->resourceManager->restoreMappingResource($updated);
 
@@ -228,8 +219,8 @@ class MappingResourcesController extends AbstractController
     {
         if (!$id) return $this->jsonResponse($response, ['status' => 'error', 'message' => 'Missing resource id'], 400);
 
-        [$predefinedData, $customData] = $this->getStoredResourceArrays();
-        [$resource] = $this->findResourceById($id, $predefinedData, $customData);
+        [$predefinedData, $customData] = $this->mappingResourceService->getStoredResourceArrays($this->module);
+        [$resource] = $this->mappingResourceService->findResourceByIdInArrays($id, $predefinedData, $customData);
         if (!$resource) return $this->jsonResponse($response, ['status' => 'error', 'message' => 'Resource not found'], 404);
 
         $purged = $this->resourceManager->purgeDeletedInstancesForMappingResource($resource);
@@ -253,20 +244,16 @@ class MappingResourcesController extends AbstractController
     {
         if (!$id) return $this->jsonResponse($response, ['status' => 'error', 'message' => 'Missing resource id'], 400);
 
-        [$predefinedData, $customData] = $this->getStoredResourceArrays();
-        [$resource, $type, $index] = $this->findResourceById($id, $predefinedData, $customData);
+        [$predefinedData, $customData] = $this->mappingResourceService->getStoredResourceArrays($this->module);
+        [$resource, $type, $index] = $this->mappingResourceService->findResourceByIdInArrays($id, $predefinedData, $customData);
         if (!$resource) return $this->jsonResponse($response, ['status' => 'error', 'message' => 'Resource not found'], 404);
 
         // Ensure instances are marked deleted (sync like soft-delete)
         $archived = $this->resourceManager->removeMappingResource($resource);
 
         // Remove from settings
-        if ($type === MappingResource::TYPE_PREDEFINED) {
-            array_splice($predefinedData, (int)$index, 1);
-        } else {
-            array_splice($customData, (int)$index, 1);
-        }
-        $this->saveResourceArrays($predefinedData, $customData);
+        [$predefinedData, $customData] = $this->mappingResourceService->removeResourceFromArrays($type, (int)$index, $predefinedData, $customData);
+        $this->mappingResourceService->saveResourceArrays($this->module, $predefinedData, $customData);
 
         return $this->jsonResponse($response, [
             'status' => 'success',
@@ -276,36 +263,5 @@ class MappingResourcesController extends AbstractController
         ]);
     }
 
-    private function getStoredResourceArrays(): array
-    {
-        $predefinedData = $this->module->getProjectSetting(Constants::SETTING_MAPPING_RESOURCES) ?? [];
-        $customData = $this->module->getProjectSetting(Constants::SETTING_CUSTOM_MAPPING_RESOURCES) ?? [];
-        return [$predefinedData, $customData];
-    }
-
-    private function saveResourceArrays(array $predefinedData, array $customData): void
-    {
-        $this->module->setProjectSetting(Constants::SETTING_MAPPING_RESOURCES, $predefinedData);
-        $this->module->setProjectSetting(Constants::SETTING_CUSTOM_MAPPING_RESOURCES, $customData);
-    }
-
-    /**
-     * Find a mapping resource by id. Returns [MappingResource|null, type, index]
-     */
-    private function findResourceById(string $id, array $predefinedData, array $customData): array
-    {
-        $predefined = $this->mappingResourceService->convertToMappingResources($predefinedData, MappingResource::TYPE_PREDEFINED);
-        foreach ($predefined as $idx => $r) {
-            if ($r->getId() === $id) {
-                return [$r, MappingResource::TYPE_PREDEFINED, $idx];
-            }
-        }
-        $custom = $this->mappingResourceService->convertToMappingResources($customData, MappingResource::TYPE_CUSTOM);
-        foreach ($custom as $idx => $r) {
-            if ($r->getId() === $id) {
-                return [$r, MappingResource::TYPE_CUSTOM, $idx];
-            }
-        }
-        return [null, null, null];
-    }
+    // Controller kept lean; storage and duplicate logic live in MappingResourceService.
 }

@@ -4,6 +4,7 @@ import { api } from '@/API'
 import { useErrorsStore } from './ErrorsStore'
 import type { MappingResource, ProjectSettings } from '@/models/ProjectSettings'
 import { useNotificationStore } from './NotificationStore'
+import { AxiosError } from 'axios'
 
 export const useSettingsStore = defineStore('settings', () => {
   const errorsStore = useErrorsStore()
@@ -58,16 +59,24 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   const addPredefinedResource = async (name: string, resourceSpec: string) => {
-    const res = await api.createMappingResource({ name, resourceSpec, type: 'predefined' })
-    await fetchProjectSettings()
-    notificationStore.showSuccess(`${name} added`, 'Resource Added')
-    return res
+    try {
+      const res = await api.createMappingResource({ name, resourceSpec, type: 'predefined' })
+      await fetchProjectSettings()
+      notificationStore.showSuccess(`${name} added`, 'Resource added')
+      return res
+    } catch (error) {
+      let errorMessage = 'Error adding the resource'
+      if(error instanceof AxiosError) {
+        errorMessage = error.response?.data?.message ?? errorMessage
+      }
+      notificationStore.showError(`${name} not added: ${errorMessage}`, 'Error')
+    }
   }
 
   const addCustomResource = async (name: string, resourceSpec: string) => {
     const res = await api.createMappingResource({ name, resourceSpec, type: 'custom' })
     await fetchProjectSettings()
-    notificationStore.showSuccess(`${name} added`, 'Resource Added')
+    notificationStore.showSuccess(`${name} added`, 'Resource added')
     return res
   }
 

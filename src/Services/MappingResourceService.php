@@ -2,6 +2,8 @@
 
 namespace Vanderbilt\FhirSnapshot\Services;
 
+use Vanderbilt\FhirSnapshot\Constants;
+use Vanderbilt\FhirSnapshot\FhirSnapshot;
 use Vanderbilt\FhirSnapshot\ValueObjects\MappingResource;
 
 /**
@@ -97,6 +99,114 @@ use Vanderbilt\FhirSnapshot\ValueObjects\MappingResource;
  */
 class MappingResourceService
 {
+    /**
+     * Retrieve stored resource arrays from project settings
+     *
+     * @return array{0: array, 1: array} [predefinedData, customData]
+     */
+    public function getStoredResourceArrays(FhirSnapshot $module): array
+    {
+        $predefinedData = $module->getProjectSetting(Constants::SETTING_MAPPING_RESOURCES) ?? [];
+        $customData = $module->getProjectSetting(Constants::SETTING_CUSTOM_MAPPING_RESOURCES) ?? [];
+        return [$predefinedData, $customData];
+    }
+
+    /**
+     * Persist resource arrays back into project settings
+     */
+    public function saveResourceArrays(FhirSnapshot $module, array $predefinedData, array $customData): void
+    {
+        $module->setProjectSetting(Constants::SETTING_MAPPING_RESOURCES, $predefinedData);
+        $module->setProjectSetting(Constants::SETTING_CUSTOM_MAPPING_RESOURCES, $customData);
+    }
+
+    /**
+     * Find a mapping resource by ID within stored arrays.
+     * @return array{0: MappingResource|null, 1: string|null, 2: int|null}
+     */
+    public function findResourceByIdInArrays(string $id, array $predefinedData, array $customData): array
+    {
+        $predefined = $this->convertToMappingResources($predefinedData, MappingResource::TYPE_PREDEFINED);
+        foreach ($predefined as $idx => $r) {
+            if ($r->getId() === $id) {
+                return [$r, MappingResource::TYPE_PREDEFINED, $idx];
+            }
+        }
+        $custom = $this->convertToMappingResources($customData, MappingResource::TYPE_CUSTOM);
+        foreach ($custom as $idx => $r) {
+            if ($r->getId() === $id) {
+                return [$r, MappingResource::TYPE_CUSTOM, $idx];
+            }
+        }
+        return [null, null, null];
+    }
+
+    /**
+     * Check for duplicate mapping based on type + resourceSpec.
+     * @return array{0: MappingResource, 1: string, 2: int}|null
+     */
+    public function findDuplicateByTypeAndSpec(array $predefinedData, array $customData, string $type, string $resourceSpec): ?array
+    {
+        $resourceSpec = trim($resourceSpec);
+        if ($type === MappingResource::TYPE_PREDEFINED) {
+            $list = $this->convertToMappingResources($predefinedData, MappingResource::TYPE_PREDEFINED);
+            foreach ($list as $idx => $r) {
+                if ($r->getType() === $type && trim($r->getResourceSpec()) === $resourceSpec) {
+                    return [$r, $type, $idx];
+                }
+            }
+        } elseif ($type === MappingResource::TYPE_CUSTOM) {
+            $list = $this->convertToMappingResources($customData, MappingResource::TYPE_CUSTOM);
+            foreach ($list as $idx => $r) {
+                if ($r->getType() === $type && trim($r->getResourceSpec()) === $resourceSpec) {
+                    return [$r, $type, $idx];
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Append a resource to the appropriate array and return updated arrays.
+     * @return array{0: array, 1: array}
+     */
+    public function appendResourceToArrays(MappingResource $resource, array $predefinedData, array $customData): array
+    {
+        if ($resource->getType() === MappingResource::TYPE_PREDEFINED) {
+            $predefinedData[] = $resource->toArray();
+        } else {
+            $customData[] = $resource->toArray();
+        }
+        return [$predefinedData, $customData];
+    }
+
+    /**
+     * Replace a resource in arrays at given type/index.
+     * @return array{0: array, 1: array}
+     */
+    public function replaceResourceInArrays(MappingResource $resource, string $type, int $index, array $predefinedData, array $customData): array
+    {
+        if ($type === MappingResource::TYPE_PREDEFINED) {
+            $predefinedData[$index] = $resource->toArray();
+        } else {
+            $customData[$index] = $resource->toArray();
+        }
+        return [$predefinedData, $customData];
+    }
+
+    /**
+     * Remove a resource from arrays at given type/index.
+     * @return array{0: array, 1: array}
+     */
+    public function removeResourceFromArrays(string $type, int $index, array $predefinedData, array $customData): array
+    {
+        if ($type === MappingResource::TYPE_PREDEFINED) {
+            array_splice($predefinedData, $index, 1);
+        } else {
+            array_splice($customData, $index, 1);
+        }
+        return [$predefinedData, $customData];
+    }
     /**
      * Convert stored configuration data to MappingResource objects with comprehensive format support
      * 
