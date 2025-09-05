@@ -63,14 +63,14 @@ use REDCap;
  * ```
  * 
  * FIELD MAPPING:
- * - resource_name → all_fhir_resource_name (display name)
- * - resource_spec → all_fhir_resource_spec (FHIR query specification)
- * - mapping_type → all_fhir_resource_type (predefined/custom classification)
- * - status → all_fhir_resource_status (lifecycle status)
- * - file_upload → all_fhir_file_upload (edoc ID reference)
- * - fetch_date → all_fhir_fetch_date (completion timestamp)
- * - error_message → all_fhir_error_message (failure details)
- * - pagination_info → all_fhir_pagination_info (FHIR pagination metadata)
+ * - resource_name → af_resource_name (display name)
+ * - resource_spec → af_resource_spec (FHIR query specification)
+ * - mapping_type → af_resource_type (predefined/custom classification)
+ * - status → af_resource_status (lifecycle status)
+ * - file_upload → af_file_upload (edoc ID reference)
+ * - fetch_date → af_fetch_date (completion timestamp)
+ * - error_message → af_error_message (failure details)
+ * - pagination_info → af_pagination_info (FHIR pagination metadata)
  * 
  * USAGE PATTERNS:
  * - saveResourceMetadata($recordId, $metadata) - Persist metadata to REDCap

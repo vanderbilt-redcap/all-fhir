@@ -10,6 +10,7 @@ use Vanderbilt\FhirSnapshot\Controllers\ProjectSettingsController;
 use Vanderbilt\FhirSnapshot\Controllers\TaskController;
 use Vanderbilt\FhirSnapshot\Controllers\MappingResourcesController;
 use Vanderbilt\FhirSnapshot\Controllers\StructureValidationController;
+use Vanderbilt\FhirSnapshot\Controllers\FhirAccessController;
 
 return function (App $app) {
     // Home route
@@ -76,6 +77,9 @@ return function (App $app) {
 
     // Structure Validation routes
     $app->get('/project-structure/validate', [StructureValidationController::class, 'validate']);
+
+    // FHIR Access routes
+    $app->get('/fhir-access/status', [FhirAccessController::class, 'getStatus']);
 
     // // Dynamic route
     // $app->get('/user/{id}', function (Request $request, Response $response, array $args) {

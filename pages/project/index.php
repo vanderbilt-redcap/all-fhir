@@ -7,6 +7,7 @@ use Vanderbilt\FhirSnapshot\Services\Validation\Criteria\ResourceFieldsPresentCr
 use Vanderbilt\FhirSnapshot\Services\Validation\Criteria\ResourceFieldsSameInstrumentCriterion;
 use Vanderbilt\FhirSnapshot\Services\Validation\Criteria\ResourceFormRepeatingCriterion;
 use Vanderbilt\FhirSnapshot\Services\ProjectStructureValidator;
+use Vanderbilt\FhirSnapshot\Services\FhirAccess\ProjectFhirAccessService;
 
 require_once APP_PATH_DOCROOT . 'ProjectGeneral/header.php';
 $module_path = $module->getModulePath();
@@ -22,6 +23,10 @@ $criteria = [
 $validator = new ProjectStructureValidator($provider, $criteria);
 $report = $validator->validate();
 $isCompliant = $report->isCompliant();
+
+// Check project-level FHIR token availability (cached)
+$tokenService = new ProjectFhirAccessService($module);
+$tokenStatus = $tokenService->getStatus($module->getProjectId());
 ?>
 
 <div style="max-width:1000px;">
@@ -30,6 +35,21 @@ $isCompliant = $report->isCompliant();
             <i class="fas fa-exclamation-triangle" style="margin-right:8px;"></i>
             <div>
                 Project structure needs attention. <a href="<?= $module->getUrl('pages/project/check.php') ?>">View details</a>
+            </div>
+        </div>
+    <?php endif; ?>
+    <?php if (!$tokenStatus->hasAnyValidToken()): ?>
+        <div class="alert alert-warning d-flex align-items-start" role="alert" style="margin-bottom:15px;">
+            <i class="fas fa-key fa-fw fa-2x me-2"></i>
+            <div>
+                No users in this project currently have a valid FHIR access token<?php $sysName = $tokenStatus->getFhirSystemName(); echo $sysName ? " (System: {$sysName})" : ""; ?>.
+                Users must authorize FHIR access to enable fetching.
+                <br/>
+                Use the Standalone Launch link to obtain a FHIR token. If you don't have credentials, any user in this project with FHIR access can perform the launch.
+
+                <div class="mt-2">
+                    <a class="btn btn-sm btn-primary text-light" href="<?= APP_PATH_WEBROOT_FULL . '/ehr.php?standalone_launch=1&ehr_id='. $tokenStatus->getFhirSystemId() ?>"><i class="fas fa-rocket fa-fw"></i> Standalone Launch</a>
+                </div>
             </div>
         </div>
     <?php endif; ?>
