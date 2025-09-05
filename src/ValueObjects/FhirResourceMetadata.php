@@ -47,14 +47,14 @@ use Vanderbilt\FhirSnapshot\Constants\FhirFormFields;
  * - REDCap save: $metadata->toRedCapData($recordId, $eventId, $instrumentName)
  * 
  * FIELD MAPPINGS:
- * - all_fhir_resource_name: Display name for the mapping resource
- * - all_fhir_resource_spec: Technical specification (predefined key OR custom URL)
- * - all_fhir_resource_type: Mapping type ("predefined" or "custom")
- * - all_fhir_resource_status: Current status in lifecycle
- * - all_fhir_file_upload: REDCap edoc ID containing JSON payload
- * - all_fhir_fetch_date: Timestamp of successful fetch
- * - all_fhir_error_message: Details when fetch fails
- * - all_fhir_pagination_info: JSON metadata for paginated results
+ * - af_resource_name: Display name for the mapping resource
+ * - af_resource_spec: Technical specification (predefined key OR custom URL)
+ * - af_resource_type: Mapping type ("predefined" or "custom")
+ * - af_resource_status: Current status in lifecycle
+ * - af_file_upload: REDCap edoc ID containing JSON payload
+ * - af_fetch_date: Timestamp of successful fetch
+ * - af_error_message: Details when fetch fails
+ * - af_pagination_info: JSON metadata for paginated results
  */
 class FhirResourceMetadata implements JsonSerializable
 {

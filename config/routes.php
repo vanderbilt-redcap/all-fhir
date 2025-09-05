@@ -36,6 +36,7 @@ return function (App $app) {
     $app->post('/mapping-resources/{id}/restore', [MappingResourcesController::class, 'restore']);
     $app->post('/mapping-resources/{id}/purge-deleted', [MappingResourcesController::class, 'purgeDeleted']);
     $app->delete('/mapping-resources/{id}', [MappingResourcesController::class, 'delete']);
+    $app->post('/mapping-resources/import', [MappingResourcesController::class, 'import']);
 
     // MrnController routes
     $app->get('/mrns', [MrnController::class, 'listMrns']);

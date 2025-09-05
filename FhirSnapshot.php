@@ -278,7 +278,7 @@ class FhirSnapshot extends AbstractExternalModule {
      */
     public function getAllConfiguredMappingResources(): array
     {
-        $mappingResourceService = new MappingResourceService();
+        $mappingResourceService = self::getOrCreateContainer()->get(MappingResourceService::class);
         
         // Get data from project settings
         $predefinedData = $this->getProjectSetting(Constants::SETTING_MAPPING_RESOURCES) ?? [];

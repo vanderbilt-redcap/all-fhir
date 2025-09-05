@@ -99,25 +99,27 @@ use Vanderbilt\FhirSnapshot\ValueObjects\MappingResource;
  */
 class MappingResourceService
 {
+    public function __construct(protected FhirSnapshot $module) {}
+
     /**
      * Retrieve stored resource arrays from project settings
      *
      * @return array{0: array, 1: array} [predefinedData, customData]
      */
-    public function getStoredResourceArrays(FhirSnapshot $module): array
+    public function getStoredResourceArrays(): array
     {
-        $predefinedData = $module->getProjectSetting(Constants::SETTING_MAPPING_RESOURCES) ?? [];
-        $customData = $module->getProjectSetting(Constants::SETTING_CUSTOM_MAPPING_RESOURCES) ?? [];
+        $predefinedData = $this->module->getProjectSetting(Constants::SETTING_MAPPING_RESOURCES) ?? [];
+        $customData = $this->module->getProjectSetting(Constants::SETTING_CUSTOM_MAPPING_RESOURCES) ?? [];
         return [$predefinedData, $customData];
     }
 
     /**
      * Persist resource arrays back into project settings
      */
-    public function saveResourceArrays(FhirSnapshot $module, array $predefinedData, array $customData): void
+    public function saveResourceArrays(array $predefinedData, array $customData): void
     {
-        $module->setProjectSetting(Constants::SETTING_MAPPING_RESOURCES, $predefinedData);
-        $module->setProjectSetting(Constants::SETTING_CUSTOM_MAPPING_RESOURCES, $customData);
+        $this->module->setProjectSetting(Constants::SETTING_MAPPING_RESOURCES, $predefinedData);
+        $this->module->setProjectSetting(Constants::SETTING_CUSTOM_MAPPING_RESOURCES, $customData);
     }
 
     /**
@@ -313,5 +315,106 @@ class MappingResourceService
     private function generateDeterministicId(string $name, string $type): string
     {
         return 'resource_' . md5($name . '_' . $type);
+    }
+
+    /**
+     * Import resources with merge or replace mode.
+     * - mode 'merge': add new, update name if resourceSpec matches, skip exact duplicates
+     * - mode 'replace': overwrite arrays with incoming unique set (deduping by type+resourceSpec)
+     * Returns summary and lists of added/updated resources.
+     *
+     * @param FhirSnapshot $module
+     * @param array $items Array of items [{name, resourceSpec, type}]
+     * @param 'merge'|'replace' $mode
+     * @return array
+     */
+    public function importMappingResources(array $items, string $mode = 'merge'): array
+    {
+        [$predefinedData, $customData] = $this->getStoredResourceArrays();
+
+        $added = 0; $updated = 0; $skipped = 0; $total = 0;
+        $addedResources = [];
+        $updatedResources = [];
+
+        // Normalize and validate incoming
+        $normalized = [];
+        foreach ($items as $item) {
+            if (!is_array($item)) continue;
+            $name = trim((string)($item['name'] ?? ''));
+            $spec = trim((string)($item['resourceSpec'] ?? ''));
+            $type = (string)($item['type'] ?? '');
+            if ($name === '' || $spec === '' || !in_array($type, [MappingResource::TYPE_PREDEFINED, MappingResource::TYPE_CUSTOM], true)) {
+                continue;
+            }
+            $normalized[] = ['name' => $name, 'resourceSpec' => $spec, 'type' => $type];
+        }
+        $total = count($normalized);
+
+        if ($mode === 'replace') {
+            // Deduplicate incoming by (type+spec), keep last occurrence's name
+            $map = [];
+            foreach ($normalized as $item) {
+                $key = $item['type'] . '|' . $item['resourceSpec'];
+                $map[$key] = $item; // overwrite retains last
+            }
+            $predef = [];
+            $custom = [];
+            foreach ($map as $item) {
+                $res = MappingResource::create($item['name'], $item['resourceSpec'], $item['type']);
+                if ($res->isPredefined()) $predef[] = $res->toArray(); else $custom[] = $res->toArray();
+            }
+            // Save
+            $this->saveResourceArrays($predef, $custom);
+
+            // Summary: added equals deduped count; updated/skipped N/A -> 0
+            $added = count($map);
+            $skipped = $total - $added; // duplicates within import
+
+            return [
+                'mode' => 'replace',
+                'summary' => compact('added','updated','skipped','total'),
+                'added_resources' => [],
+                'updated_resources' => []
+            ];
+        }
+
+        // merge mode
+        foreach ($normalized as $item) {
+            $duplicate = $this->findDuplicateByTypeAndSpec($predefinedData, $customData, $item['type'], $item['resourceSpec']);
+            if ($duplicate) {
+                /** @var MappingResource $existing */
+                [$existing, $type, $index] = $duplicate;
+                if ($existing->getName() !== $item['name']) {
+                    // update name only
+                    $updatedRes = new MappingResource(
+                        $existing->getId(),
+                        $item['name'],
+                        $existing->getResourceSpec(),
+                        $existing->getType(),
+                        $existing->isDeleted(),
+                        $existing->getDeletedAt()
+                    );
+                    [$predefinedData, $customData] = $this->replaceResourceInArrays($updatedRes, $type, (int)$index, $predefinedData, $customData);
+                    $updatedResources[] = $updatedRes;
+                    $updated++;
+                } else {
+                    $skipped++;
+                }
+                continue;
+            }
+            // add new
+            $newRes = MappingResource::create($item['name'], $item['resourceSpec'], $item['type']);
+            [$predefinedData, $customData] = $this->appendResourceToArrays($newRes, $predefinedData, $customData);
+            $addedResources[] = $newRes;
+            $added++;
+        }
+        $this->saveResourceArrays($predefinedData, $customData);
+
+        return [
+            'mode' => 'merge',
+            'summary' => compact('added','updated','skipped','total'),
+            'added_resources' => array_map(fn($r) => $r->toArray(), $addedResources),
+            'updated_resources' => array_map(fn($r) => $r->toArray(), $updatedResources)
+        ];
     }
 }

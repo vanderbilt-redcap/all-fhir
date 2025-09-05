@@ -80,6 +80,11 @@ return function (ContainerBuilder $containerBuilder) {
             $c->get(FhirClientInterface::class)
         ),
 
+        // Mapping resources service
+        MappingResourceService::class => fn(Container $c) => new MappingResourceService(
+            $c->get(FhirSnapshot::class)
+        ),
+
         // Resource fetcher service (generic FHIR resource processing)
         ResourceFetcher::class => fn(Container $c) => new ResourceFetcher(
             $c->get(FhirSnapshot::class),

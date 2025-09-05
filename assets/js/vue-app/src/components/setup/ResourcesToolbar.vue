@@ -107,8 +107,10 @@ async function handleImportFile(event: Event) {
     if (!file) return
     const text = await file.text()
     const json = JSON.parse(text)
-    const result = settingsStore.importResources(json, { mode: pendingImportMode.value })
-    notificationStore.showSuccess(`Imported ${result.added} new, updated ${result.updated}, skipped ${result.skipped}.`)
+    const result = await settingsStore.importResources(json, { mode: pendingImportMode.value })
+    const title = 'Resources Import Summary'
+    const message = `Imported ${result.added} new, updated ${result.updated}, skipped ${result.skipped} (total ${result.total}).`
+    await notificationStore.alertUser(title, message)
   } catch (err) {
     console.error('Import failed:', err)
     notificationStore.showError('Failed to import resources. Please check the JSON file.')

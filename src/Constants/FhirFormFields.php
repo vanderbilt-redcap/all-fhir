@@ -28,13 +28,13 @@ namespace Vanderbilt\FhirSnapshot\Constants;
 class FhirFormFields
 {
     public const MRN = 'mrn';
-    public const RESOURCE_NAME = 'all_fhir_resource_name';
-    public const RESOURCE_SPEC = 'all_fhir_resource_spec';
-    public const RESOURCE_TYPE = 'all_fhir_resource_type';
-    public const RESOURCE_STATUS = 'all_fhir_resource_status';
-    public const MAPPING_RESOURCE_ID = 'all_fhir_mapping_resource_id';
-    public const FILE_UPLOAD = 'all_fhir_file_upload';
-    public const FETCH_DATE = 'all_fhir_fetch_date';
-    public const ERROR_MESSAGE = 'all_fhir_error_message';
-    public const PAGINATION_INFO = 'all_fhir_pagination_info';
+    public const RESOURCE_NAME = 'af_resource_name';
+    public const RESOURCE_SPEC = 'af_resource_spec';
+    public const RESOURCE_TYPE = 'af_resource_type';
+    public const RESOURCE_STATUS = 'af_resource_status';
+    public const MAPPING_RESOURCE_ID = 'af_mapping_resource_id';
+    public const FILE_UPLOAD = 'af_file_upload';
+    public const FETCH_DATE = 'af_fetch_date';
+    public const ERROR_MESSAGE = 'af_error_message';
+    public const PAGINATION_INFO = 'af_pagination_info';
 }

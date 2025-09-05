@@ -249,5 +249,9 @@ export const api = {
   deleteMappingResource(id: string) {
     const params = { route: `mapping-resources/${id}` }
     return apiClient.delete('', { params })
+  },
+  importMappingResources(payload: { version: string; mode: 'merge'|'replace'; items: any[] }) {
+    const params = { route: `mapping-resources/import` }
+    return apiClient.post('', payload, { params })
   }
 }
