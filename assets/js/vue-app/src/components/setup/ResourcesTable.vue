@@ -63,7 +63,6 @@
 import { computed, reactive } from 'vue'
 import { useSettingsStore } from '@/store/SettingsStore'
 import { useNotificationStore } from '@/store/NotificationStore'
-import { api } from '@/API'
 import { storeToRefs } from 'pinia'
 import type { MappingResource } from '@/models/ProjectSettings'
 
@@ -113,10 +112,11 @@ async function handlePurge(resource: MappingResource) {
         )
         if (!ok) return
         if (!resource.id) return
-        // Remove mapping from settings and purge its deleted instances
-        await api.deleteMappingResource(resource.id)
-        await settingsStore.fetchProjectSettings()
-        notificationStore.showSuccess('Resource removed and deleted items purged')
+        // Optimistic delete via store
+        const success = await settingsStore.deleteResource(resource)
+        if (success) {
+          notificationStore.showSuccess('Resource removed and deleted items purged')
+        }
     } finally {
         rowLoading[k] = false
     }

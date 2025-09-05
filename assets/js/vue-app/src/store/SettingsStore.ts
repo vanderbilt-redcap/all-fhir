@@ -83,16 +83,63 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const softDeleteResource = async (resource: MappingResource) => {
     if (!resource.id) return
-    await api.softDeleteMappingResource(resource.id)
-    await fetchProjectSettings()
-    notificationStore.showWarning(`${resource.name} soft-deleted`, 'Resource Deleted')
+    const list = resource.type === 'predefined' ? selectedMappingResources.value : selectedCustomMappingResources.value
+    const idx = list.findIndex(r => r.id === resource.id)
+    if (idx === -1) return
+    const original = { ...list[idx] }
+    // Optimistic update
+    list[idx] = { ...list[idx], deleted: true, deletedAt: new Date().toISOString() } as any
+    try {
+      await api.softDeleteMappingResource(resource.id)
+      notificationStore.showWarning(`${resource.name} soft-deleted`, 'Resource Deleted')
+    } catch (err) {
+      // Rollback
+      list[idx] = original
+      errorsStore.addError(err as Error, 'settingsStore.softDeleteResource')
+      notificationStore.showError(`Failed to soft-delete ${resource.name}`)
+      throw err
+    }
   }
 
   const restoreResource = async (resource: MappingResource) => {
     if (!resource.id) return
-    await api.restoreMappingResource(resource.id)
-    await fetchProjectSettings()
-    notificationStore.showSuccess(`${resource.name} restored`, 'Resource Restored')
+    const list = resource.type === 'predefined' ? selectedMappingResources.value : selectedCustomMappingResources.value
+    const idx = list.findIndex(r => r.id === resource.id)
+    if (idx === -1) return
+    const original = { ...list[idx] }
+    // Optimistic update
+    list[idx] = { ...list[idx], deleted: false, deletedAt: null } as any
+    try {
+      await api.restoreMappingResource(resource.id)
+      notificationStore.showSuccess(`${resource.name} restored`, 'Resource Restored')
+    } catch (err) {
+      // Rollback
+      list[idx] = original
+      errorsStore.addError(err as Error, 'settingsStore.restoreResource')
+      notificationStore.showError(`Failed to restore ${resource.name}`)
+      throw err
+    }
+  }
+
+  const deleteResource = async (resource: MappingResource) => {
+    if (!resource.id) return false
+    const list = resource.type === 'predefined' ? selectedMappingResources.value : selectedCustomMappingResources.value
+    const idx = list.findIndex(r => r.id === resource.id)
+    if (idx === -1) return false
+    const original = { ...list[idx] }
+    // Optimistic remove
+    list.splice(idx, 1)
+    try {
+      await api.deleteMappingResource(resource.id)
+      notificationStore.showSuccess(`${resource.name} removed`, 'Resource Deleted')
+      return true
+    } catch (err) {
+      // Rollback
+      list.splice(idx, 0, original)
+      errorsStore.addError(err as Error, 'settingsStore.deleteResource')
+      notificationStore.showError(`Failed to delete ${resource.name}`)
+      return false
+    }
   }
 
   const updateSelectedFhirSystem = async (fhirSystemId: number) => {
@@ -159,6 +206,7 @@ export const useSettingsStore = defineStore('settings', () => {
     addCustomResource,
     softDeleteResource,
     restoreResource,
+    deleteResource,
     updateSelectedFhirSystem,
     exportResources,
     importResources,
