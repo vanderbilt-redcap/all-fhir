@@ -5,7 +5,6 @@ namespace Vanderbilt\FhirSnapshot\Services;
 use Vanderbilt\FhirSnapshot\Contracts\FhirClientInterface;
 use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
 use Vanderbilt\FhirSnapshot\ValueObjects\MappingResource;
-use Vanderbilt\REDCap\Classes\Fhir\FhirMetadata\FhirMetadataSource;
 
 /**
  * FhirResourceService
