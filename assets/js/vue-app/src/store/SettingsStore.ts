@@ -34,6 +34,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const loading = reactive({
     fetch: false,
     save: false,
+    importing: false,
   })
 
   const fetchProjectSettings = async () => {
@@ -134,12 +135,17 @@ export const useSettingsStore = defineStore('settings', () => {
     if (!payload.version || payload.version !== RESOURCES_EXPORT_VERSION) throw new Error('Unsupported or missing version')
     if (!Array.isArray(payload.items)) throw new Error('Invalid payload: items must be an array')
 
-    // Send server-side for authoritative import
-    const res = await api.importMappingResources({ version: RESOURCES_EXPORT_VERSION, mode, items: payload.items })
-    const summary = res.data?.summary || { added: 0, updated: 0, skipped: 0, total: 0 }
-    // refresh settings to reflect changes
-    await fetchProjectSettings()
-    return summary
+    loading.importing = true
+    try {
+      // Send server-side for authoritative import
+      const res = await api.importMappingResources({ version: RESOURCES_EXPORT_VERSION, mode, items: payload.items })
+      const summary = res.data?.summary || { added: 0, updated: 0, skipped: 0, total: 0 }
+      // refresh settings to reflect changes
+      await fetchProjectSettings()
+      return summary
+    } finally {
+      loading.importing = false
+    }
   }
 
   return {

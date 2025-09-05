@@ -14,15 +14,15 @@
     <!-- Right: refresh -->
     <div class="ms-auto d-flex align-items-center gap-2">
 
-        <button class="btn btn-sm btn-primary" @click="handleImport" :title="importTooltip">
+        <button class="btn btn-sm btn-primary" @click="handleImport" :title="importTooltip" :disabled="loading.fetch || loading.importing">
             <i class="fas fa-upload fa-fw"></i>
             <span>Import</span>
         </button>
-        <button class="btn btn-sm btn-primary" @click="handleExport" :title="exportTooltip">
+        <button class="btn btn-sm btn-primary" @click="handleExport" :title="exportTooltip" :disabled="loading.fetch || loading.importing">
             <i class="fas fa-download fa-fw"></i>
             <span>Export</span>
         </button>
-        <button class="btn btn-sm btn-primary" @click="handleAdd">
+        <button class="btn btn-sm btn-primary" @click="handleAdd" :disabled="loading.fetch || loading.importing">
             <i class="fas fa-plus fa-fw"></i>
             <span>Add</span>
         </button>
@@ -35,6 +35,11 @@
         >
         <i class="fas fa-rotate-right fa-fw" :class="{ 'fa-spin': loading.fetch }"></i>
       </button>
+
+      <div v-if="loading.importing" class="d-flex align-items-center text-muted small ms-2">
+        <i class="fas fa-spinner fa-spin me-1"></i>
+        Importing...
+      </div>
     </div>
 
     <!-- Hidden file input for import -->
