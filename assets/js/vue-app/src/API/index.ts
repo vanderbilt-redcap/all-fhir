@@ -220,6 +220,12 @@ export const api = {
     }
     return apiClient.get('', { params })
   },
+ 
+  // FHIR access status
+  getFhirAccessStatus() {
+    const params = { route: `fhir-access/status` }
+    return apiClient.get('', { params })
+  },
 
   // Mapping resources (route-based management)
   listMappingResources() {

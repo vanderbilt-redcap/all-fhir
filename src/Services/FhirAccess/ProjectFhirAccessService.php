@@ -19,7 +19,7 @@ class ProjectFhirAccessService implements ProjectFhirAccessChecker
     {
     }
 
-    public function getStatus(int $projectId): ProjectFhirAccessStatus
+    public function getCachedStatus(int $projectId): ProjectFhirAccessStatus
     {
         $cacheKey = $this->buildCacheKey($projectId);
         $cache = $this->getCache();
@@ -50,6 +50,11 @@ class ProjectFhirAccessService implements ProjectFhirAccessChecker
         }
 
         return $result;
+    }
+    
+    public function getStatus(int $projectId): ProjectFhirAccessStatus
+    {
+        return $this->compute($projectId);
     }
 
     private function compute(int $projectId): ProjectFhirAccessStatus

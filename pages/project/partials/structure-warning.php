@@ -25,4 +25,5 @@ if (!$isCompliant): ?>
         </div>
     </div>
 <?php endif; ?>
-
+<?php
+return $isCompliant;

@@ -27,12 +27,19 @@ class FhirAccessController extends AbstractController
             'level' => $status->hasAnyValidToken() ? 'info' : 'warning',
             'message' => $status->hasAnyValidToken()
                 ? 'At least one user has a valid FHIR access token.'
-                : 'No users in this project currently have a valid FHIR access token.' . ($status->getFhirSystemId() ? ' (EHR ID: ' . $status->getFhirSystemId() . ')' : ''),
+                : 'No users in this project currently have a valid FHIR access token.',
         ];
+
+        // Provide Standalone Launch link similar to token-warning partial
+        $standaloneLaunchUrl = null;
+        if ($status->getFhirSystemId()) {
+            $standaloneLaunchUrl = APP_PATH_WEBROOT_FULL . '/ehr.php?standalone_launch=1&ehr_id=' . $status->getFhirSystemId();
+        }
 
         $payload = [
             'status' => $status->toArray(),
             'banner' => $banner,
+            'standalone_launch_url' => $standaloneLaunchUrl,
         ];
 
         $response->getBody()->write(json_encode($payload));

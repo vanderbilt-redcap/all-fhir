@@ -9,9 +9,13 @@ $module_path = $module->getModulePath();
 ?>
 
 <div style="max-width:1000px;">
-    <?php include __DIR__ . '/partials/structure-warning.php'; ?>
-    <?php include __DIR__ . '/partials/token-warning.php'; ?>
+    <?php $isCompliant   = require_once(__DIR__ . '/partials/structure-warning.php'); ?>
+
+    <?php require_once(__DIR__ . '/partials/data-dictionary-notice.php'); ?>
+
+    <?php if($isCompliant): ?>
     <div id="app"></div>
+    <?php endif; ?>
 </div>
 
 <link rel="stylesheet" type="text/css" media="screen,print" href="<?= $module->getUrl('assets/js/vue-app/dist/style.css') ?>"/>

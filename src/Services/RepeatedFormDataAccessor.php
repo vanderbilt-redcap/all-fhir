@@ -188,6 +188,11 @@ class RepeatedFormDataAccessor
             $this->instrumentName,
             $repeatInstance
         );
+
+        /* REDCapData::forProject($this->projectId)
+            ->whereEvents([$eventId])
+            ->whereRecords([$recordId])
+            ->where */
         
         // Check if we have repeat instances data
         if (empty($data[$recordId]['repeat_instances'][$eventId][$this->instrumentName][$repeatInstance])) {

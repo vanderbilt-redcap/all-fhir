@@ -1,0 +1,12 @@
+"Variable / Field Name","Form Name","Section Header","Field Type","Field Label","Choices, Calculations, OR Slider Labels","Field Note","Text Validation Type OR Show Slider Number","Text Validation Min","Text Validation Max",Identifier?,"Branching Logic (Show field only if...)","Required Field?","Custom Alignment","Question Number (surveys only)","Matrix Group Name","Matrix Ranking?","Field Annotation"
+record_id,form_1,,text,"Record ID",,,,,,,,,,,,,
+mrn,form_1,,text,MRN,,,,,,,,,,,,,
+af_mapping_resource_id,fhir_resources,,text,mapping_resource_id,,,,,,,,,,,,,
+af_resource_name,fhir_resources,,text,resource_name,,,,,,,,,,,,,
+af_resource_spec,fhir_resources,,text,resource_spec,,,,,,,,,,,,,
+af_resource_type,fhir_resources,,text,resource_type,,,,,,,,,,,,,
+af_resource_status,fhir_resources,,text,resource_status,,,,,,,,,,,,,
+af_file_upload,fhir_resources,,file,file_upload,,,,,,,,,,,,,
+af_fetch_date,fhir_resources,,text,fetch_date,,,,,,,,,,,,,
+af_error_message,fhir_resources,,text,error_message,,,,,,,,,,,,,
+af_pagination_info,fhir_resources,,text,pagination_info,,,,,,,,,,,,,

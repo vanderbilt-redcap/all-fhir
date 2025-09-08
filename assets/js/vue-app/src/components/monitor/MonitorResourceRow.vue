@@ -39,10 +39,10 @@
             <div v-else class="text-muted">-</div>
         </td>
         <td>
-            <div class="btn-group" role="group">
+            <div class="d-flex gap-2" >
                 <button 
                     v-if="resource.status === 'Failed'"
-                    class="btn btn-sm btn-warning"
+                    class="btn btn-sm btn-warning btn-icon"
                     @click="retryResource"
                     :disabled="loading"
                     title="Retry this resource"
@@ -51,7 +51,7 @@
                 </button>
                 <button 
                     v-if="resource.status === 'Completed'"
-                    class="btn btn-sm btn-outline-primary"
+                    class="btn btn-sm btn-outline-primary btn-icon"
                     @click="viewDetails"
                     :disabled="viewDetailsLoading"
                     title="View resource details"
@@ -60,7 +60,7 @@
                 </button>
                 <button 
                     v-if="resource.status === 'Completed'"
-                    class="btn btn-sm btn-success"
+                    class="btn btn-sm btn-outline-success btn-icon"
                     @click="streamDownload"
                     :disabled="loading || streamingStore.isStreamingActive"
                     title="Stream download this resource"
