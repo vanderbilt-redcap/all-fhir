@@ -58,7 +58,6 @@ use Vanderbilt\REDCap\Classes\Fhir\FhirCategory;
  * USAGE PATTERNS:
  * - getAvailableCategories() - Get all categories with display names and specs
  * - isCategoryAvailable($category) - Validate category availability
- * - getLegacyCategories() - Access raw category constants (deprecated)
  * 
  * EXTENSIBILITY:
  * - Categories can be easily added/removed by updating the category lists
@@ -112,7 +111,7 @@ class FhirCategoryService
             ['name' => 'Demographics', 'resourceSpec' => FhirCategory::DEMOGRAPHICS],
             ['name' => 'Device implants', 'resourceSpec' => FhirCategory::DEVICE_IMPLANTS],
             ['name' => 'Diagnosis', 'resourceSpec' => FhirCategory::DIAGNOSIS],
-            // ['name' => 'Document reference clinical notes', 'resourceSpec' => // FhirCategory::DOCUMENT_REFERENCE_CLINICAL_NOTES],
+            ['name' => 'Document reference clinical notes', 'resourceSpec' => FhirCategory::DOCUMENT_REFERENCE_CLINICAL_NOTES],
             ['name' => 'Encounter', 'resourceSpec' => FhirCategory::ENCOUNTER],
             ['name' => 'Immunization', 'resourceSpec' => FhirCategory::IMMUNIZATION],
             ['name' => 'Laboratory', 'resourceSpec' => FhirCategory::LABORATORY],
@@ -126,47 +125,6 @@ class FhirCategoryService
         ];
     }
 
-    /**
-     * Get raw FHIR category constants for legacy compatibility
-     * 
-     * Returns array of FhirCategory constant values without display names,
-     * maintained for backward compatibility with existing code.
-     * 
-     * @return array Array of FhirCategory constant values
-     * @deprecated Use getAvailableCategories() for new implementations that need display names
-     */
-    public function getLegacyCategories(): array
-    {
-        return [
-            FhirCategory::APPOINTMENT_APPOINTMENTS,
-            FhirCategory::APPOINTMENT_SCHEDULED_SURGERIES,
-            FhirCategory::ALLERGY_INTOLERANCE,
-            FhirCategory::ADVERSE_EVENT,
-            FhirCategory::CONDITION,
-            FhirCategory::CONDITION_DENTAL_FINDING,
-            FhirCategory::CONDITION_GENOMICS,
-            FhirCategory::CONDITION_INFECTION,
-            FhirCategory::CONDITION_MEDICAL_HISTORY,
-            FhirCategory::CONDITION_PROBLEMS,
-            FhirCategory::CONDITION_REASON_FOR_VISIT,
-            FhirCategory::CORE_CHARACTERISTICS,
-            FhirCategory::COVERAGE,
-            FhirCategory::DEMOGRAPHICS,
-            FhirCategory::DEVICE_IMPLANTS,
-            FhirCategory::DIAGNOSIS,
-            // FhirCategory::DOCUMENT_REFERENCE_CLINICAL_NOTES,
-            FhirCategory::ENCOUNTER,
-            FhirCategory::IMMUNIZATION,
-            FhirCategory::LABORATORY,
-            FhirCategory::MEDICATIONS,
-            // FhirCategory::PRACTITIONER,
-            FhirCategory::SOCIAL_HISTORY,
-            FhirCategory::PROCEDURE,
-            // FhirCategory::RESEARCH_STUDY,
-            // FhirCategory::SMART_DATA,
-            FhirCategory::VITAL_SIGNS,
-        ];
-    }
 
     /**
      * Validate if a FHIR category is currently available for use

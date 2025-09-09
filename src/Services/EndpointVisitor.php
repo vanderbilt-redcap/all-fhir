@@ -137,20 +137,17 @@ class EndpointVisitor implements EndpointVisitorInterface
         
         // Get the project IRB number for study lookup
         $irbNumber = $endpointsHelper->getProjectIrbNumber();
+        $options['subject'] = $this->patientId;
         if (empty($irbNumber)) {
             // If no IRB number available, fall back to patient-only filtering
-            $options['subject'] = $this->patientId;
             return $options;
         }
         
         // Look up the FHIR study ID using the IRB number
         $studyFhirId = $endpointsHelper->getFhirStudyID($this->fhirClient, $irbNumber);
-        
         if ($studyFhirId) {
             $options['study'] = $studyFhirId;
         }
-        
-        $options['subject'] = $this->patientId;
         return $options;
     }
 }
