@@ -47,6 +47,7 @@ class MappingResourcesController extends AbstractController
         $name = $params['name'] ?? null;
         $spec = $params['resourceSpec'] ?? null;
         $type = $params['type'] ?? null; // 'predefined' | 'custom'
+        $incomingParams = isset($params['params']) && is_array($params['params']) ? $params['params'] : null;
 
         if (!$name || !$spec || !$type) {
             return $this->jsonResponse($response, ['status' => 'error', 'message' => 'Missing required fields (name, resourceSpec, type)'], 400);
@@ -63,6 +64,9 @@ class MappingResourcesController extends AbstractController
             ], 409);
         }
         $resource = MappingResource::create($name, $spec, $type);
+        if ($incomingParams) {
+            $resource = $resource->withParams($incomingParams);
+        }
 
         // Persist in the proper array (using service)
         [$predefinedData, $customData] = $this->mappingResourceService->appendResourceToArrays($resource, $predefinedData, $customData);
@@ -101,6 +105,7 @@ class MappingResourcesController extends AbstractController
         $params = (array)$request->getParsedBody();
         $name = $params['name'] ?? null;
         $spec = $params['resourceSpec'] ?? null;
+        $incomingParams = isset($params['params']) && is_array($params['params']) ? $params['params'] : null;
 
         // Load existing
         [$predefinedData, $customData] = $this->mappingResourceService->getStoredResourceArrays();
@@ -114,7 +119,8 @@ class MappingResourcesController extends AbstractController
             $spec ?? $resource->getResourceSpec(),
             $resource->getType(),
             $resource->isDeleted(),
-            $resource->getDeletedAt()
+            $resource->getDeletedAt(),
+            $incomingParams ?? $resource->getParams()
         );
 
         [$predefinedData, $customData] = $this->mappingResourceService->replaceResourceInArrays($updated, $type, (int)$index, $predefinedData, $customData);

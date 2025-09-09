@@ -19,6 +19,8 @@
                         </option>
                     </template>
                 </select>
+                <!-- Endpoint params form for predefined resources -->
+                <EndpointParamsForm v-if="form.resourceType===RESOURCE_TYPE.PREDEFINED && form.predefinedResource" :resourceSpec="form.predefinedResource" />
             </div>
             <div class="d-flex justify-start-center my-2">
                 <span>—OR—</span>
@@ -38,7 +40,9 @@
 import { useSettingsStore } from '@/store/SettingsStore'
 import { RESOURCE_TYPE, type ResourceFormType } from '@/types/ResourceForm';
 import { storeToRefs } from 'pinia'
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
+import EndpointParamsForm from '@/components/setup/EndpointParamsForm.vue'
+import { useEndpointParamsStore } from '@/store/EndpointParamsStore'
 
 
 const settingsStore = useSettingsStore()
@@ -46,6 +50,22 @@ const { settings } = storeToRefs(settingsStore)
 const mapping_resources = computed(() => settings.value.mapping_resources )
 
 const form = defineModel<ResourceFormType>({default: () => ({})})
+
+const endpointParamsStore = useEndpointParamsStore()
+
+watch(() => form.value.resourceType, (t) => {
+  if (t === RESOURCE_TYPE.PREDEFINED) {
+    // Ensure schemas are available
+    if (!endpointParamsStore.loaded) endpointParamsStore.fetchSchemas()
+  }
+})
+
+watch(() => form.value.predefinedResource, (spec) => {
+  if (form.value.resourceType === RESOURCE_TYPE.PREDEFINED && spec) {
+    // Prepare draft with defaults for selected spec
+    endpointParamsStore.prepareDraftFor(spec, form.value.params || {})
+  }
+})
 
 </script>
 

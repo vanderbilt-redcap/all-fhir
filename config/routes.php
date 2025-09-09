@@ -11,6 +11,7 @@ use Vanderbilt\AllFhir\Controllers\TaskController;
 use Vanderbilt\AllFhir\Controllers\MappingResourcesController;
 use Vanderbilt\AllFhir\Controllers\StructureValidationController;
 use Vanderbilt\AllFhir\Controllers\FhirAccessController;
+use Vanderbilt\AllFhir\Controllers\EndpointParamsController;
 
 return function (App $app) {
     // Home route
@@ -80,6 +81,10 @@ return function (App $app) {
 
     // FHIR Access routes
     $app->get('/fhir-access/status', [FhirAccessController::class, 'getStatus']);
+
+    // Endpoint parameter schemas
+    $app->get('/endpoint-params', [EndpointParamsController::class, 'list']);
+    $app->get('/endpoint-params/{resourceSpec}', [EndpointParamsController::class, 'get']);
 
     // // Dynamic route
     // $app->get('/user/{id}', function (Request $request, Response $response, array $args) {

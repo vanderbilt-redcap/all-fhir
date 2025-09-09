@@ -13,6 +13,7 @@ export interface MappingResource {
   type: ResourceType     // "predefined" or "custom"
   deleted?: boolean
   deletedAt?: string | null
+  params?: Record<string, any>
 }
 
 export interface ProjectSettings {

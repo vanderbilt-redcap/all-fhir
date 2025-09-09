@@ -90,6 +90,8 @@ class MappingResource implements JsonSerializable
     private string $type;
     private bool $deleted = false;
     private ?string $deletedAt = null;
+    /** @var array<string, string|int|bool|float>|null */
+    private ?array $params = null;
 
     /**
      * Constructor for MappingResource
@@ -106,7 +108,8 @@ class MappingResource implements JsonSerializable
         string $resourceSpec,
         string $type,
         bool $deleted = false,
-        ?string $deletedAt = null
+        ?string $deletedAt = null,
+        ?array $params = null
     ) {
         $this->validateId($id);
         $this->validateName($name);
@@ -119,6 +122,7 @@ class MappingResource implements JsonSerializable
         $this->type = $type;
         $this->deleted = $deleted;
         $this->deletedAt = $deletedAt;
+        $this->params = $params;
     }
 
     /**
@@ -170,7 +174,8 @@ class MappingResource implements JsonSerializable
                 $data['resourceSpec'],
                 $data['type'],
                 (bool)($data['deleted'] ?? false),
-                $data['deletedAt'] ?? null
+                $data['deletedAt'] ?? null,
+                isset($data['params']) && is_array($data['params']) ? $data['params'] : null
             );
         }
         
@@ -193,7 +198,8 @@ class MappingResource implements JsonSerializable
             $resourceSpec,
             $data['type'],
             (bool)($data['deleted'] ?? false),
-            $data['deletedAt'] ?? null
+            $data['deletedAt'] ?? null,
+            isset($data['params']) && is_array($data['params']) ? $data['params'] : null
         );
     }
 
@@ -270,7 +276,8 @@ class MappingResource implements JsonSerializable
             'resourceSpec' => $this->resourceSpec,
             'type' => $this->type,
             'deleted' => $this->deleted,
-            'deletedAt' => $this->deletedAt
+            'deletedAt' => $this->deletedAt,
+            'params' => $this->params
         ];
     }
 
@@ -310,7 +317,8 @@ class MappingResource implements JsonSerializable
             $this->resourceSpec,
             $this->type,
             $deleted,
-            $this->deletedAt
+            $this->deletedAt,
+            $this->params
         );
     }
 
@@ -327,7 +335,34 @@ class MappingResource implements JsonSerializable
             $this->resourceSpec,
             $this->type,
             $this->deleted,
-            $deletedAt
+            $deletedAt,
+            $this->params
+        );
+    }
+
+    /**
+     * Get optional parameter values configured for this mapping.
+     * @return array<string, string|int|bool|float>|null
+     */
+    public function getParams(): ?array
+    {
+        return $this->params;
+    }
+
+    /**
+     * Return a new instance with updated params.
+     * @param array<string, string|int|bool|float>|null $params
+     */
+    public function withParams(?array $params): self
+    {
+        return new self(
+            $this->id,
+            $this->name,
+            $this->resourceSpec,
+            $this->type,
+            $this->deleted,
+            $this->deletedAt,
+            $params
         );
     }
 

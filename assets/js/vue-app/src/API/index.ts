@@ -227,16 +227,26 @@ export const api = {
     return apiClient.get('', { params })
   },
 
+  // Endpoint parameter schemas
+  getEndpointParamsSchemas() {
+    const params = { route: `endpoint-params` }
+    return apiClient.get('', { params })
+  },
+  getEndpointParamsFor(resourceSpec: string) {
+    const params = { route: `endpoint-params/${encodeURIComponent(resourceSpec)}` }
+    return apiClient.get('', { params })
+  },
+
   // Mapping resources (route-based management)
   listMappingResources() {
     const params = { route: `mapping-resources` }
     return apiClient.get('', { params })
   },
-  createMappingResource(resource: { name: string; resourceSpec: string; type: 'predefined' | 'custom' }) {
+  createMappingResource(resource: { name: string; resourceSpec: string; type: 'predefined' | 'custom'; params?: Record<string, any> }) {
     const params = { route: `mapping-resources` }
     return apiClient.post('', resource, { params })
   },
-  updateMappingResource(id: string, payload: Partial<{ name: string; resourceSpec: string }>) {
+  updateMappingResource(id: string, payload: Partial<{ name: string; resourceSpec: string; params: Record<string, any> }>) {
     const params = { route: `mapping-resources/${id}` }
     return apiClient.put('', payload, { params })
   },

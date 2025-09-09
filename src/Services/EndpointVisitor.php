@@ -2,6 +2,7 @@
 
 namespace Vanderbilt\AllFhir\Services;
 
+use Vanderbilt\AllFhir\Constants\EndpointParams;
 use Vanderbilt\REDCap\Classes\Fhir\FhirClient;
 use Vanderbilt\REDCap\Classes\Fhir\Endpoints\EndpointVisitorInterface;
 use Vanderbilt\REDCap\Classes\Fhir\Endpoints\R4\Patient as Patient_R4;
@@ -42,7 +43,7 @@ use Vanderbilt\REDCap\Classes\Fhir\Endpoints\EndpointsHelper;
  * - Compatible with both DSTU2 and R4 FHIR versions
  * 
  * USAGE EXAMPLES:
- * - $visitor = new EndpointVisitor($fhirClient, $patientId)
+ * - $visitor = new EndpointVisitor($fhirClient, $patientId, $params, $resolver)
  * - $options = $endpoint->accept($visitor)
  * - Used internally by FhirClientWrapper for parameter injection
  * 
@@ -64,16 +65,19 @@ class EndpointVisitor implements EndpointVisitorInterface
      */
     private string $patientId;
 
+    /** @var array<string, mixed> */
+    private array $params = [];
+    private ?FhirStudyResolver $studyResolver = null;
+
     /**
-     * Initialize the endpoint visitor with FHIR client and patient context
-     * 
-     * @param FhirClient $fhirClient Configured REDCap FHIR client instance
-     * @param string $patientId FHIR Patient ID for request scoping
+     * Initialize the endpoint visitor with FHIR client, patient context and optional params
      */
-    public function __construct(FhirClient $fhirClient, string $patientId)
+    public function __construct(FhirClient $fhirClient, string $patientId, array $params = [], ?FhirStudyResolver $resolver = null)
     {
         $this->fhirClient = $fhirClient;
         $this->patientId = $patientId;
+        $this->params = $params;
+        $this->studyResolver = $resolver;
     }
 
     /**
@@ -133,18 +137,24 @@ class EndpointVisitor implements EndpointVisitorInterface
      */
     private function visitAdverseEvent(AdverseEvent $endpoint, array $options): array
     {
-        $endpointsHelper = new EndpointsHelper();
-        
-        // Get the project IRB number for study lookup
-        $irbNumber = $endpointsHelper->getProjectIrbNumber();
         $options['subject'] = $this->patientId;
-        if (empty($irbNumber)) {
-            // If no IRB number available, fall back to patient-only filtering
-            return $options;
+
+        // Resolve study ID either from provided params or project IRB number
+        $studyFhirId = null;
+        $identifier = $this->params[EndpointParams::KEY_STUDY_ID] ?? null;
+
+        if ($identifier && $this->studyResolver) {
+            // Resolve from the provided study ID string
+            if (method_exists($this->studyResolver, 'resolveByIdentifier')) {
+                $studyFhirId = $this->studyResolver->resolveByIdentifier((string)$identifier, $this->fhirClient);
+            }
         }
-        
-        // Look up the FHIR study ID using the IRB number
-        $studyFhirId = $endpointsHelper->getFhirStudyID($this->fhirClient, $irbNumber);
+
+        if (!$studyFhirId) {
+            $resolver = $this->studyResolver ?: new FhirStudyResolver();
+            $studyFhirId = $resolver->resolveFromProjectIrbNumber($this->fhirClient);
+        }
+
         if ($studyFhirId) {
             $options['study'] = $studyFhirId;
         }

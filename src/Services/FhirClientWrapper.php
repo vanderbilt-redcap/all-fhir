@@ -168,8 +168,14 @@ class FhirClientWrapper implements FhirClientInterface
             throw new \Exception("Failed to create predefined FHIR endpoint for category: {$category}");
         }
         
-        // Create visitor to apply patient ID parameters
-        $visitor = new EndpointVisitor($this->fhirClient, $patientId);
+        // Create visitor to apply patient ID parameters and endpoint params
+        $resolver = new FhirStudyResolver();
+        $visitor = new EndpointVisitor(
+            $this->fhirClient,
+            $patientId,
+            method_exists($mappingResource, 'getParams') ? ($mappingResource->getParams() ?? []) : [],
+            $resolver
+        );
         
         // Apply visitor to get endpoint-specific options
         $options = $endpoint->accept($visitor);

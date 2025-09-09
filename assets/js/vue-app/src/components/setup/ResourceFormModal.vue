@@ -31,14 +31,19 @@ import { ref, computed } from 'vue'
 import ResourceForm from '@/components/setup/ResourceForm.vue'
 import { RESOURCE_TYPE, type ResourceFormType } from '@/types/ResourceForm'
 import type { ModalRef } from '@/types/Modal'
+import { useEndpointParamsStore } from '@/store/EndpointParamsStore'
+import { storeToRefs } from 'pinia'
 
 const resourceFormModal = ref<ModalRef>(null)
+const endpointParamsStore = useEndpointParamsStore()
+const { draft } = storeToRefs(endpointParamsStore)
 
 const getNewForm = (): ResourceFormType => ({
   displayName: '',
   customResourceSpec: '',
   predefinedResource: '',
-  resourceType: RESOURCE_TYPE.PREDEFINED
+  resourceType: RESOURCE_TYPE.PREDEFINED,
+  params: {}
 })
 
 const form = ref<ResourceFormType>(getNewForm())
@@ -63,6 +68,10 @@ const show = async (): Promise<ResourceFormType | null> => {
 
 const handleSubmit = (hide: Function) => {
   if (isFormValid.value) {
+    // attach endpoint params for predefined resources
+    if (form.value.resourceType === RESOURCE_TYPE.PREDEFINED) {
+      form.value.params = { ...(draft.value || {}) }
+    }
     hide(true)
   }
 }
