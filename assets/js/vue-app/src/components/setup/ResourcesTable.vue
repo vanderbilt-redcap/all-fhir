@@ -74,15 +74,18 @@
             </tr>
         </tbody>
     </table>
+    <!-- Modals -->
+    <ResourceFormModal ref="resourceFormModal" />
  </template>
 
 <script setup lang="ts">
-import { computed, reactive } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { useSettingsStore } from '@/store/SettingsStore'
 import { useNotificationStore } from '@/store/NotificationStore'
 import { storeToRefs } from 'pinia'
 import type { MappingResource } from '@/models/ProjectSettings'
-import { useRouter } from 'vue-router'
+import ResourceFormModal from '@/components/setup/ResourceFormModal.vue'
+import { useEndpointParamsStore } from '@/store/EndpointParamsStore'
 
 const settingsStore = useSettingsStore()
 const notificationStore = useNotificationStore()
@@ -102,11 +105,25 @@ const isRowLoading = (r: MappingResource) => !!rowLoading[getKey(r)]
 
 const hasParams = (r: MappingResource): boolean => !!(r.params && Object.keys(r.params).length)
 
-const router = useRouter()
+const resourceFormModal = ref<InstanceType<typeof ResourceFormModal> | null>(null)
+const endpointParamsStore = useEndpointParamsStore()
 
-function handleEdit(resource: MappingResource) {
-  if (!resource.id) return
-  router.push({ name: 'resourceEdit', params: { id: resource.id } })
+async function handleEdit(resource: MappingResource) {
+  if (!resource.id || !resourceFormModal.value) return
+  const data = await resourceFormModal.value.showEdit(resource)
+  if (!data) return
+  // Build payload and update via settings store
+  const payload: any = { name: data.displayName }
+  if (data.resourceType === 'PREDEFINED') {
+    payload.resourceSpec = data.predefinedResource
+    // Use params provided by the modal (already seeded from the endpoint params draft)
+    if (data.params !== undefined) {
+      payload.params = data.params
+    }
+  } else {
+    payload.resourceSpec = data.customResourceSpec
+  }
+  await settingsStore.updateResource(resource.id, payload)
 }
 
 async function handleSoftDelete(resource: MappingResource) {

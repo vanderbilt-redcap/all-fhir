@@ -64,11 +64,11 @@ class MappingResourcesController extends AbstractController
         $name = $params['name'] ?? null;
         $spec = $params['resourceSpec'] ?? null;
         $type = $params['type'] ?? null; // 'predefined' | 'custom'
-        $incomingParams = isset($params['params']) && is_array($params['params']) ? $params['params'] : null;
-        if ($type === MappingResource::TYPE_PREDEFINED && $incomingParams) {
+        $hasIncomingParams = array_key_exists('params', $params) && is_array($params['params']);
+        $incomingParams = $hasIncomingParams ? $params['params'] : null;
+        if ($type === MappingResource::TYPE_PREDEFINED && $hasIncomingParams) {
             // Normalize and validate against endpoint schema
-            $normalizer = $this->module->getContainer()->get(\Vanderbilt\AllFhir\Services\EndpointParamNormalizer::class);
-            $result = $normalizer->normalizeForStorage($spec, $incomingParams);
+            $result = $this->normalizeEndpointParams($spec, $incomingParams);
             if (!empty($result['errors'])) {
                 return $this->jsonResponse($response, [ 'status' => 'error', 'message' => 'Invalid endpoint parameters', 'errors' => $result['errors'] ], 400);
             }
@@ -90,7 +90,7 @@ class MappingResourcesController extends AbstractController
             ], 409);
         }
         $resource = MappingResource::create($name, $spec, $type);
-        if ($incomingParams) {
+        if ($hasIncomingParams) {
             $resource = $resource->withParams($incomingParams);
         }
 
@@ -131,7 +131,8 @@ class MappingResourcesController extends AbstractController
         $params = (array)$request->getParsedBody();
         $name = $params['name'] ?? null;
         $spec = $params['resourceSpec'] ?? null;
-        $incomingParams = isset($params['params']) && is_array($params['params']) ? $params['params'] : null;
+        $hasIncomingParams = array_key_exists('params', $params) && is_array($params['params']);
+        $incomingParams = $hasIncomingParams ? $params['params'] : null;
 
         // Load existing
         [$predefinedData, $customData] = $this->mappingResourceService->getStoredResourceArrays();
@@ -139,7 +140,7 @@ class MappingResourcesController extends AbstractController
         if (!$resource) return $this->jsonResponse($response, ['status' => 'error', 'message' => 'Resource not found'], 404);
 
         // Normalize and validate endpoint params for predefined resources
-        if ($incomingParams && $resource->getType() === MappingResource::TYPE_PREDEFINED) {
+        if ($hasIncomingParams && $resource->getType() === MappingResource::TYPE_PREDEFINED) {
             $normalizer = $this->module->getContainer()->get(\Vanderbilt\AllFhir\Services\EndpointParamNormalizer::class);
             $result = $normalizer->normalizeForStorage($spec ?? $resource->getResourceSpec(), $incomingParams);
             if (!empty($result['errors'])) {
@@ -168,7 +169,7 @@ class MappingResourcesController extends AbstractController
             $resource->getType(),
             $resource->isDeleted(),
             $resource->getDeletedAt(),
-            $incomingParams ?? $resource->getParams()
+            $hasIncomingParams ? $incomingParams : $resource->getParams()
         );
 
         [$predefinedData, $customData] = $this->mappingResourceService->replaceResourceInArrays($updated, $type, (int)$index, $predefinedData, $customData);
@@ -351,4 +352,10 @@ class MappingResourcesController extends AbstractController
     }
 
     // Controller kept lean; storage and duplicate logic live in MappingResourceService.
+
+    private function normalizeEndpointParams(string $resourceSpec, ?array $params): array
+    {
+        $normalizer = $this->module->getContainer()->get(\Vanderbilt\AllFhir\Services\EndpointParamNormalizer::class);
+        return $normalizer->normalizeForStorage($resourceSpec, $params ?? []);
+    }
 }

@@ -6,7 +6,6 @@ import SetupPage from '@/pages/SetupPage.vue'
 import ResourcesPage from '@/pages/ResourcesPage.vue'
 import TasksPage from '@/pages/TasksPage.vue'
 import ArchivesPage from '@/pages/ArchivesPage.vue'
-import ResourceEditPage from '@/pages/ResourceEditPage.vue'
 
 // other
 import NotFoundPage from '@/pages/NotFoundPage.vue'
@@ -22,7 +21,6 @@ const routes = [
         children: [
             { path: '', name: 'home', component: HomePage, },
             { path: 'setup', name: 'setup', component: SetupPage, },
-            { path: 'setup/resources/:id/edit', name: 'resourceEdit', component: ResourceEditPage },
             { path: 'resources', name: 'resources', component: ResourcesPage, },
             { path: 'tasks', name: 'tasks', component: TasksPage, },
             { path: 'archives', name: 'archives', component: ArchivesPage, },

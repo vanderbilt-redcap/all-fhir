@@ -152,6 +152,21 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   }
 
+  const updateResource = async (id: string, payload: Partial<{ name: string; resourceSpec: string; params: Record<string, any> }>) => {
+    if (!id) return
+    try {
+      const res = await api.updateMappingResource(id, payload)
+      await fetchProjectSettings()
+      const updatedName = res.data?.resource?.name || 'Resource'
+      const affected = res.data?.sync_results?.instances_updated ?? 0
+      notificationStore.showSuccess(`${updatedName} updated`, `Instances marked pending: ${affected}`)
+      return res
+    } catch (err) {
+      errorsStore.addError(err as Error, 'settingsStore.updateResource')
+      throw err
+    }
+  }
+
   const updateSelectedFhirSystem = async (fhirSystemId: number | null) => {
     // This method is now expected to be called once the user confirmed (if needed)
     await api.updateFhirSystem(fhirSystemId)
@@ -220,6 +235,7 @@ export const useSettingsStore = defineStore('settings', () => {
     softDeleteResource,
     restoreResource,
     deleteResource,
+    updateResource,
     updateSelectedFhirSystem,
     exportResources,
     importResources,
