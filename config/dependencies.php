@@ -84,7 +84,8 @@ return function (ContainerBuilder $containerBuilder) {
         
         FhirResourceService::class => fn(Container $c) => new FhirResourceService(
             $c->get(RepeatedFormDataAccessor::class),
-            $c->get(FhirClientInterface::class)
+            $c->get(FhirClientInterface::class),
+            $c->get(MappingResourceService::class)
         ),
 
         // Mapping resources service

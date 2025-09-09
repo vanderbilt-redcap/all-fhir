@@ -5,6 +5,7 @@ namespace Vanderbilt\AllFhir\Services;
 use Vanderbilt\AllFhir\Contracts\FhirClientInterface;
 use Vanderbilt\AllFhir\ValueObjects\FhirResourceMetadata;
 use Vanderbilt\AllFhir\ValueObjects\MappingResource;
+use Vanderbilt\AllFhir\Services\MappingResourceService;
 
 /**
  * FhirResourceService
@@ -55,6 +56,7 @@ class FhirResourceService
 {
     private RepeatedFormDataAccessor $dataAccessor;
     private FhirClientInterface $fhirClient;
+    private MappingResourceService $mappingResourceService;
 
     /**
      * Initialize the FHIR resource service with data access and client dependencies
@@ -64,10 +66,12 @@ class FhirResourceService
      */
     public function __construct(
         RepeatedFormDataAccessor $dataAccessor,
-        FhirClientInterface $fhirClient
+        FhirClientInterface $fhirClient,
+        MappingResourceService $mappingResourceService
     ) {
         $this->dataAccessor = $dataAccessor;
         $this->fhirClient = $fhirClient;
+        $this->mappingResourceService = $mappingResourceService;
     }
 
     /**
@@ -96,14 +100,35 @@ class FhirResourceService
         $this->dataAccessor->saveResourceMetadata($recordId, $metadata);
 
         try {
-            // Use provided MappingResource (with params) when available; fallback to minimal
+            // Resolve MappingResource strictly by ID (or provided)
             $mappingResource = $options['mapping_resource'] ?? null;
-            if (!$mappingResource instanceof MappingResource) {
-                $mappingResource = MappingResource::create(
-                    $metadata->getResourceName(),
-                    $metadata->getResourceSpec(),
-                    $metadata->getMappingType()
-                );
+            if ($mappingResource instanceof MappingResource) {
+                if (method_exists($mappingResource, 'isDeleted') && $mappingResource->isDeleted()) {
+                    return $this->handleFetchFailure(
+                        $recordId,
+                        $metadata,
+                        'Mapping resource is deleted; cannot fetch.'
+                    );
+                }
+            } else {
+                $id = $metadata->getMappingResourceId();
+                if (empty($id)) {
+                    return $this->handleFetchFailure(
+                        $recordId,
+                        $metadata,
+                        'Missing mapping_resource_id; re-sync configuration is required.'
+                    );
+                }
+                [$predefinedData, $customData] = $this->mappingResourceService->getStoredResourceArrays();
+                [$resolved] = $this->mappingResourceService->findResourceByIdInArrays($id, $predefinedData, $customData);
+                if (!$resolved || (method_exists($resolved, 'isDeleted') && $resolved->isDeleted())) {
+                    return $this->handleFetchFailure(
+                        $recordId,
+                        $metadata,
+                        'Mapping resource not found or deleted; cannot fetch.'
+                    );
+                }
+                $mappingResource = $resolved;
             }
             $mappingResourceId = $mappingResource->getId();
             

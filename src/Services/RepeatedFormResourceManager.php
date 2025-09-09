@@ -771,13 +771,8 @@ class RepeatedFormResourceManager
             $configured = $this->module->getAllConfiguredMappingResources();
             $id = $metadata->getMappingResourceId();
             if (!empty($id)) {
-                foreach ($configured as $res) if ($res->getId() === $id) return $res;
-            }
-            foreach ($configured as $res) {
-                if ($res->getName() === $metadata->getResourceName()
-                    && $res->getType() === $metadata->getMappingType()
-                    && $res->getResourceSpec() === $metadata->getResourceSpec()) {
-                    return $res;
+                foreach ($configured as $res) {
+                    if ($res->getId() === $id) return $res;
                 }
             }
         } catch (\Throwable $e) {}

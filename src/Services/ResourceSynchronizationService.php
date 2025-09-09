@@ -178,13 +178,10 @@ class ResourceSynchronizationService
                 continue;
             }
             
-            // Mark existing instances as outdated (prefer mapping id if available, else fallback to name)
+            // Mark existing instances as outdated (by mapping id only)
             $existingMetadata = [];
             if ($resource->getId()) {
                 $existingMetadata = $this->dataAccessor->getResourceMetadataByMappingId($recordId, $resource->getId());
-            }
-            if (empty($existingMetadata)) {
-                $existingMetadata = $this->dataAccessor->getResourceMetadataByType($recordId, $resource->getName());
             }
             foreach ($existingMetadata as $metadata) {
                 if (!$metadata->isDeleted()) {
@@ -233,9 +230,6 @@ class ResourceSynchronizationService
             $existingMetadata = [];
             if ($resource->getId()) {
                 $existingMetadata = $this->dataAccessor->getResourceMetadataByMappingId($recordId, $resource->getId());
-            }
-            if (empty($existingMetadata)) {
-                $existingMetadata = $this->dataAccessor->getResourceMetadataByType($recordId, $resource->getName());
             }
             
             foreach ($existingMetadata as $metadata) {
@@ -423,9 +417,6 @@ class ResourceSynchronizationService
             if ($resource->getId()) {
                 $existingMetadata = $this->dataAccessor->getResourceMetadataByMappingId($recordId, $resource->getId());
             }
-            if (empty($existingMetadata)) {
-                $existingMetadata = $this->dataAccessor->getResourceMetadataByType($recordId, $resource->getName());
-            }
             $deletedFound = false;
             foreach ($existingMetadata as $metadata) {
                 if ($metadata->isDeleted()) {
@@ -524,9 +515,6 @@ class ResourceSynchronizationService
             $metadataList = [];
             if ($resource->getId()) {
                 $metadataList = $this->dataAccessor->getResourceMetadataByMappingId($recordId, $resource->getId());
-            }
-            if (empty($metadataList)) {
-                $metadataList = $this->dataAccessor->getResourceMetadataByType($recordId, $resource->getName());
             }
 
             foreach ($metadataList as $meta) {

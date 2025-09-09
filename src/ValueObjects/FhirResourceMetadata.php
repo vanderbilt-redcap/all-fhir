@@ -123,7 +123,7 @@ class FhirResourceMetadata implements JsonSerializable
         $this->mappingResourceId = $mappingResourceId;
     }
 
-    public static function create(string $resourceName, string $resourceSpec, string $mappingType, int $repeatInstance = 1, ?string $mappingResourceId = null): self
+    public static function create(string $resourceName, string $resourceSpec, string $mappingType, int $repeatInstance, string $mappingResourceId): self
     {
         return new self($resourceName, $resourceSpec, $mappingType, self::STATUS_PENDING, null, null, null, null, $repeatInstance, $mappingResourceId);
     }
