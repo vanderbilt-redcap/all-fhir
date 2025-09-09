@@ -81,11 +81,11 @@ class MappingResourcesController extends AbstractController
 
         // Avoid inserting duplicates (same type + resourceSpec)
         [$predefinedData, $customData] = $this->mappingResourceService->getStoredResourceArrays();
-        $existing = $this->mappingResourceService->findDuplicateByTypeAndSpec($predefinedData, $customData, $type, $spec);
+        $existing = $this->mappingResourceService->findDuplicateByTypeAndSpec($predefinedData, $customData, $type, $spec, $incomingParams);
         if ($existing !== null) {
             return $this->jsonResponse($response, [
                 'status' => 'error',
-                'message' => 'Duplicate mapping resource exists (same type and resourceSpec)',
+                'message' => 'Duplicate mapping resource exists (same type, resourceSpec, and params)',
                 'existing' => $existing[0]->toArray()
             ], 409);
         }
@@ -152,11 +152,12 @@ class MappingResourcesController extends AbstractController
         // Optional: reject duplicate change (same type + resourceSpec), but allow self
         $newType = $resource->getType();
         $newSpec = $spec ?? $resource->getResourceSpec();
-        $duplicate = $this->mappingResourceService->findDuplicateByTypeAndSpec($predefinedData, $customData, $newType, $newSpec);
+        $newParams = $hasIncomingParams ? $incomingParams : $resource->getParams();
+        $duplicate = $this->mappingResourceService->findDuplicateByTypeAndSpec($predefinedData, $customData, $newType, $newSpec, $newParams);
         if ($duplicate && $duplicate[0]->getId() !== $resource->getId()) {
             return $this->jsonResponse($response, [
                 'status' => 'error',
-                'message' => 'Another mapping resource with the same type and resourceSpec exists',
+                'message' => 'Another mapping resource with the same type, resourceSpec, and params exists',
                 'existing' => $duplicate[0]->toArray()
             ], 409);
         }

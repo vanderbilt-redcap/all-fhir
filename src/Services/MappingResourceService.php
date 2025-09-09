@@ -144,28 +144,77 @@ class MappingResourceService
     }
 
     /**
-     * Check for duplicate mapping based on type + resourceSpec.
+     * Check for duplicate mapping based on type + resourceSpec + params.
+     * Two resources are considered equal if all three match.
+     * The $params argument is optional for backward compatibility; when provided,
+     * it is used in the equality check; when omitted, only type+spec are compared.
+     * @param array|null $params Optional params for comparison (normalized or raw)
      * @return array{0: MappingResource, 1: string, 2: int}|null
      */
-    public function findDuplicateByTypeAndSpec(array $predefinedData, array $customData, string $type, string $resourceSpec): ?array
+    public function findDuplicateByTypeAndSpec(array $predefinedData, array $customData, string $type, string $resourceSpec, ?array $params = null): ?array
     {
         $resourceSpec = trim($resourceSpec);
+        $compareWithParams = func_num_args() >= 5; // true if caller passed $params explicitly
+
         if ($type === MappingResource::TYPE_PREDEFINED) {
             $list = $this->convertToMappingResources($predefinedData, MappingResource::TYPE_PREDEFINED);
             foreach ($list as $idx => $r) {
                 if ($r->getType() === $type && trim($r->getResourceSpec()) === $resourceSpec) {
-                    return [$r, $type, $idx];
+                    if (!$compareWithParams || $this->areParamsEqual($params, $r->getParams())) {
+                        return [$r, $type, $idx];
+                    }
                 }
             }
         } elseif ($type === MappingResource::TYPE_CUSTOM) {
             $list = $this->convertToMappingResources($customData, MappingResource::TYPE_CUSTOM);
             foreach ($list as $idx => $r) {
                 if ($r->getType() === $type && trim($r->getResourceSpec()) === $resourceSpec) {
-                    return [$r, $type, $idx];
+                    if (!$compareWithParams || $this->areParamsEqual($params, $r->getParams())) {
+                        return [$r, $type, $idx];
+                    }
                 }
             }
         }
         return null;
+    }
+
+    /**
+     * Compare mapping params for equality in a stable way.
+     */
+    private function areParamsEqual(?array $a, ?array $b): bool
+    {
+        $na = $this->normalizeParamsForCompare($a);
+        $nb = $this->normalizeParamsForCompare($b);
+        return $na == $nb; // intentionally non-strict to avoid type-related false negatives
+    }
+
+    /**
+     * Normalize params for comparison: treat null as empty, sort keys recursively,
+     * and sort list values to make order-insensitive comparisons.
+     * @return array
+     */
+    private function normalizeParamsForCompare(?array $params): array
+    {
+        if ($params === null) return [];
+
+        $normalize = function ($value) use (&$normalize) {
+            if (is_array($value)) {
+                $isAssoc = array_keys($value) !== range(0, count($value) - 1);
+                if ($isAssoc) {
+                    ksort($value);
+                    foreach ($value as $k => $v) {
+                        $value[$k] = $normalize($v);
+                    }
+                } else {
+                    $value = array_map($normalize, $value);
+                    sort($value);
+                }
+                return $value;
+            }
+            return $value;
+        };
+
+        return $normalize($params);
     }
 
     /**
@@ -319,10 +368,9 @@ class MappingResourceService
 
     /**
      * Import resources with merge or replace mode.
-     * - mode 'merge': add new, update name if resourceSpec matches, skip exact duplicates
-     * - mode 'replace': overwrite arrays with incoming unique set (deduping by type+resourceSpec)
+     * - mode 'merge': add new, update name if same type+resourceSpec+params exists, skip exact duplicates
+     * - mode 'replace': overwrite arrays with incoming unique set (deduping by type+resourceSpec+params)
      * Returns summary and lists of added/updated resources.
-     *
      */
     public function importMappingResources(array $items, string $mode = 'merge'): array
     {
@@ -332,31 +380,36 @@ class MappingResourceService
         $addedResources = [];
         $updatedResources = [];
 
-        // Normalize and validate incoming
+        // Normalize incoming (basic shape + required fields). Params are accepted as-is if provided.
         $normalized = [];
         foreach ($items as $item) {
             if (!is_array($item)) continue;
             $name = trim((string)($item['name'] ?? ''));
             $spec = trim((string)($item['resourceSpec'] ?? ''));
             $type = (string)($item['type'] ?? '');
+            $params = isset($item['params']) && is_array($item['params']) ? $item['params'] : null;
             if ($name === '' || $spec === '' || !in_array($type, [MappingResource::TYPE_PREDEFINED, MappingResource::TYPE_CUSTOM], true)) {
                 continue;
             }
-            $normalized[] = ['name' => $name, 'resourceSpec' => $spec, 'type' => $type];
+            $normalized[] = ['name' => $name, 'resourceSpec' => $spec, 'type' => $type, 'params' => $params];
         }
         $total = count($normalized);
 
         if ($mode === 'replace') {
-            // Deduplicate incoming by (type+spec), keep last occurrence's name
+            // Deduplicate incoming by (type+spec+params), keep last occurrence's name
             $map = [];
             foreach ($normalized as $item) {
-                $key = $item['type'] . '|' . $item['resourceSpec'];
+                $normParams = $this->normalizeParamsForCompare($item['params'] ?? null);
+                $key = $item['type'] . '|' . $item['resourceSpec'] . '|' . json_encode($normParams);
                 $map[$key] = $item; // overwrite retains last
             }
             $predef = [];
             $custom = [];
             foreach ($map as $item) {
                 $res = MappingResource::create($item['name'], $item['resourceSpec'], $item['type']);
+                if (isset($item['params'])) {
+                    $res = $res->withParams($item['params']);
+                }
                 if ($res->isPredefined()) $predef[] = $res->toArray(); else $custom[] = $res->toArray();
             }
             // Save
@@ -376,7 +429,7 @@ class MappingResourceService
 
         // merge mode
         foreach ($normalized as $item) {
-            $duplicate = $this->findDuplicateByTypeAndSpec($predefinedData, $customData, $item['type'], $item['resourceSpec']);
+            $duplicate = $this->findDuplicateByTypeAndSpec($predefinedData, $customData, $item['type'], $item['resourceSpec'], $item['params'] ?? null);
             if ($duplicate) {
                 /** @var MappingResource $existing */
                 [$existing, $type, $index] = $duplicate;
@@ -388,7 +441,8 @@ class MappingResourceService
                         $existing->getResourceSpec(),
                         $existing->getType(),
                         $existing->isDeleted(),
-                        $existing->getDeletedAt()
+                        $existing->getDeletedAt(),
+                        $existing->getParams()
                     );
                     [$predefinedData, $customData] = $this->replaceResourceInArrays($updatedRes, $type, (int)$index, $predefinedData, $customData);
                     $updatedResources[] = $updatedRes;
@@ -400,6 +454,9 @@ class MappingResourceService
             }
             // add new
             $newRes = MappingResource::create($item['name'], $item['resourceSpec'], $item['type']);
+            if (isset($item['params'])) {
+                $newRes = $newRes->withParams($item['params']);
+            }
             [$predefinedData, $customData] = $this->appendResourceToArrays($newRes, $predefinedData, $customData);
             $addedResources[] = $newRes;
             $added++;
