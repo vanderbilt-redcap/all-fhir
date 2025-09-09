@@ -96,11 +96,15 @@ class FhirResourceService
         $this->dataAccessor->saveResourceMetadata($recordId, $metadata);
 
         try {
-            $mappingResource = MappingResource::create(
-                $metadata->getResourceName(),
-                $metadata->getResourceSpec(),
-                $metadata->getMappingType()
-            );
+            // Use provided MappingResource (with params) when available; fallback to minimal
+            $mappingResource = $options['mapping_resource'] ?? null;
+            if (!$mappingResource instanceof MappingResource) {
+                $mappingResource = MappingResource::create(
+                    $metadata->getResourceName(),
+                    $metadata->getResourceSpec(),
+                    $metadata->getMappingType()
+                );
+            }
             $mappingResourceId = $mappingResource->getId();
             
             // Fetch FHIR resource data from external system

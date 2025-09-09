@@ -48,6 +48,15 @@ class MappingResourcesController extends AbstractController
         $spec = $params['resourceSpec'] ?? null;
         $type = $params['type'] ?? null; // 'predefined' | 'custom'
         $incomingParams = isset($params['params']) && is_array($params['params']) ? $params['params'] : null;
+        if ($type === MappingResource::TYPE_PREDEFINED && $incomingParams) {
+            // Normalize and validate against endpoint schema
+            $normalizer = $this->module->getContainer()->get(\Vanderbilt\AllFhir\Services\EndpointParamNormalizer::class);
+            $result = $normalizer->normalizeForStorage($spec, $incomingParams);
+            if (!empty($result['errors'])) {
+                return $this->jsonResponse($response, [ 'status' => 'error', 'message' => 'Invalid endpoint parameters', 'errors' => $result['errors'] ], 400);
+            }
+            $incomingParams = $result['params'];
+        }
 
         if (!$name || !$spec || !$type) {
             return $this->jsonResponse($response, ['status' => 'error', 'message' => 'Missing required fields (name, resourceSpec, type)'], 400);
@@ -111,6 +120,16 @@ class MappingResourcesController extends AbstractController
         [$predefinedData, $customData] = $this->mappingResourceService->getStoredResourceArrays();
         [$resource, $type, $index] = $this->mappingResourceService->findResourceByIdInArrays($id, $predefinedData, $customData);
         if (!$resource) return $this->jsonResponse($response, ['status' => 'error', 'message' => 'Resource not found'], 404);
+
+        // Normalize and validate endpoint params for predefined resources
+        if ($incomingParams && $resource->getType() === MappingResource::TYPE_PREDEFINED) {
+            $normalizer = $this->module->getContainer()->get(\Vanderbilt\AllFhir\Services\EndpointParamNormalizer::class);
+            $result = $normalizer->normalizeForStorage($spec ?? $resource->getResourceSpec(), $incomingParams);
+            if (!empty($result['errors'])) {
+                return $this->jsonResponse($response, [ 'status' => 'error', 'message' => 'Invalid endpoint parameters', 'errors' => $result['errors'] ], 400);
+            }
+            $incomingParams = $result['params'];
+        }
 
         // Update fields
         $updated = new MappingResource(

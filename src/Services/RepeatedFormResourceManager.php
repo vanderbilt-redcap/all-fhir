@@ -702,8 +702,9 @@ class RepeatedFormResourceManager
         $metadata = $resource['metadata'];
         
         try {
-            // Create MappingResource directly from metadata properties
-            
+            // Resolve configured MappingResource (to include params if available)
+            $mappingResource = $this->resolveConfiguredMappingResource($metadata);
+
             // Use FhirResourceService to fetch and store the resource
             // Pass the existing metadata object instead of letting the service recreate it
             $result = $this->fhirResourceService->fetchAndStoreResource(
@@ -711,7 +712,8 @@ class RepeatedFormResourceManager
                 $mrn,
                 $metadata,
                 [
-                    'is_refetch' => true // Force fetch is always a refetch
+                    'is_refetch' => true, // Force fetch is always a refetch
+                    'mapping_resource' => $mappingResource
                 ]
             );
             
@@ -761,6 +763,25 @@ class RepeatedFormResourceManager
                 'repeat_instance' => $metadata->getRepeatInstance()
             ];
         }
+    }
+
+    private function resolveConfiguredMappingResource(FhirResourceMetadata $metadata): ?MappingResource
+    {
+        try {
+            $configured = $this->module->getAllConfiguredMappingResources();
+            $id = $metadata->getMappingResourceId();
+            if (!empty($id)) {
+                foreach ($configured as $res) if ($res->getId() === $id) return $res;
+            }
+            foreach ($configured as $res) {
+                if ($res->getName() === $metadata->getResourceName()
+                    && $res->getType() === $metadata->getMappingType()
+                    && $res->getResourceSpec() === $metadata->getResourceSpec()) {
+                    return $res;
+                }
+            }
+        } catch (\Throwable $e) {}
+        return null;
     }
 
     /**

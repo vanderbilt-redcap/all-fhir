@@ -37,6 +37,7 @@ use Vanderbilt\AllFhir\Controllers\FhirAccessController;
 use Vanderbilt\AllFhir\Controllers\EndpointParamsController;
 use Vanderbilt\AllFhir\Services\FhirEndpointRegistry;
 use Vanderbilt\AllFhir\Services\FhirStudyResolver;
+use Vanderbilt\AllFhir\Services\EndpointParamNormalizer;
 use Vanderbilt\AllFhir\Services\FhirAccess\ProjectFhirAccessService;
 use Vanderbilt\AllFhir\Services\Contracts\ProjectFhirAccessChecker;
 use Vanderbilt\AllFhir\Controllers\StructureValidationController;
@@ -205,6 +206,7 @@ return function (ContainerBuilder $containerBuilder) {
         // Endpoint params
         FhirEndpointRegistry::class => fn(Container $c) => new FhirEndpointRegistry(),
         FhirStudyResolver::class => fn(Container $c) => new FhirStudyResolver(),
+        EndpointParamNormalizer::class => fn(Container $c) => new EndpointParamNormalizer($c->get(FhirEndpointRegistry::class)),
         EndpointParamsController::class => fn(Container $c) => new EndpointParamsController(
             $c->get(AllFhir::class),
             $c->get(FhirEndpointRegistry::class)

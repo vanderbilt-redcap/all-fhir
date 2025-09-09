@@ -170,10 +170,11 @@ class FhirClientWrapper implements FhirClientInterface
         
         // Create visitor to apply patient ID parameters and endpoint params
         $resolver = new FhirStudyResolver();
+        $params = method_exists($mappingResource, 'getParams') ? ($mappingResource->getParams() ?? []) : [];
         $visitor = new EndpointVisitor(
             $this->fhirClient,
             $patientId,
-            method_exists($mappingResource, 'getParams') ? ($mappingResource->getParams() ?? []) : [],
+            $params,
             $resolver
         );
         
@@ -241,4 +242,5 @@ class FhirClientWrapper implements FhirClientInterface
         return $basePath . ($queryString ? '?' . $queryString : '');
     }
 
+    
 }
