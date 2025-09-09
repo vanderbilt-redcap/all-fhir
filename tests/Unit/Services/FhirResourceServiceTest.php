@@ -4,10 +4,10 @@ namespace Tests\Unit\Services;
 
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
-use Vanderbilt\FhirSnapshot\Services\FhirResourceService;
-use Vanderbilt\FhirSnapshot\Services\RepeatedFormDataAccessor;
-use Vanderbilt\FhirSnapshot\Contracts\FhirClientInterface;
-use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
+use Vanderbilt\AllFhir\Services\FhirResourceService;
+use Vanderbilt\AllFhir\Services\RepeatedFormDataAccessor;
+use Vanderbilt\AllFhir\Contracts\FhirClientInterface;
+use Vanderbilt\AllFhir\ValueObjects\FhirResourceMetadata;
 use Tests\Mocks\MockFhirClient;
 
 class FhirResourceServiceTest extends TestCase

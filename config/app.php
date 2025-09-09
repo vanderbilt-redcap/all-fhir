@@ -4,7 +4,7 @@ use DI\Container;
 use Slim\App;
 use Slim\Factory\AppFactory;
 use Slim\Handlers\Strategies\RequestResponseArgs;
-use Vanderbilt\FhirSnapshot\Middleware\ExtractRouteMiddleware;
+use Vanderbilt\AllFhir\Middleware\ExtractRouteMiddleware;
 
 /**
  * Application Factory

@@ -20,7 +20,7 @@ export default defineConfig({
   build: {
     lib: {
       entry: path.resolve("./", "src/lib.js"),
-      name: "FHIR Snapshot",
+      name: "ALL FHIR",
       cssFileName: "style",
       formats: ["es", "umd"],
       fileName(format, entryAlias) {

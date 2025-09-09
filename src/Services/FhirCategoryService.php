@@ -1,6 +1,6 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Services;
+namespace Vanderbilt\AllFhir\Services;
 
 use Vanderbilt\REDCap\Classes\Fhir\FhirCategory;
 

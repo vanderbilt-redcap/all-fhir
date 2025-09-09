@@ -1,13 +1,13 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Controllers;
+namespace Vanderbilt\AllFhir\Controllers;
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use Vanderbilt\FhirSnapshot\FhirSnapshot;
-use Vanderbilt\FhirSnapshot\Services\TaskService;
-use Vanderbilt\FhirSnapshot\ValueObjects\TaskPaginationInfo;
-use Vanderbilt\FhirSnapshot\ValueObjects\TaskFilter;
+use Vanderbilt\AllFhir\AllFhir;
+use Vanderbilt\AllFhir\Services\TaskService;
+use Vanderbilt\AllFhir\ValueObjects\TaskPaginationInfo;
+use Vanderbilt\AllFhir\ValueObjects\TaskFilter;
 
 /**
  * TaskController
@@ -33,7 +33,7 @@ class TaskController
 {
 
     public function __construct(
-        private FhirSnapshot $module,
+        private AllFhir $module,
         private TaskService $taskService
     ) {}
 

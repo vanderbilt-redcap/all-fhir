@@ -1,4 +1,4 @@
-# FHIR Snapshot External Module
+# ALL FHIR External Module
 
 **Version:** 1.0
 **Author:** Francesco Delacqua
@@ -6,7 +6,7 @@
 
 ## Overview
 
-**FHIR Snapshot** is a REDCap External Module designed to enhance data retrieval capabilities from FHIR-compliant systems using REDCap's existing CDIS tools. This module enables batch fetching of FHIR resources for selected MRNs and stores the resulting JSON payloads in structured directories, without modifying REDCap project data.
+**ALL FHIR** is a REDCap External Module designed to enhance data retrieval capabilities from FHIR-compliant systems using REDCap's existing CDIS tools. This module enables batch fetching of FHIR resources for selected MRNs and stores the resulting JSON payloads in structured directories, without modifying REDCap project data.
 
 It is particularly useful for research workflows, data audits, or archiving raw clinical data.
 
@@ -39,7 +39,7 @@ It is particularly useful for research workflows, data audits, or archiving raw 
 ## Installation & Configuration
 
 1. **Enable the module** at the **System level** via the REDCap External Module Manager.
-2. **Enable the module** for individual projects where FHIR snapshot functionality is required.
+2. **Enable the module** for individual projects where ALL FHIR functionality is required.
 3. Go to the **Setup Page**:
 
    * Select a FHIR system from CDIS configuration.

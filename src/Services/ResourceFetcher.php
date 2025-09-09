@@ -1,9 +1,9 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Services;
+namespace Vanderbilt\AllFhir\Services;
 
-use Vanderbilt\FhirSnapshot\FhirSnapshot;
-use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
+use Vanderbilt\AllFhir\AllFhir;
+use Vanderbilt\AllFhir\ValueObjects\FhirResourceMetadata;
 use Vanderbilt\REDCap\Classes\SystemMonitors\ResourceMonitor;
 
 /**
@@ -76,7 +76,7 @@ use Vanderbilt\REDCap\Classes\SystemMonitors\ResourceMonitor;
  * - RepeatedFormDataAccessor: For discovering resources by status
  * - RepeatedFormResourceManager: For actual resource fetching
  * - ResourceMonitor: For system resource monitoring
- * - FhirSnapshot: For logging and project context
+ * - AllFhir: For logging and project context
  * 
  * ERROR HANDLING:
  * - Individual resource failures don't stop processing
@@ -89,13 +89,13 @@ class ResourceFetcher
     /**
      * Initialize the resource fetcher with required dependencies
      * 
-     * @param FhirSnapshot $module Main module instance for logging and project context
+     * @param AllFhir $module Main module instance for logging and project context
      * @param RepeatedFormDataAccessor $dataAccessor Service for accessing REDCap repeated form data
      * @param RepeatedFormResourceManager $resourceManager Service for individual resource fetching operations
      * @param ResourceMonitor $resourceMonitor System resource monitoring service
      */
     public function __construct(
-        private FhirSnapshot $module,
+        private AllFhir $module,
         private RepeatedFormDataAccessor $dataAccessor,
         private RepeatedFormResourceManager $resourceManager,
         private ResourceMonitor $resourceMonitor

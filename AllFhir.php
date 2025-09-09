@@ -1,17 +1,18 @@
 <?php
-namespace Vanderbilt\FhirSnapshot;
+namespace Vanderbilt\AllFhir;
 
 use DI\Container;
 use ExternalModules\AbstractExternalModule;
 use Project;
-use Vanderbilt\FhirSnapshot\Queue\QueueProcessor;
-use Vanderbilt\FhirSnapshot\Services\MappingResourceService;
-use Vanderbilt\FhirSnapshot\Services\ResourceFetcher;
+use Vanderbilt\AllFhir\Queue\QueueProcessor;
+use Vanderbilt\AllFhir\Services\MappingResourceService;
+use Vanderbilt\AllFhir\Services\ResourceFetcher;
+use Vanderbilt\AllFhir\ValueObjects\MappingResource;
 
 /**
- * FhirSnapshot
+ * AllFhir
  * 
- * Main REDCap External Module class for the FHIR Snapshot system that orchestrates 
+ * Main REDCap External Module class for the AllFhir system that orchestrates 
  * automated FHIR data retrieval, storage, and management in REDCap repeated forms.
  * 
  * ROLE & RESPONSIBILITIES:
@@ -101,11 +102,11 @@ use Vanderbilt\FhirSnapshot\Services\ResourceFetcher;
  * - Logging and monitoring for troubleshooting and maintenance
  * - Recovery mechanisms for transient failures and system issues
  */
-class FhirSnapshot extends AbstractExternalModule {
+class AllFhir extends AbstractExternalModule {
 
-    const PREFIX = 'fhir_snapshot';
+    const PREFIX = 'all_fhir';
 
-    private static FhirSnapshot $instance;
+    private static AllFhir $instance;
     private static ?Container $globalContainer = null;
 
     public static function getInstance() {
@@ -128,7 +129,7 @@ class FhirSnapshot extends AbstractExternalModule {
 
             // Ensure this specific instance is registered
             $instance = self::getInstance();
-            self::$globalContainer->set(FhirSnapshot::class, $instance);
+            self::$globalContainer->set(AllFhir::class, $instance);
         }
         return self::$globalContainer;
     }
@@ -156,7 +157,7 @@ class FhirSnapshot extends AbstractExternalModule {
     }
 
 
-    function logToFile($message, $file = APP_PATH_TEMP.'FHIR-snapshot.log') {
+    function logToFile($message, $file = APP_PATH_TEMP.'ALL-FHIR.log') {
         $timestamp = date('Y-m-d H:i:s');
         file_put_contents($file, "[$timestamp] $message" . PHP_EOL, FILE_APPEND);
     }
@@ -196,7 +197,7 @@ class FhirSnapshot extends AbstractExternalModule {
     function cron_processQueue($cronInfo)
     {
         require_once __DIR__ . '/vendor/autoload.php';
-        $cron_name = $cronInfo['cron_name'] ?? 'FHIR Snapshot';
+        $cron_name = $cronInfo['cron_name'] ?? 'ALL FHIR';
         try {
             $this->processQueue();
             return sprintf("%s - all jobs have been processed", $cron_name);
@@ -274,7 +275,7 @@ class FhirSnapshot extends AbstractExternalModule {
      * and converts them to proper MappingResource value objects using the 
      * MappingResourceService for consistent format handling.
      * 
-     * @return \Vanderbilt\FhirSnapshot\ValueObjects\MappingResource[] Array of all configured mapping resources
+     * @return MappingResource[] Array of all configured mapping resources
      */
     public function getAllConfiguredMappingResources(): array
     {

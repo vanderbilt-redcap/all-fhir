@@ -2,45 +2,45 @@
 
 use DI\Container;
 use DI\ContainerBuilder;
-use Vanderbilt\FhirSnapshot\FhirSnapshot;
-use Vanderbilt\FhirSnapshot\Controllers\FetchController;
-use Vanderbilt\FhirSnapshot\Controllers\MrnController;
-use Vanderbilt\FhirSnapshot\Controllers\ArchiveController;
-use Vanderbilt\FhirSnapshot\Controllers\ProjectSettingsController;
-use Vanderbilt\FhirSnapshot\Controllers\MappingResourcesController;
-use Vanderbilt\FhirSnapshot\Services\FhirCategoryService;
-use Vanderbilt\FhirSnapshot\Services\FhirMetadataService;
-use Vanderbilt\FhirSnapshot\Services\FhirResourceService;
-use Vanderbilt\FhirSnapshot\Services\LazyFhirClientWrapper;
-use Vanderbilt\FhirSnapshot\Services\MappingResourceService;
-use Vanderbilt\FhirSnapshot\Services\RepeatedFormDataAccessor;
-use Vanderbilt\FhirSnapshot\Contracts\FhirClientInterface;
-use Vanderbilt\FhirSnapshot\Services\RepeatedFormResourceManager;
-use Vanderbilt\FhirSnapshot\Services\ResourceSynchronizationService;
-use Vanderbilt\FhirSnapshot\Services\ResourceArchiveService;
-use Vanderbilt\FhirSnapshot\Services\ArchivePackager;
-use Vanderbilt\FhirSnapshot\Services\OnDemandStreamingPackager;
-use Vanderbilt\FhirSnapshot\Services\ArchiveUrlService;
-use Vanderbilt\FhirSnapshot\Services\ResourceFetcher;
-use Vanderbilt\FhirSnapshot\Services\ResourceContentService;
-use Vanderbilt\FhirSnapshot\Services\MrnService;
-use Vanderbilt\FhirSnapshot\Queue\QueueManager;
-use Vanderbilt\FhirSnapshot\Queue\QueueProcessor;
-use Vanderbilt\FhirSnapshot\Queue\Processors\ArchiveProcessor;
-use Vanderbilt\FhirSnapshot\Queue\Processors\EmailNotificationProcessor;
-use Vanderbilt\FhirSnapshot\Queue\Processors\FullSyncProcessor;
-use Vanderbilt\FhirSnapshot\Queue\Processors\RetryFailedProcessor;
-use Vanderbilt\FhirSnapshot\Settings\Settings;
-use Vanderbilt\FhirSnapshot\Constants;
-use Vanderbilt\FhirSnapshot\Controllers\TaskController;
-use Vanderbilt\FhirSnapshot\Controllers\FhirAccessController;
-use Vanderbilt\FhirSnapshot\Services\FhirAccess\ProjectFhirAccessService;
-use Vanderbilt\FhirSnapshot\Services\Contracts\ProjectFhirAccessChecker;
-use Vanderbilt\FhirSnapshot\Controllers\StructureValidationController;
-use Vanderbilt\FhirSnapshot\Services\Contracts\ProjectMetadataProvider as ProjectMetadataProviderContract;
-use Vanderbilt\FhirSnapshot\Services\Redcap\ProjectMetadataProvider as ProjectMetadataProviderImpl;
-use Vanderbilt\FhirSnapshot\Services\ArchiveMetadataService;
-use Vanderbilt\FhirSnapshot\Services\TaskService;
+use Vanderbilt\AllFhir\AllFhir;
+use Vanderbilt\AllFhir\Controllers\FetchController;
+use Vanderbilt\AllFhir\Controllers\MrnController;
+use Vanderbilt\AllFhir\Controllers\ArchiveController;
+use Vanderbilt\AllFhir\Controllers\ProjectSettingsController;
+use Vanderbilt\AllFhir\Controllers\MappingResourcesController;
+use Vanderbilt\AllFhir\Services\FhirCategoryService;
+use Vanderbilt\AllFhir\Services\FhirMetadataService;
+use Vanderbilt\AllFhir\Services\FhirResourceService;
+use Vanderbilt\AllFhir\Services\LazyFhirClientWrapper;
+use Vanderbilt\AllFhir\Services\MappingResourceService;
+use Vanderbilt\AllFhir\Services\RepeatedFormDataAccessor;
+use Vanderbilt\AllFhir\Contracts\FhirClientInterface;
+use Vanderbilt\AllFhir\Services\RepeatedFormResourceManager;
+use Vanderbilt\AllFhir\Services\ResourceSynchronizationService;
+use Vanderbilt\AllFhir\Services\ResourceArchiveService;
+use Vanderbilt\AllFhir\Services\ArchivePackager;
+use Vanderbilt\AllFhir\Services\OnDemandStreamingPackager;
+use Vanderbilt\AllFhir\Services\ArchiveUrlService;
+use Vanderbilt\AllFhir\Services\ResourceFetcher;
+use Vanderbilt\AllFhir\Services\ResourceContentService;
+use Vanderbilt\AllFhir\Services\MrnService;
+use Vanderbilt\AllFhir\Queue\QueueManager;
+use Vanderbilt\AllFhir\Queue\QueueProcessor;
+use Vanderbilt\AllFhir\Queue\Processors\ArchiveProcessor;
+use Vanderbilt\AllFhir\Queue\Processors\EmailNotificationProcessor;
+use Vanderbilt\AllFhir\Queue\Processors\FullSyncProcessor;
+use Vanderbilt\AllFhir\Queue\Processors\RetryFailedProcessor;
+use Vanderbilt\AllFhir\Settings\Settings;
+use Vanderbilt\AllFhir\Constants;
+use Vanderbilt\AllFhir\Controllers\TaskController;
+use Vanderbilt\AllFhir\Controllers\FhirAccessController;
+use Vanderbilt\AllFhir\Services\FhirAccess\ProjectFhirAccessService;
+use Vanderbilt\AllFhir\Services\Contracts\ProjectFhirAccessChecker;
+use Vanderbilt\AllFhir\Controllers\StructureValidationController;
+use Vanderbilt\AllFhir\Services\Contracts\ProjectMetadataProvider as ProjectMetadataProviderContract;
+use Vanderbilt\AllFhir\Services\Redcap\ProjectMetadataProvider as ProjectMetadataProviderImpl;
+use Vanderbilt\AllFhir\Services\ArchiveMetadataService;
+use Vanderbilt\AllFhir\Services\TaskService;
 use Vanderbilt\REDCap\Classes\Fhir\FhirSystem\FhirSystemManager;
 use Vanderbilt\REDCap\Classes\SystemMonitors\MemoryMonitor;
 use Vanderbilt\REDCap\Classes\SystemMonitors\ResourceMonitor;
@@ -54,14 +54,14 @@ return function (ContainerBuilder $containerBuilder) {
             'memory_threshold'  => 0.8,
             'time_threshold'    => '30 minutes',
         ]),
-        // Define how to instantiate the FhirSnapshot class.
-        FhirSnapshot::class => fn (Container $c) => FhirSnapshot::getInstance(),
+        // Define how to instantiate the AllFhir class.
+        AllFhir::class => fn (Container $c) => AllFhir::getInstance(),
         RepeatedFormDataAccessor::class => factory(function(Container $c) {
-            $module = $c->get(FhirSnapshot::class);
+            $module = $c->get(AllFhir::class);
             return new RepeatedFormDataAccessor($module->getProjectId());
         }),
         ResourceSynchronizationService::class => factory(function(Container $c) {
-            $module = $c->get(FhirSnapshot::class);
+            $module = $c->get(AllFhir::class);
             return new ResourceSynchronizationService(
                 $c->get(RepeatedFormDataAccessor::class),
                 $c->get(QueueManager::class),
@@ -69,14 +69,14 @@ return function (ContainerBuilder $containerBuilder) {
             );
         }),
         RepeatedFormResourceManager::class => fn(Container $c) => new RepeatedFormResourceManager(
-                $c->get(FhirSnapshot::class),
+                $c->get(AllFhir::class),
                 $c->get(RepeatedFormDataAccessor::class),
                 $c->get(ResourceSynchronizationService::class),
                 $c->get(QueueManager::class),
                 $c->get(FhirResourceService::class)
         ),
         // FHIR Client configuration - using lazy initialization to handle unconfigured state
-        FhirClientInterface::class => fn(Container $c) => new LazyFhirClientWrapper($c->get(FhirSnapshot::class)),
+        FhirClientInterface::class => fn(Container $c) => new LazyFhirClientWrapper($c->get(AllFhir::class)),
         
         FhirResourceService::class => fn(Container $c) => new FhirResourceService(
             $c->get(RepeatedFormDataAccessor::class),
@@ -85,12 +85,12 @@ return function (ContainerBuilder $containerBuilder) {
 
         // Mapping resources service
         MappingResourceService::class => fn(Container $c) => new MappingResourceService(
-            $c->get(FhirSnapshot::class)
+            $c->get(AllFhir::class)
         ),
 
         // Resource fetcher service (generic FHIR resource processing)
         ResourceFetcher::class => fn(Container $c) => new ResourceFetcher(
-            $c->get(FhirSnapshot::class),
+            $c->get(AllFhir::class),
             $c->get(RepeatedFormDataAccessor::class),
             $c->get(RepeatedFormResourceManager::class),
             $c->get(ResourceMonitor::class)
@@ -98,32 +98,32 @@ return function (ContainerBuilder $containerBuilder) {
         
         // Resource content service (FHIR resource file content retrieval)
         ResourceContentService::class => fn(Container $c) => new ResourceContentService(
-            $c->get(FhirSnapshot::class),
+            $c->get(AllFhir::class),
             $c->get(RepeatedFormDataAccessor::class)
         ),
         MrnService::class => fn(Container $c) => new MrnService(
-            $c->get(FhirSnapshot::class),
+            $c->get(AllFhir::class),
             $c->get(RepeatedFormResourceManager::class),
             $c->get(RepeatedFormDataAccessor::class)
         ),
         
         // Archive services
-        ArchiveUrlService::class => fn(Container $c) => new ArchiveUrlService($c->get(FhirSnapshot::class)),
+        ArchiveUrlService::class => fn(Container $c) => new ArchiveUrlService($c->get(AllFhir::class)),
         ArchivePackager::class => fn(Container $c) => new ArchivePackager(
-            $c->get(FhirSnapshot::class),
+            $c->get(AllFhir::class),
             $c->get(ArchiveUrlService::class)
         ),
         OnDemandStreamingPackager::class => fn(Container $c) => new OnDemandStreamingPackager(
-            $c->get(FhirSnapshot::class),
+            $c->get(AllFhir::class),
             $c->get(RepeatedFormDataAccessor::class)
         ),
         ArchiveProcessor::class => fn(Container $c) => new ArchiveProcessor(
-            $c->get(FhirSnapshot::class),
+            $c->get(AllFhir::class),
             $c->get(ArchivePackager::class),
             $c->get(ArchiveMetadataService::class)
         ),
         ResourceArchiveService::class => fn(Container $c) => new ResourceArchiveService(
-            $c->get(FhirSnapshot::class),
+            $c->get(AllFhir::class),
             $c->get(RepeatedFormDataAccessor::class),
             $c->get(ArchivePackager::class),
             $c->get(QueueManager::class),
@@ -132,13 +132,13 @@ return function (ContainerBuilder $containerBuilder) {
         ),
         // Tasks
         TaskService::class => fn(Container $c) => new TaskService(
-            $c->get(FhirSnapshot::class),
+            $c->get(AllFhir::class),
             $c->get(QueueManager::class),
             $c->get(RepeatedFormDataAccessor::class)
         ),
 
         // Define how to instantiate queue components
-        QueueManager::class => fn(Container $c) => new QueueManager($c->get(FhirSnapshot::class)),
+        QueueManager::class => fn(Container $c) => new QueueManager($c->get(AllFhir::class)),
         MemoryMonitor::class => fn(Container $c) => new MemoryMonitor($c->get(Settings::class)->get('memory_threshold')),
         TimeMonitor::class => fn(Container $c) => new TimeMonitor($c->get(Settings::class)->get('time_threshold')),
         ResourceMonitor::class => fn(Container $c) => new ResourceMonitor($c->get(MemoryMonitor::class), $c->get(TimeMonitor::class)),
@@ -151,35 +151,35 @@ return function (ContainerBuilder $containerBuilder) {
             ];
             
             return new QueueProcessor(
-                $c->get(FhirSnapshot::class),
+                $c->get(AllFhir::class),
                 $c->get(QueueManager::class),
                 $c->get(ResourceMonitor::class),
                 $processorFactories
             );
         }),
-        EmailNotificationProcessor::class => fn(Container $c) => new EmailNotificationProcessor($c->get(FhirSnapshot::class)),
+        EmailNotificationProcessor::class => fn(Container $c) => new EmailNotificationProcessor($c->get(AllFhir::class)),
         FullSyncProcessor::class => fn(Container $c) => new FullSyncProcessor(
-            $c->get(FhirSnapshot::class),
+            $c->get(AllFhir::class),
             $c->get(RepeatedFormResourceManager::class)
         ),
         RetryFailedProcessor::class => fn(Container $c) => new RetryFailedProcessor(
-            $c->get(FhirSnapshot::class),
+            $c->get(AllFhir::class),
             $c->get(RepeatedFormResourceManager::class)
         ),
 
         // Define how to instantiate the controllers.
         ArchiveController::class => fn(Container $c) => new ArchiveController(
-            $c->get(FhirSnapshot::class),
+            $c->get(AllFhir::class),
             $c->get(ResourceArchiveService::class),
             $c->get(OnDemandStreamingPackager::class)
         ),
         TaskController::class => fn(Container $c) => new TaskController(
-            $c->get(FhirSnapshot::class),
+            $c->get(AllFhir::class),
             $c->get(TaskService::class)
         ),
-        FetchController::class => fn(Container $c) => new FetchController($c->get(FhirSnapshot::class)),
+        FetchController::class => fn(Container $c) => new FetchController($c->get(AllFhir::class)),
         MrnController::class => fn(Container $c) => new MrnController(
-            $c->get(FhirSnapshot::class),
+            $c->get(AllFhir::class),
             $c->get(RepeatedFormResourceManager::class),
             $c->get(ResourceContentService::class),
             $c->get(RepeatedFormDataAccessor::class),
@@ -187,7 +187,7 @@ return function (ContainerBuilder $containerBuilder) {
             $c->get(MrnService::class)
         ),
         ProjectSettingsController::class => fn(Container $c) => new ProjectSettingsController(
-            $c->get(FhirSnapshot::class),
+            $c->get(AllFhir::class),
             $c->get(FhirSystemManager::class),
             $c->get(MappingResourceService::class),
             $c->get(FhirMetadataService::class),
@@ -195,22 +195,22 @@ return function (ContainerBuilder $containerBuilder) {
             $c->get(RepeatedFormResourceManager::class)
         ),
         MappingResourcesController::class => fn(Container $c) => new MappingResourcesController(
-            $c->get(FhirSnapshot::class),
+            $c->get(AllFhir::class),
             $c->get(MappingResourceService::class),
             $c->get(RepeatedFormResourceManager::class)
         ),
         // FHIR Access status
         ProjectFhirAccessChecker::class => fn(Container $c) => new ProjectFhirAccessService(
-            $c->get(FhirSnapshot::class)
+            $c->get(AllFhir::class)
         ),
         FhirAccessController::class => fn(Container $c) => new FhirAccessController(
-            $c->get(FhirSnapshot::class),
+            $c->get(AllFhir::class),
             $c->get(ProjectFhirAccessChecker::class)
         ),
         // Structure validation
         ProjectMetadataProviderContract::class => fn(Container $c) => new ProjectMetadataProviderImpl(),
         StructureValidationController::class => fn(Container $c) => new StructureValidationController(
-            $c->get(FhirSnapshot::class),
+            $c->get(AllFhir::class),
             $c->get(ProjectMetadataProviderContract::class)
         ),
     ]);

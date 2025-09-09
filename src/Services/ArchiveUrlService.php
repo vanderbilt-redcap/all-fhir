@@ -1,8 +1,8 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Services;
+namespace Vanderbilt\AllFhir\Services;
 
-use Vanderbilt\FhirSnapshot\FhirSnapshot;
+use Vanderbilt\AllFhir\AllFhir;
 
 /**
  * ArchiveUrlService
@@ -24,7 +24,7 @@ use Vanderbilt\FhirSnapshot\FhirSnapshot;
  * - List URL: /api/?route=archives&pid={pid}&...
  * 
  * INTEGRATION POINTS:
- * - FhirSnapshot: Uses buildApiUrl() for base URL construction
+ * - AllFhir: Uses buildApiUrl() for base URL construction
  * - ArchivePackager: Generates download URLs during archive creation
  * - ResourceArchiveService: Provides URLs for status responses
  * - API Controllers: Consistent URL format for all endpoints
@@ -38,14 +38,11 @@ use Vanderbilt\FhirSnapshot\FhirSnapshot;
 class ArchiveUrlService
 {
     /**
-     * Initialize service with FhirSnapshot dependency
+     * Initialize service with AllFhir dependency
      * 
-     * @param FhirSnapshot $fhirSnapshot Module instance for URL building
+     * @param AllFhir $module Module instance for URL building
      */
-    public function __construct(
-        private FhirSnapshot $fhirSnapshot
-    ) {
-    }
+    public function __construct(private AllFhir $module) {}
 
     /**
      * Generate download URL for a specific archive
@@ -58,7 +55,7 @@ class ArchiveUrlService
      */
     public function generateDownloadUrl(string $archiveId): string
     {
-        return $this->fhirSnapshot->buildApiUrl("archives/{$archiveId}/download");
+        return $this->module->buildApiUrl("archives/{$archiveId}/download");
     }
 
     /**
@@ -71,7 +68,7 @@ class ArchiveUrlService
      */
     public function generateStatusUrl(string $archiveId): string
     {
-        return $this->fhirSnapshot->buildApiUrl("archives/{$archiveId}/status");
+        return $this->module->buildApiUrl("archives/{$archiveId}/status");
     }
 
     /**
@@ -83,7 +80,7 @@ class ArchiveUrlService
      */
     public function generateListUrl(): string
     {
-        return $this->fhirSnapshot->buildApiUrl('archives');
+        return $this->module->buildApiUrl('archives');
     }
 
     /**
@@ -96,7 +93,7 @@ class ArchiveUrlService
      */
     public function generateCreateUrl(string $archiveType): string
     {
-        return $this->fhirSnapshot->buildApiUrl("archives/{$archiveType}");
+        return $this->module->buildApiUrl("archives/{$archiveType}");
     }
 
     /**
@@ -189,6 +186,6 @@ class ArchiveUrlService
      */
     public function getBaseApiUrl(): string
     {
-        return $this->fhirSnapshot->buildApiUrl('');
+        return $this->module->buildApiUrl('');
     }
 }

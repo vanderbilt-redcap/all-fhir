@@ -1,10 +1,10 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Services;
+namespace Vanderbilt\AllFhir\Services;
 
-use Vanderbilt\FhirSnapshot\Contracts\FhirClientInterface;
-use Vanderbilt\FhirSnapshot\ValueObjects\MappingResource;
-use Vanderbilt\FhirSnapshot\Services\FhirSnapshotEndpointVisitor;
+use Vanderbilt\AllFhir\Contracts\FhirClientInterface;
+use Vanderbilt\AllFhir\ValueObjects\MappingResource;
+use Vanderbilt\AllFhir\Services\EndpointVisitor;
 use Vanderbilt\REDCap\Classes\Fhir\FhirClient;
 use Vanderbilt\REDCap\Classes\Fhir\FhirClientResponse;
 use Vanderbilt\REDCap\Classes\Fhir\Endpoints\AbstractEndpoint;
@@ -169,7 +169,7 @@ class FhirClientWrapper implements FhirClientInterface
         }
         
         // Create visitor to apply patient ID parameters
-        $visitor = new FhirSnapshotEndpointVisitor($this->fhirClient, $patientId);
+        $visitor = new EndpointVisitor($this->fhirClient, $patientId);
         
         // Apply visitor to get endpoint-specific options
         $options = $endpoint->accept($visitor);

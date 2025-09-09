@@ -1,6 +1,6 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\ValueObjects;
+namespace Vanderbilt\AllFhir\ValueObjects;
 
 /**
  * TaskSummary

@@ -1,6 +1,6 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Services\Contracts;
+namespace Vanderbilt\AllFhir\Services\Contracts;
 
 interface ProjectMetadataProvider
 {

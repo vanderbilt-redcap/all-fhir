@@ -1,9 +1,9 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Queue\Processors;
+namespace Vanderbilt\AllFhir\Queue\Processors;
 
-use Vanderbilt\FhirSnapshot\ValueObjects\Task;
-use Vanderbilt\FhirSnapshot\ValueObjects\TaskProcessorResult;
+use Vanderbilt\AllFhir\ValueObjects\Task;
+use Vanderbilt\AllFhir\ValueObjects\TaskProcessorResult;
 use Vanderbilt\REDCap\Classes\SystemMonitors\ResourceMonitor;
 
 interface TaskProcessorInterface

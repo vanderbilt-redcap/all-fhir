@@ -2,7 +2,7 @@
  * Archive-related TypeScript interfaces and types
  * 
  * Provides type definitions for archive creation, management, and status tracking
- * operations in the FHIR Snapshot application.
+ * operations in the application.
  */
 
 /**

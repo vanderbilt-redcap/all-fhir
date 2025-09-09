@@ -1,11 +1,11 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\ValueObjects;
+namespace Vanderbilt\AllFhir\ValueObjects;
 
 use InvalidArgumentException;
 use JsonSerializable;
-use Vanderbilt\FhirSnapshot\Constants;
-use Vanderbilt\FhirSnapshot\Constants\FhirFormFields;
+use Vanderbilt\AllFhir\Constants;
+use Vanderbilt\AllFhir\Constants\FhirFormFields;
 
 /**
  * FhirResourceMetadata

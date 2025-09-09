@@ -1,10 +1,10 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Services;
+namespace Vanderbilt\AllFhir\Services;
 
-use Vanderbilt\FhirSnapshot\Constants;
-use Vanderbilt\FhirSnapshot\FhirSnapshot;
-use Vanderbilt\FhirSnapshot\ValueObjects\MappingResource;
+use Vanderbilt\AllFhir\Constants;
+use Vanderbilt\AllFhir\AllFhir;
+use Vanderbilt\AllFhir\ValueObjects\MappingResource;
 
 /**
  * MappingResourceService
@@ -80,7 +80,7 @@ use Vanderbilt\FhirSnapshot\ValueObjects\MappingResource;
  * - Integrates with MappingResource value object lifecycle management
  * 
  * MODULE INTEGRATION:
- * - Used by FhirSnapshot::getAllConfiguredMappingResources() for centralized access
+ * - Used by AllFhir::getAllConfiguredMappingResources() for centralized access
  * - Provides consistent conversion logic across the entire module ecosystem
  * - Enables single source of truth for mapping resource configuration handling
  * - Supports performFullSync operations through main module helper method
@@ -99,7 +99,7 @@ use Vanderbilt\FhirSnapshot\ValueObjects\MappingResource;
  */
 class MappingResourceService
 {
-    public function __construct(protected FhirSnapshot $module) {}
+    public function __construct(protected AllFhir $module) {}
 
     /**
      * Retrieve stored resource arrays from project settings
@@ -323,10 +323,6 @@ class MappingResourceService
      * - mode 'replace': overwrite arrays with incoming unique set (deduping by type+resourceSpec)
      * Returns summary and lists of added/updated resources.
      *
-     * @param FhirSnapshot $module
-     * @param array $items Array of items [{name, resourceSpec, type}]
-     * @param 'merge'|'replace' $mode
-     * @return array
      */
     public function importMappingResources(array $items, string $mode = 'merge'): array
     {

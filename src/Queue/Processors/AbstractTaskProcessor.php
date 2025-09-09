@@ -1,18 +1,18 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Queue\Processors;
+namespace Vanderbilt\AllFhir\Queue\Processors;
 
-use Vanderbilt\FhirSnapshot\FhirSnapshot;
-use Vanderbilt\FhirSnapshot\ValueObjects\Task;
 use Exception;
-use Vanderbilt\FhirSnapshot\ValueObjects\TaskProcessorResult;
+use Vanderbilt\AllFhir\AllFhir;
+use Vanderbilt\AllFhir\ValueObjects\Task;
+use Vanderbilt\AllFhir\ValueObjects\TaskProcessorResult;
 use Vanderbilt\REDCap\Classes\SystemMonitors\ResourceMonitor;
 
 abstract class AbstractTaskProcessor implements TaskProcessorInterface
 {
     protected ?ResourceMonitor $resourceMonitor = null;
 
-    public function __construct(private FhirSnapshot $module) {}
+    public function __construct(private AllFhir $module) {}
 
     public function process(Task $task, ?ResourceMonitor $resourceMonitor = null): TaskProcessorResult
     {

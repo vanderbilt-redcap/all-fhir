@@ -1,8 +1,8 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Services\Redcap;
+namespace Vanderbilt\AllFhir\Services\Redcap;
 
-use Vanderbilt\FhirSnapshot\Services\Contracts\ProjectMetadataProvider as ProjectMetadataProviderContract;
+use Vanderbilt\AllFhir\Services\Contracts\ProjectMetadataProvider as ProjectMetadataProviderContract;
 
 class ProjectMetadataProvider implements ProjectMetadataProviderContract
 {

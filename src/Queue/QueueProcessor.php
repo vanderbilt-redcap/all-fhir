@@ -1,11 +1,11 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Queue;
+namespace Vanderbilt\AllFhir\Queue;
 
-use Vanderbilt\FhirSnapshot\FhirSnapshot;
-use Vanderbilt\FhirSnapshot\ValueObjects\Task;
-use Vanderbilt\FhirSnapshot\Queue\Processors\TaskProcessorInterface;
-use Vanderbilt\FhirSnapshot\ValueObjects\TaskProcessorResult;
+use Vanderbilt\AllFhir\AllFhir;
+use Vanderbilt\AllFhir\ValueObjects\Task;
+use Vanderbilt\AllFhir\Queue\Processors\TaskProcessorInterface;
+use Vanderbilt\AllFhir\ValueObjects\TaskProcessorResult;
 use Vanderbilt\REDCap\Classes\SystemMonitors\ResourceMonitor;
 use Exception;
 use Throwable;
@@ -82,10 +82,6 @@ use Throwable;
  */
 class QueueProcessor
 {
-    private FhirSnapshot $module;
-    private QueueManager $queueManager;
-    private ResourceMonitor $resourceMonitor;
-    
     /** @var TaskProcessorInterface[] Lazy-loaded processor instances */
     private array $processorInstances = [];
     
@@ -93,9 +89,9 @@ class QueueProcessor
     private array $processorFactories = [];
 
     public function __construct(
-        FhirSnapshot $module,
-        QueueManager $queueManager,
-        ResourceMonitor $resourceMonitor,
+        private AllFhir $module,
+        private QueueManager $queueManager,
+        private ResourceMonitor $resourceMonitor,
         array $processorFactories = []
     ) {
         $this->module = $module;

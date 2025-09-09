@@ -1,17 +1,17 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Services;
+namespace Vanderbilt\AllFhir\Services;
 
-use Vanderbilt\FhirSnapshot\Constants;
-use Vanderbilt\FhirSnapshot\FhirSnapshot;
-use Vanderbilt\FhirSnapshot\Queue\QueueManager;
-use Vanderbilt\FhirSnapshot\Services\RepeatedFormDataAccessor;
-use Vanderbilt\FhirSnapshot\ValueObjects\Task;
-use Vanderbilt\FhirSnapshot\ValueObjects\TaskListResponse;
-use Vanderbilt\FhirSnapshot\ValueObjects\TaskOperationResponse;
-use Vanderbilt\FhirSnapshot\ValueObjects\TaskDetailsResponse;
-use Vanderbilt\FhirSnapshot\ValueObjects\TaskPaginationInfo;
-use Vanderbilt\FhirSnapshot\ValueObjects\TaskFilter;
+use Vanderbilt\AllFhir\Constants;
+use Vanderbilt\AllFhir\AllFhir;
+use Vanderbilt\AllFhir\Queue\QueueManager;
+use Vanderbilt\AllFhir\Services\RepeatedFormDataAccessor;
+use Vanderbilt\AllFhir\ValueObjects\Task;
+use Vanderbilt\AllFhir\ValueObjects\TaskListResponse;
+use Vanderbilt\AllFhir\ValueObjects\TaskOperationResponse;
+use Vanderbilt\AllFhir\ValueObjects\TaskDetailsResponse;
+use Vanderbilt\AllFhir\ValueObjects\TaskPaginationInfo;
+use Vanderbilt\AllFhir\ValueObjects\TaskFilter;
 
 /**
  * TaskService
@@ -36,7 +36,7 @@ class TaskService
 {
 
     public function __construct(
-        private FhirSnapshot $module,
+        private AllFhir $module,
         private QueueManager $queueManager,
         private RepeatedFormDataAccessor $dataAccessor,
     ) {}

@@ -1,6 +1,6 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Services;
+namespace Vanderbilt\AllFhir\Services;
 
 use Vanderbilt\REDCap\Classes\Fhir\FhirClient;
 use Vanderbilt\REDCap\Classes\Fhir\Endpoints\EndpointVisitorInterface;
@@ -10,9 +10,9 @@ use Vanderbilt\REDCap\Classes\Fhir\Endpoints\R4\AdverseEvent;
 use Vanderbilt\REDCap\Classes\Fhir\Endpoints\EndpointsHelper;
 
 /**
- * FhirSnapshotEndpointVisitor
+ * EndpointVisitor
  * 
- * Simplified FHIR endpoint visitor for the FHIR Snapshot module that applies
+ * Simplified FHIR endpoint visitor for the module that applies
  * patient ID parameters to FHIR endpoints without complex mapping logic.
  * 
  * ROLE & RESPONSIBILITIES:
@@ -42,7 +42,7 @@ use Vanderbilt\REDCap\Classes\Fhir\Endpoints\EndpointsHelper;
  * - Compatible with both DSTU2 and R4 FHIR versions
  * 
  * USAGE EXAMPLES:
- * - $visitor = new FhirSnapshotEndpointVisitor($fhirClient, $patientId)
+ * - $visitor = new EndpointVisitor($fhirClient, $patientId)
  * - $options = $endpoint->accept($visitor)
  * - Used internally by FhirClientWrapper for parameter injection
  * 
@@ -52,7 +52,7 @@ use Vanderbilt\REDCap\Classes\Fhir\Endpoints\EndpointsHelper;
  * - Extensible - easy to add endpoint-specific logic later
  * - Clean separation - visitor handles parameter concerns
  */
-class FhirSnapshotEndpointVisitor implements EndpointVisitorInterface
+class EndpointVisitor implements EndpointVisitorInterface
 {
     /**
      * @var FhirClient REDCap FHIR client for additional API calls

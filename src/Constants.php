@@ -1,5 +1,5 @@
 <?php
-namespace Vanderbilt\FhirSnapshot;
+namespace Vanderbilt\AllFhir;
 
 class Constants {
     const FIELD_PREFIX = '__all_fhir-';

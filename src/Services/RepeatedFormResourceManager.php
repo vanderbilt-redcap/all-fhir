@@ -1,13 +1,13 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Services;
+namespace Vanderbilt\AllFhir\Services;
 
-use Vanderbilt\FhirSnapshot\FhirSnapshot;
-use Vanderbilt\FhirSnapshot\ValueObjects\MappingResource;
-use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
-use Vanderbilt\FhirSnapshot\ValueObjects\SyncResults;
-use Vanderbilt\FhirSnapshot\Queue\QueueManager;
-use Vanderbilt\FhirSnapshot\Services\FhirResourceService;
+use Vanderbilt\AllFhir\AllFhir;
+use Vanderbilt\AllFhir\ValueObjects\MappingResource;
+use Vanderbilt\AllFhir\ValueObjects\FhirResourceMetadata;
+use Vanderbilt\AllFhir\ValueObjects\SyncResults;
+use Vanderbilt\AllFhir\Queue\QueueManager;
+use Vanderbilt\AllFhir\Services\FhirResourceService;
 
 /**
  * RepeatedFormResourceManager
@@ -78,14 +78,14 @@ class RepeatedFormResourceManager
     /**
      * Initialize the resource manager with all required service dependencies
      * 
-     * @param FhirSnapshot $module Main module instance providing project context and configuration
+     * @param AllFhir $module Main module instance providing project context and configuration
      * @param RepeatedFormDataAccessor $dataAccessor Low-level data access for REDCap repeated forms
      * @param ResourceSynchronizationService $syncService Orchestration service for resource lifecycle management
      * @param QueueManager $queueManager Asynchronous task management for FHIR operations
      * @param FhirResourceService $fhirResourceService Service for real-time FHIR resource fetching and storage
      */
     public function __construct(
-        private FhirSnapshot $module,
+        private AllFhir $module,
         private RepeatedFormDataAccessor $dataAccessor,
         private ResourceSynchronizationService $syncService,
         private QueueManager $queueManager,
@@ -615,7 +615,7 @@ class RepeatedFormResourceManager
         return ['ids' => $ids, 'nameType' => $nameType];
     }
 
-    private function isMappingActiveForMetadata(\Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata $meta, array $activeIndex): bool
+    private function isMappingActiveForMetadata(\Vanderbilt\AllFhir\ValueObjects\FhirResourceMetadata $meta, array $activeIndex): bool
     {
         $id = $meta->getMappingResourceId();
         if (!empty($id)) return isset($activeIndex['ids'][$id]);

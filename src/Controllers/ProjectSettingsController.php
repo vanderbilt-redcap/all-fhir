@@ -1,23 +1,23 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Controllers;
+namespace Vanderbilt\AllFhir\Controllers;
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use Vanderbilt\FhirSnapshot\Constants;
-use Vanderbilt\FhirSnapshot\FhirSnapshot;
-use Vanderbilt\FhirSnapshot\Services\RepeatedFormResourceManager;
-use Vanderbilt\FhirSnapshot\Services\FhirCategoryService;
-use Vanderbilt\FhirSnapshot\Services\FhirMetadataService;
-use Vanderbilt\FhirSnapshot\Services\MappingResourceService;
-use Vanderbilt\FhirSnapshot\ValueObjects\MappingResource;
+use Vanderbilt\AllFhir\Constants;
+use Vanderbilt\AllFhir\AllFhir;
+use Vanderbilt\AllFhir\Services\RepeatedFormResourceManager;
+use Vanderbilt\AllFhir\Services\FhirCategoryService;
+use Vanderbilt\AllFhir\Services\FhirMetadataService;
+use Vanderbilt\AllFhir\Services\MappingResourceService;
+use Vanderbilt\AllFhir\ValueObjects\MappingResource;
 use Vanderbilt\REDCap\Classes\Fhir\FhirSystem\FhirSystemManager;
 
 class ProjectSettingsController extends AbstractController
 {
 
     public function __construct(
-        protected FhirSnapshot $module,
+        protected AllFhir $module,
         protected FhirSystemManager $fhirSystemManager,
         protected MappingResourceService $mappingResourceService,
         protected FhirMetadataService $fhirMetadataService,

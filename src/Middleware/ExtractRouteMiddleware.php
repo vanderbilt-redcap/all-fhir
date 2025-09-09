@@ -1,5 +1,5 @@
 <?php
-namespace Vanderbilt\FhirSnapshot\Middleware;
+namespace Vanderbilt\AllFhir\Middleware;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;

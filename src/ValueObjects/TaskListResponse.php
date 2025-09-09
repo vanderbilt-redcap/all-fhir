@@ -1,8 +1,8 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\ValueObjects;
+namespace Vanderbilt\AllFhir\ValueObjects;
 
-use Vanderbilt\FhirSnapshot\ValueObjects\Task;
+use Vanderbilt\AllFhir\ValueObjects\Task;
 
 /**
  * TaskListResponse

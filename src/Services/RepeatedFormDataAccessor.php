@@ -1,12 +1,12 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Services;
+namespace Vanderbilt\AllFhir\Services;
 
 use Project;
-use Vanderbilt\FhirSnapshot\Constants;
-use Vanderbilt\FhirSnapshot\Constants\FhirFormFields;
-use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
-use Vanderbilt\FhirSnapshot\ValueObjects\RepeatedFormInstance;
+use Vanderbilt\AllFhir\Constants;
+use Vanderbilt\AllFhir\Constants\FhirFormFields;
+use Vanderbilt\AllFhir\ValueObjects\FhirResourceMetadata;
+use Vanderbilt\AllFhir\ValueObjects\RepeatedFormInstance;
 use REDCap;
 
 /**
@@ -14,7 +14,7 @@ use REDCap;
  * 
  * Low-level data access service that handles all REDCap database operations for FHIR resource
  * metadata stored in repeated form instances. Serves as the primary data persistence layer
- * for the FHIR snapshot system.
+ * for the system.
  * 
  * ROLE & RESPONSIBILITIES:
  * - Manages REDCap repeated form data structure operations with proper field mapping

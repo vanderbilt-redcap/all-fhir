@@ -1,5 +1,5 @@
 <?php
-use Vanderbilt\FhirSnapshot\Services\FhirAccess\ProjectFhirAccessService;
+use Vanderbilt\AllFhir\Services\FhirAccess\ProjectFhirAccessService;
 
 $tokenService = new ProjectFhirAccessService($module);
 $tokenStatus = $tokenService->getStatus($module->getProjectId());

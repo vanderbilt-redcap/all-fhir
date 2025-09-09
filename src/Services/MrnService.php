@@ -1,17 +1,17 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Services;
+namespace Vanderbilt\AllFhir\Services;
 
-use Vanderbilt\FhirSnapshot\FhirSnapshot;
-use Vanderbilt\FhirSnapshot\Services\RepeatedFormResourceManager;
-use Vanderbilt\FhirSnapshot\Services\RepeatedFormDataAccessor;
-use Vanderbilt\FhirSnapshot\Constants\FhirFormFields;
+use Vanderbilt\AllFhir\AllFhir;
+use Vanderbilt\AllFhir\Services\RepeatedFormResourceManager;
+use Vanderbilt\AllFhir\Services\RepeatedFormDataAccessor;
+use Vanderbilt\AllFhir\Constants\FhirFormFields;
 use REDCap;
 
 class MrnService
 {
     public function __construct(
-        private FhirSnapshot $module,
+        private AllFhir $module,
         private RepeatedFormResourceManager $resourceManager,
         private RepeatedFormDataAccessor $dataAccessor
     ) {

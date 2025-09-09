@@ -4,9 +4,9 @@ namespace Tests\Unit\Queue;
 
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
-use Vanderbilt\FhirSnapshot\Queue\QueueManager;
-use Vanderbilt\FhirSnapshot\ValueObjects\Task;
-use Vanderbilt\FhirSnapshot\FhirSnapshot;
+use Vanderbilt\AllFhir\Queue\QueueManager;
+use Vanderbilt\AllFhir\ValueObjects\Task;
+use Vanderbilt\AllFhir\AllFhir;
 
 class QueueManagerTest extends TestCase
 {
@@ -15,7 +15,7 @@ class QueueManagerTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->mockModule = $this->createMock(FhirSnapshot::class);
+        $this->mockModule = $this->createMock(AllFhir::class);
         $this->queueManager = new QueueManager($this->mockModule);
     }
 

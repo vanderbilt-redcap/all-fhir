@@ -1,11 +1,11 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Services;
+namespace Vanderbilt\AllFhir\Services;
 
-use Vanderbilt\FhirSnapshot\FhirSnapshot;
-use Vanderbilt\FhirSnapshot\Services\ArchiveUrlService;
-use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
-use Vanderbilt\FhirSnapshot\ValueObjects\ArchiveInfo;
+use Vanderbilt\AllFhir\AllFhir;
+use Vanderbilt\AllFhir\Services\ArchiveUrlService;
+use Vanderbilt\AllFhir\ValueObjects\FhirResourceMetadata;
+use Vanderbilt\AllFhir\ValueObjects\ArchiveInfo;
 use ZipArchive;
 use Exception;
 
@@ -81,7 +81,7 @@ use Exception;
  * - REDCap edocs system: File retrieval through REDCap::getFile()
  * - File system: ZIP creation and temporary file management
  * - FhirResourceMetadata: Resource information and file references
- * - FhirSnapshot module: URL building for download links
+ * - AllFhir module: URL building for download links
  * - Archive storage: Organized file structure and metadata
  */
 class ArchivePackager
@@ -92,11 +92,11 @@ class ArchivePackager
     /**
      * Initialize the archive packager with dependencies
      * 
-     * @param FhirSnapshot $fhirSnapshot FhirSnapshot module instance for project context
+     * @param AllFhir $module module instance for project context
      * @param ArchiveUrlService $urlService URL generation service for download links
      */
     public function __construct(
-        private FhirSnapshot $fhirSnapshot,
+        private AllFhir $module,
         private ArchiveUrlService $urlService
     ) {
         $this->tempDir = sys_get_temp_dir();
@@ -417,7 +417,7 @@ class ArchivePackager
         $metadata = [
             'archive_info' => [
                 'created_at' => date('c'),
-                'created_by' => 'FHIR Snapshot Module - ArchivePackager',
+                'created_by' => 'Module - ArchivePackager',
                 'project_id' => $options['project_id'] ?? 'unknown',
                 'archive_name' => $options['archive_name'] ?? 'fhir_archive',
                 'total_resources' => count($resources),

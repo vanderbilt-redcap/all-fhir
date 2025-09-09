@@ -1,9 +1,9 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Services;
+namespace Vanderbilt\AllFhir\Services;
 
-use Vanderbilt\FhirSnapshot\FhirSnapshot;
-use Vanderbilt\FhirSnapshot\Security\PathSecurityValidator;
+use Vanderbilt\AllFhir\AllFhir;
+use Vanderbilt\AllFhir\Security\PathSecurityValidator;
 
 /**
  * ArchiveMetadataService
@@ -47,10 +47,10 @@ class ArchiveMetadataService
     /**
      * Initialize service with security validation
      * 
-     * @param FhirSnapshot $module Main module instance
+     * @param AllFhir $module Main module instance
      */
     public function __construct(
-        private FhirSnapshot $module
+        private AllFhir $module
     ) {
         $this->projectId = $module->getProjectId();
         $this->securityValidator = new PathSecurityValidator(

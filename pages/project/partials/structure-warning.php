@@ -1,10 +1,10 @@
 <?php
-use Vanderbilt\FhirSnapshot\Services\Redcap\ProjectMetadataProvider;
-use Vanderbilt\FhirSnapshot\Services\Validation\Criteria\NonRepeatingMrnCriterion;
-use Vanderbilt\FhirSnapshot\Services\Validation\Criteria\ResourceFieldsPresentCriterion;
-use Vanderbilt\FhirSnapshot\Services\Validation\Criteria\ResourceFieldsSameInstrumentCriterion;
-use Vanderbilt\FhirSnapshot\Services\Validation\Criteria\ResourceFormRepeatingCriterion;
-use Vanderbilt\FhirSnapshot\Services\ProjectStructureValidator;
+use Vanderbilt\AllFhir\Services\Redcap\ProjectMetadataProvider;
+use Vanderbilt\AllFhir\Services\Validation\Criteria\NonRepeatingMrnCriterion;
+use Vanderbilt\AllFhir\Services\Validation\Criteria\ResourceFieldsPresentCriterion;
+use Vanderbilt\AllFhir\Services\Validation\Criteria\ResourceFieldsSameInstrumentCriterion;
+use Vanderbilt\AllFhir\Services\Validation\Criteria\ResourceFormRepeatingCriterion;
+use Vanderbilt\AllFhir\Services\ProjectStructureValidator;
 
 $provider = new ProjectMetadataProvider();
 $criteria = [

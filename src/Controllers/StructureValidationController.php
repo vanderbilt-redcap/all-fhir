@@ -1,21 +1,21 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Controllers;
+namespace Vanderbilt\AllFhir\Controllers;
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use Vanderbilt\FhirSnapshot\FhirSnapshot;
-use Vanderbilt\FhirSnapshot\Services\Contracts\ProjectMetadataProvider as ProjectMetadataProviderContract;
-use Vanderbilt\FhirSnapshot\Services\ProjectStructureValidator;
-use Vanderbilt\FhirSnapshot\Services\Validation\Criteria\NonRepeatingMrnCriterion;
-use Vanderbilt\FhirSnapshot\Services\Validation\Criteria\ResourceFieldsPresentCriterion;
-use Vanderbilt\FhirSnapshot\Services\Validation\Criteria\ResourceFieldsSameInstrumentCriterion;
-use Vanderbilt\FhirSnapshot\Services\Validation\Criteria\ResourceFormRepeatingCriterion;
+use Vanderbilt\AllFhir\AllFhir;
+use Vanderbilt\AllFhir\Services\Contracts\ProjectMetadataProvider as ProjectMetadataProviderContract;
+use Vanderbilt\AllFhir\Services\ProjectStructureValidator;
+use Vanderbilt\AllFhir\Services\Validation\Criteria\NonRepeatingMrnCriterion;
+use Vanderbilt\AllFhir\Services\Validation\Criteria\ResourceFieldsPresentCriterion;
+use Vanderbilt\AllFhir\Services\Validation\Criteria\ResourceFieldsSameInstrumentCriterion;
+use Vanderbilt\AllFhir\Services\Validation\Criteria\ResourceFormRepeatingCriterion;
 
 class StructureValidationController extends AbstractController
 {
     public function __construct(
-        protected FhirSnapshot $module,
+        protected AllFhir $module,
         protected ProjectMetadataProviderContract $provider,
     ) {
         parent::__construct($module);

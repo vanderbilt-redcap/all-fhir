@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Vanderbilt\FhirSnapshot\Settings;
+namespace Vanderbilt\AllFhir\Settings;
 
 class Settings implements SettingsInterface
 {

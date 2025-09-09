@@ -1,14 +1,14 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Tests\Unit\Services;
+namespace Vanderbilt\AllFhir\Tests\Unit\Services;
 
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
-use Vanderbilt\FhirSnapshot\Services\ResourceArchiveService;
-use Vanderbilt\FhirSnapshot\Services\RepeatedFormDataAccessor;
-use Vanderbilt\FhirSnapshot\Services\ArchivePackager;
-use Vanderbilt\FhirSnapshot\Queue\QueueManager;
-use Vanderbilt\FhirSnapshot\FhirSnapshot;
+use Vanderbilt\AllFhir\Services\ResourceArchiveService;
+use Vanderbilt\AllFhir\Services\RepeatedFormDataAccessor;
+use Vanderbilt\AllFhir\Services\ArchivePackager;
+use Vanderbilt\AllFhir\Queue\QueueManager;
+use Vanderbilt\AllFhir\AllFhir;
 
 /**
  * Security-focused integration tests for ResourceArchiveService
@@ -45,7 +45,7 @@ class ResourceArchiveServiceSecurityTest extends TestCase
         file_put_contents($this->tempDir . '/forbidden/secret.zip', 'secret archive content');
 
         // Create mocks
-        $this->module = $this->createMock(FhirSnapshot::class);
+        $this->module = $this->createMock(AllFhir::class);
         $this->dataAccessor = $this->createMock(RepeatedFormDataAccessor::class);
         $this->archivePackager = $this->createMock(ArchivePackager::class);
         $this->queueManager = $this->createMock(QueueManager::class);

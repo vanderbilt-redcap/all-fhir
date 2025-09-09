@@ -1,12 +1,12 @@
 <?php
-namespace Vanderbilt\FhirSnapshot\Controllers;
+namespace Vanderbilt\AllFhir\Controllers;
 
-use Vanderbilt\FhirSnapshot\FhirSnapshot;
+use Vanderbilt\AllFhir\AllFhir;
 use Psr\Http\Message\ResponseInterface as Response;
 
 abstract class AbstractController
 {
-    public function __construct(protected FhirSnapshot $module) {}
+    public function __construct(protected AllFhir $module) {}
 
     /**
      * Create JSON response with consistent formatting

@@ -1,6 +1,6 @@
 # Product Requirements Document (PRD)
 
-**Module Name:** FHIR Snapshot  
+**Module Name:** ALL FHIR  
 **Author:** Francesco Delacqua  
 **Date:** 07/01/2025  
 **Version:** 1.0  

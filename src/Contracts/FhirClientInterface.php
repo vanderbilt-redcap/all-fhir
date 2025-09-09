@@ -1,8 +1,8 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Contracts;
+namespace Vanderbilt\AllFhir\Contracts;
 
-use Vanderbilt\FhirSnapshot\ValueObjects\MappingResource;
+use Vanderbilt\AllFhir\ValueObjects\MappingResource;
 
 /**
  * FhirClientInterface

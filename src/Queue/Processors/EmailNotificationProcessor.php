@@ -1,10 +1,10 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Queue\Processors;
+namespace Vanderbilt\AllFhir\Queue\Processors;
 
-use Vanderbilt\FhirSnapshot\Constants;
-use Vanderbilt\FhirSnapshot\ValueObjects\Task;
-use Vanderbilt\FhirSnapshot\ValueObjects\TaskProcessorResult;
+use Vanderbilt\AllFhir\Constants;
+use Vanderbilt\AllFhir\ValueObjects\Task;
+use Vanderbilt\AllFhir\ValueObjects\TaskProcessorResult;
 
 class EmailNotificationProcessor extends AbstractTaskProcessor
 {

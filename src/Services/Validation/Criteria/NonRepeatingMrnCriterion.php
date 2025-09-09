@@ -1,10 +1,10 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Services\Validation\Criteria;
+namespace Vanderbilt\AllFhir\Services\Validation\Criteria;
 
-use Vanderbilt\FhirSnapshot\Constants\FhirFormFields;
-use Vanderbilt\FhirSnapshot\Services\Contracts\ProjectMetadataProvider;
-use Vanderbilt\FhirSnapshot\ValueObjects\CriterionResult;
+use Vanderbilt\AllFhir\Constants\FhirFormFields;
+use Vanderbilt\AllFhir\Services\Contracts\ProjectMetadataProvider;
+use Vanderbilt\AllFhir\ValueObjects\CriterionResult;
 
 class NonRepeatingMrnCriterion implements ProjectStructureCriterion
 {

@@ -1,9 +1,9 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Queue;
+namespace Vanderbilt\AllFhir\Queue;
 
-use Vanderbilt\FhirSnapshot\FhirSnapshot;
-use Vanderbilt\FhirSnapshot\ValueObjects\Task;
+use Vanderbilt\AllFhir\AllFhir;
+use Vanderbilt\AllFhir\ValueObjects\Task;
 use InvalidArgumentException;
 
 /**
@@ -71,9 +71,7 @@ class QueueManager
 {
     private const TASKS_SETTING_KEY = 'tasks';
 
-    private FhirSnapshot $module;
-
-    public function __construct(FhirSnapshot $module)
+    public function __construct(private AllFhir $module)
     {
         $this->module = $module;
     }

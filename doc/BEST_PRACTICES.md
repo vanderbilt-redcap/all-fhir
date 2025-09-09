@@ -1,6 +1,6 @@
 # Frontend Development Best Practices
 
-This document outlines the best practices and conventions for developing the Vue.js frontend for the FHIR Snapshot module. Adhering to these guidelines will ensure consistency, maintainability, and scalability.
+This document outlines the best practices and conventions for developing the Vue.js frontend for the ALL FHIR module. Adhering to these guidelines will ensure consistency, maintainability, and scalability.
 
 ## 1. Core Principles & Technologies
 

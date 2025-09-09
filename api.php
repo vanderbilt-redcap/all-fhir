@@ -1,12 +1,12 @@
 <?php
 
-use Vanderbilt\FhirSnapshot\FhirSnapshot;
+use Vanderbilt\AllFhir\AllFhir;
 
 require __DIR__ . '/vendor/autoload.php';
 
-// Get container from FhirSnapshot (your desired API)
-$fhirSnapshot = FhirSnapshot::getInstance();
-$container = $fhirSnapshot->getContainer();
+// Get container from module (your desired API)
+$module = AllFhir::getInstance();
+$container = $module->getContainer();
 
 // Create App using the app factory
 $createApp = require __DIR__ . '/config/app.php';

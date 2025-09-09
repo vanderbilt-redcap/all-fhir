@@ -1,17 +1,17 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Controllers;
+namespace Vanderbilt\AllFhir\Controllers;
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use Vanderbilt\FhirSnapshot\FhirSnapshot;
-use Vanderbilt\FhirSnapshot\Services\Contracts\ProjectFhirAccessChecker;
-use Vanderbilt\FhirSnapshot\Constants\FhirAccessState;
+use Vanderbilt\AllFhir\AllFhir;
+use Vanderbilt\AllFhir\Services\Contracts\ProjectFhirAccessChecker;
+use Vanderbilt\AllFhir\Constants\FhirAccessState;
 
 class FhirAccessController extends AbstractController
 {
     public function __construct(
-        protected FhirSnapshot $module,
+        protected AllFhir $module,
         protected ProjectFhirAccessChecker $checker,
     ) {
         parent::__construct($module);

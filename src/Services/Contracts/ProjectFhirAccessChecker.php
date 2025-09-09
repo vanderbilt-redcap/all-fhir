@@ -1,8 +1,8 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Services\Contracts;
+namespace Vanderbilt\AllFhir\Services\Contracts;
 
-use Vanderbilt\FhirSnapshot\ValueObjects\ProjectFhirAccessStatus;
+use Vanderbilt\AllFhir\ValueObjects\ProjectFhirAccessStatus;
 
 interface ProjectFhirAccessChecker
 {

@@ -4,12 +4,12 @@ namespace Tests\Unit\Queue;
 
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\MockObject\MockObject;
-use Vanderbilt\FhirSnapshot\Queue\QueueProcessor;
-use Vanderbilt\FhirSnapshot\Queue\QueueManager;
-use Vanderbilt\FhirSnapshot\ValueObjects\Task;
-use Vanderbilt\FhirSnapshot\Queue\Processors\TaskProcessorInterface;
-use Vanderbilt\FhirSnapshot\ValueObjects\TaskProcessorResult;
-use Vanderbilt\FhirSnapshot\FhirSnapshot;
+use Vanderbilt\AllFhir\Queue\QueueProcessor;
+use Vanderbilt\AllFhir\Queue\QueueManager;
+use Vanderbilt\AllFhir\ValueObjects\Task;
+use Vanderbilt\AllFhir\Queue\Processors\TaskProcessorInterface;
+use Vanderbilt\AllFhir\ValueObjects\TaskProcessorResult;
+use Vanderbilt\AllFhir\AllFhir;
 use Vanderbilt\REDCap\Classes\SystemMonitors\ResourceMonitor;
 use Vanderbilt\REDCap\Classes\SystemMonitors\MemoryMonitor;
 use Vanderbilt\REDCap\Classes\SystemMonitors\TimeMonitor;
@@ -25,7 +25,7 @@ class QueueProcessorTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->mockModule = $this->createMock(FhirSnapshot::class);
+        $this->mockModule = $this->createMock(AllFhir::class);
         $this->mockQueueManager = $this->createMock(QueueManager::class);
         $this->mockResourceMonitor = $this->createMock(ResourceMonitor::class);
         $this->mockMemoryMonitor = $this->createMock(MemoryMonitor::class);

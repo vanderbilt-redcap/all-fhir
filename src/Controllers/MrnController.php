@@ -1,17 +1,17 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Controllers;
+namespace Vanderbilt\AllFhir\Controllers;
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use Vanderbilt\FhirSnapshot\Constants;
-use Vanderbilt\FhirSnapshot\Services\RepeatedFormResourceManager;
-use Vanderbilt\FhirSnapshot\Services\ResourceContentService;
-use Vanderbilt\FhirSnapshot\Services\RepeatedFormDataAccessor;
-use Vanderbilt\FhirSnapshot\Queue\QueueManager;
+use Vanderbilt\AllFhir\Constants;
+use Vanderbilt\AllFhir\Services\RepeatedFormResourceManager;
+use Vanderbilt\AllFhir\Services\ResourceContentService;
+use Vanderbilt\AllFhir\Services\RepeatedFormDataAccessor;
+use Vanderbilt\AllFhir\Queue\QueueManager;
 use REDCap;
-use Vanderbilt\FhirSnapshot\FhirSnapshot;
-use Vanderbilt\FhirSnapshot\Services\MrnService;
+use Vanderbilt\AllFhir\AllFhir;
+use Vanderbilt\AllFhir\Services\MrnService;
 
 /**
  * MrnController
@@ -41,7 +41,7 @@ use Vanderbilt\FhirSnapshot\Services\MrnService;
 class MrnController extends AbstractController
 {
     public function __construct(
-        protected FhirSnapshot $module,
+        protected AllFhir $module,
         private RepeatedFormResourceManager $resourceManager,
         private ResourceContentService $contentService,
         private RepeatedFormDataAccessor $dataAccessor,

@@ -1,9 +1,9 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Services;
+namespace Vanderbilt\AllFhir\Services;
 
-use Vanderbilt\FhirSnapshot\Contracts\FhirClientInterface;
-use Vanderbilt\FhirSnapshot\ValueObjects\MappingResource;
+use Vanderbilt\AllFhir\Contracts\FhirClientInterface;
+use Vanderbilt\AllFhir\ValueObjects\MappingResource;
 
 /**
  * NullFhirClient

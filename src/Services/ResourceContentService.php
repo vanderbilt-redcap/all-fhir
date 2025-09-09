@@ -1,10 +1,10 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Services;
+namespace Vanderbilt\AllFhir\Services;
 
 use InvalidArgumentException;
-use Vanderbilt\FhirSnapshot\FhirSnapshot;
-use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
+use Vanderbilt\AllFhir\AllFhir;
+use Vanderbilt\AllFhir\ValueObjects\FhirResourceMetadata;
 
 /**
  * ResourceContentService
@@ -42,7 +42,7 @@ class ResourceContentService
     private const MAX_PREVIEW_LIMIT_BYTES = 10485760; // 10MB
     
     public function __construct(
-        private FhirSnapshot $module,
+        private AllFhir $module,
         private RepeatedFormDataAccessor $dataAccessor
     ) {}
 

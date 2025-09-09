@@ -1,15 +1,15 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Services;
+namespace Vanderbilt\AllFhir\Services;
 
-use Vanderbilt\FhirSnapshot\FhirSnapshot;
-use Vanderbilt\FhirSnapshot\Queue\QueueManager;
-use Vanderbilt\FhirSnapshot\Constants;
-use Vanderbilt\FhirSnapshot\Security\PathSecurityValidator;
-use Vanderbilt\FhirSnapshot\ValueObjects\ArchiveInfo;
-use Vanderbilt\FhirSnapshot\ValueObjects\ArchiveStatus;
-use Vanderbilt\FhirSnapshot\Services\ArchiveMetadataService;
-use Vanderbilt\FhirSnapshot\ValueObjects\Task;
+use Vanderbilt\AllFhir\AllFhir;
+use Vanderbilt\AllFhir\Queue\QueueManager;
+use Vanderbilt\AllFhir\Constants;
+use Vanderbilt\AllFhir\Security\PathSecurityValidator;
+use Vanderbilt\AllFhir\ValueObjects\ArchiveInfo;
+use Vanderbilt\AllFhir\ValueObjects\ArchiveStatus;
+use Vanderbilt\AllFhir\Services\ArchiveMetadataService;
+use Vanderbilt\AllFhir\ValueObjects\Task;
 
 /**
  * ResourceArchiveService
@@ -73,7 +73,7 @@ class ResourceArchiveService
     /**
      * Initialize the archive service with all required dependencies
      * 
-     * @param FhirSnapshot $module Main module instance providing project context
+     * @param AllFhir $module Main module instance providing project context
      * @param RepeatedFormDataAccessor $dataAccessor Data access for FHIR resource metadata
      * @param ArchivePackager $archivePackager Low-level ZIP creation and file management
      * @param QueueManager $queueManager Background task management
@@ -81,7 +81,7 @@ class ResourceArchiveService
      * @param ArchiveMetadataService $archiveMetadataService Unified archive metadata management
      */
     public function __construct(
-        private FhirSnapshot $module,
+        private AllFhir $module,
         private RepeatedFormDataAccessor $dataAccessor,
         private ArchivePackager $archivePackager,
         private QueueManager $queueManager,

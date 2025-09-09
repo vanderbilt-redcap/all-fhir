@@ -1,9 +1,9 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Tests\Unit\Security;
+namespace Vanderbilt\AllFhir\Tests\Unit\Security;
 
 use PHPUnit\Framework\TestCase;
-use Vanderbilt\FhirSnapshot\Security\PathSecurityValidator;
+use Vanderbilt\AllFhir\Security\PathSecurityValidator;
 
 /**
  * Comprehensive security tests for PathSecurityValidator

@@ -6,7 +6,7 @@ declare global {
   }
 }
 
-const module_prefix = "fhir_snapshot";
+const module_prefix = "all_fhir";
 const page = "api";
 
 interface REDCapQueryParams {

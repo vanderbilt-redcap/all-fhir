@@ -129,7 +129,7 @@
     <div v-if="showProjectStatus" class="status-section">
       <div class="text-center mb-4">
         <h2>Project Status</h2>
-        <p class="text-muted">Current overview of your FHIR snapshot project</p>
+        <p class="text-muted">Current overview of your project</p>
       </div>
       
       <!-- First Row - Overview Statistics -->

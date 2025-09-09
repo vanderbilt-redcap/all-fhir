@@ -1,11 +1,11 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Services;
+namespace Vanderbilt\AllFhir\Services;
 
-use Vanderbilt\FhirSnapshot\Contracts\FhirClientInterface;
-use Vanderbilt\FhirSnapshot\ValueObjects\MappingResource;
-use Vanderbilt\FhirSnapshot\FhirSnapshot;
-use Vanderbilt\FhirSnapshot\Constants;
+use Vanderbilt\AllFhir\Contracts\FhirClientInterface;
+use Vanderbilt\AllFhir\ValueObjects\MappingResource;
+use Vanderbilt\AllFhir\AllFhir;
+use Vanderbilt\AllFhir\Constants;
 use Vanderbilt\REDCap\Classes\Fhir\Facades\FhirClientFacade;
 
 /**
@@ -49,19 +49,15 @@ use Vanderbilt\REDCap\Classes\Fhir\Facades\FhirClientFacade;
  */
 class LazyFhirClientWrapper implements FhirClientInterface
 {
-    private FhirSnapshot $module;
     private ?FhirClientInterface $actualClient = null;
     private bool $initialized = false;
 
     /**
      * Initialize the lazy wrapper with module instance for configuration access
      * 
-     * @param FhirSnapshot $module Module instance for accessing project settings
+     * @param module $module Module instance for accessing project settings
      */
-    public function __construct(FhirSnapshot $module)
-    {
-        $this->module = $module;
-    }
+    public function __construct(private AllFhir $module) {}
 
     /**
      * Fetch FHIR resource data, initializing the actual client if needed

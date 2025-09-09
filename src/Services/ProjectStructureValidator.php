@@ -1,10 +1,10 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Services;
+namespace Vanderbilt\AllFhir\Services;
 
-use Vanderbilt\FhirSnapshot\Services\Contracts\ProjectMetadataProvider;
-use Vanderbilt\FhirSnapshot\Services\Validation\Criteria\ProjectStructureCriterion;
-use Vanderbilt\FhirSnapshot\ValueObjects\ProjectStructureReport;
+use Vanderbilt\AllFhir\Services\Contracts\ProjectMetadataProvider;
+use Vanderbilt\AllFhir\Services\Validation\Criteria\ProjectStructureCriterion;
+use Vanderbilt\AllFhir\ValueObjects\ProjectStructureReport;
 
 class ProjectStructureValidator
 {

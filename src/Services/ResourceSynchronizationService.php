@@ -1,10 +1,10 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Services;
+namespace Vanderbilt\AllFhir\Services;
 
-use Vanderbilt\FhirSnapshot\ValueObjects\MappingResource;
-use Vanderbilt\FhirSnapshot\ValueObjects\FhirResourceMetadata;
-use Vanderbilt\FhirSnapshot\Queue\QueueManager;
+use Vanderbilt\AllFhir\ValueObjects\MappingResource;
+use Vanderbilt\AllFhir\ValueObjects\FhirResourceMetadata;
+use Vanderbilt\AllFhir\Queue\QueueManager;
 
 /**
  * ResourceSynchronizationService
@@ -83,7 +83,7 @@ use Vanderbilt\FhirSnapshot\Queue\QueueManager;
  * 
  * INTEGRATION WITH MAIN MODULE:
  * - Used by RepeatedFormResourceManager::performFullSync() for comprehensive synchronization
- * - Integrates with FhirSnapshot::getAllConfiguredMappingResources() for configuration access
+ * - Integrates with AllFhir::getAllConfiguredMappingResources() for configuration access
  * - Enables full project synchronization through centralized configuration management
  * - Supports test page operations and manual synchronization workflows
  * 

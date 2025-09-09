@@ -3,14 +3,14 @@
 use Slim\App;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use Vanderbilt\FhirSnapshot\Controllers\ArchiveController;
-use Vanderbilt\FhirSnapshot\Controllers\FetchController;
-use Vanderbilt\FhirSnapshot\Controllers\MrnController;
-use Vanderbilt\FhirSnapshot\Controllers\ProjectSettingsController;
-use Vanderbilt\FhirSnapshot\Controllers\TaskController;
-use Vanderbilt\FhirSnapshot\Controllers\MappingResourcesController;
-use Vanderbilt\FhirSnapshot\Controllers\StructureValidationController;
-use Vanderbilt\FhirSnapshot\Controllers\FhirAccessController;
+use Vanderbilt\AllFhir\Controllers\ArchiveController;
+use Vanderbilt\AllFhir\Controllers\FetchController;
+use Vanderbilt\AllFhir\Controllers\MrnController;
+use Vanderbilt\AllFhir\Controllers\ProjectSettingsController;
+use Vanderbilt\AllFhir\Controllers\TaskController;
+use Vanderbilt\AllFhir\Controllers\MappingResourcesController;
+use Vanderbilt\AllFhir\Controllers\StructureValidationController;
+use Vanderbilt\AllFhir\Controllers\FhirAccessController;
 
 return function (App $app) {
     // Home route

@@ -1,11 +1,11 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Services\FhirAccess;
+namespace Vanderbilt\AllFhir\Services\FhirAccess;
 
-use Vanderbilt\FhirSnapshot\Constants;
-use Vanderbilt\FhirSnapshot\FhirSnapshot;
-use Vanderbilt\FhirSnapshot\Services\Contracts\ProjectFhirAccessChecker;
-use Vanderbilt\FhirSnapshot\ValueObjects\ProjectFhirAccessStatus;
+use Vanderbilt\AllFhir\Constants;
+use Vanderbilt\AllFhir\AllFhir;
+use Vanderbilt\AllFhir\Services\Contracts\ProjectFhirAccessChecker;
+use Vanderbilt\AllFhir\ValueObjects\ProjectFhirAccessStatus;
 use Vanderbilt\REDCap\Classes\Fhir\TokenManager\FhirTokenDTO;
 use Vanderbilt\REDCap\Classes\Fhir\TokenManager\FhirTokenManagerFactory;
 use Vanderbilt\REDCap\Classes\Fhir\FhirSystem\FhirSystem;
@@ -15,7 +15,7 @@ class ProjectFhirAccessService implements ProjectFhirAccessChecker
 {
     private const CACHE_TTL_SECONDS = 300; // 5 minutes
 
-    public function __construct(private FhirSnapshot $module)
+    public function __construct(private AllFhir $module)
     {
     }
 

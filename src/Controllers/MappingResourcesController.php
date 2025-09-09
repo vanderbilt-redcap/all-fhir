@@ -1,18 +1,18 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Controllers;
+namespace Vanderbilt\AllFhir\Controllers;
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use Vanderbilt\FhirSnapshot\FhirSnapshot;
-use Vanderbilt\FhirSnapshot\Services\MappingResourceService;
-use Vanderbilt\FhirSnapshot\Services\RepeatedFormResourceManager;
-use Vanderbilt\FhirSnapshot\ValueObjects\MappingResource;
+use Vanderbilt\AllFhir\AllFhir;
+use Vanderbilt\AllFhir\Services\MappingResourceService;
+use Vanderbilt\AllFhir\Services\RepeatedFormResourceManager;
+use Vanderbilt\AllFhir\ValueObjects\MappingResource;
 
 class MappingResourcesController extends AbstractController
 {
     public function __construct(
-        protected FhirSnapshot $module,
+        protected AllFhir $module,
         protected MappingResourceService $mappingResourceService,
         protected RepeatedFormResourceManager $resourceManager
     ) {

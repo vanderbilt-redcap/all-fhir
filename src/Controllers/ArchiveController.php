@@ -1,11 +1,11 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Controllers;
+namespace Vanderbilt\AllFhir\Controllers;
 
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use Vanderbilt\FhirSnapshot\Services\ResourceArchiveService;
-use Vanderbilt\FhirSnapshot\Services\OnDemandStreamingPackager;
+use Vanderbilt\AllFhir\Services\ResourceArchiveService;
+use Vanderbilt\AllFhir\Services\OnDemandStreamingPackager;
 
 /**
  * ArchiveController
@@ -53,7 +53,7 @@ class ArchiveController extends AbstractController
      * @param OnDemandStreamingPackager $streamingPackager Service for on-demand streaming
      */
     public function __construct(
-        \Vanderbilt\FhirSnapshot\FhirSnapshot $module,
+        \Vanderbilt\AllFhir\AllFhir $module,
         ResourceArchiveService $archiveService,
         OnDemandStreamingPackager $streamingPackager
     ) {

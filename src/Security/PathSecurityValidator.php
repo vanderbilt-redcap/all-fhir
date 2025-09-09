@@ -1,6 +1,6 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Security;
+namespace Vanderbilt\AllFhir\Security;
 
 /**
  * PathSecurityValidator

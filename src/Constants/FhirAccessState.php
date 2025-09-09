@@ -1,6 +1,6 @@
 <?php
 
-namespace Vanderbilt\FhirSnapshot\Constants;
+namespace Vanderbilt\AllFhir\Constants;
 
 /**
  * Discrete states for project FHIR access status.

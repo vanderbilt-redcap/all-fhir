@@ -3,7 +3,7 @@
 namespace Tests\Unit\Queue;
 
 use PHPUnit\Framework\TestCase;
-use Vanderbilt\FhirSnapshot\ValueObjects\Task;
+use Vanderbilt\AllFhir\ValueObjects\Task;
 use InvalidArgumentException;
 
 class TaskTest extends TestCase
