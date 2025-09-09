@@ -17,7 +17,7 @@ It is particularly useful for research workflows, data audits, or archiving raw 
 * Select FHIR system and resource types from CDIS configuration
 * Add or remove MRNs for tracking and fetch
 * Background fetching of FHIR resources (e.g., Patient, Observation)
-* Stores JSON payloads in `{project_id}{mrn}/` directories
+* Stores JSON payloads in `{project_id}/{record_id}/{mrn}/` directories
 * Monitor page with real-time status updates for each MRN and resource
 * ZIP download of completed payloads
 * OperationOutcome parsing for error detection and privacy protection
@@ -55,16 +55,19 @@ It is particularly useful for research workflows, data audits, or archiving raw 
 
 ## File Storage Convention
 
-Payloads are stored on the server as:
+Payloads are organized as:
 
 ```
-/{project_id}-{mrn}/
-  ├── Patient.json
-  ├── Observation-1.json
-  ├── Observation-2.json
+/{project_id}/
+  └── {record_id}/
+      └── {mrn}/
+          ├── Patient.json
+          ├── Observation-1.json
+          ├── Observation-2.json
+archive_metadata.json
 ```
 
-ZIP packages are created from this structure for download.
+ZIP packages are created from this structure for download and include a root-level `archive_metadata.json` file with summary information about the archive (counts, file list, and processing details).
 
 ---
 
@@ -83,9 +86,15 @@ OperationOutcome messages are parsed for error details and protection flags (e.g
 
 ## Security & Privacy
 
-* No PHI is written to REDCap fields or instruments
 * JSON payloads stored securely on the server
 * Error logs avoid storing sensitive data
 * Monitor UI and downloads are access-controlled
 
 ---
+
+## Features
+
+- Token status banner with auto-refresh and clear guidance when no tokens or no FHIR system is configured
+- Standalone Launch button for EHR sign-in and automatic status refresh
+- FHIR system selection with placeholder option, Disabled mode, and change confirmation
+- Data dictionary notice with packaged template and link to the REDCap Data Dictionary upload page when the project is not compliant
