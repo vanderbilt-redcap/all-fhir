@@ -50,13 +50,6 @@
                 "icon": "fas fa-fire-flame-curved",
                 "url": "pages/project/index.php"
             }
-        ],
-        "control-center": [
-            {
-                "name": "ALL FHIR",
-                "icon": "fas fa-fire-flame-curved",
-                "url": "pages/control-center/index.php"
-            }
         ]
     },
     "no-csrf-pages": [
