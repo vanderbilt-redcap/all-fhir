@@ -4,7 +4,7 @@ import { useFhirAccessStore } from '@/store/FhirAccessStore'
 import { FhirAccessState } from '@/models/FhirAccess'
 
 const fhirAccessStore = useFhirAccessStore()
-const { banner, status, shouldWarn, message, loading, lastChecked, state } = storeToRefs(fhirAccessStore)
+const { banner, status, counts, shouldWarn, message, loading, lastChecked, state } = storeToRefs(fhirAccessStore)
 </script>
 
 <template>
@@ -13,7 +13,7 @@ const { banner, status, shouldWarn, message, loading, lastChecked, state } = sto
     <span>{{ message }}</span>
     <template v-if="status && state !== FhirAccessState.NoFhirSystem">
       <span class="text-muted" style="margin-left:8px;">
-        (Valid: {{ status.valid_count }} / {{ status.total_users_with_token }}
+        (Valid: {{ status.valid_count }} / {{ counts?.project_total ?? status.total_project_users ?? status.total_users_with_token }}
         <template v-if="status.fhir_system_name"> • System: {{ status.fhir_system_name }}</template>
         <template v-if="lastChecked"> • Updated: {{ lastChecked.toLocaleTimeString() }}</template>)
       </span>

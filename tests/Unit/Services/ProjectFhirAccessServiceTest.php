@@ -21,9 +21,9 @@ class ProjectFhirAccessServiceTest extends TestCase
         $this->assertFalse($status->hasAnyValidToken());
         $this->assertSame(0, $status->getValidCount());
         $this->assertSame(0, $status->getTotalUsersWithToken());
+        $this->assertSame(0, $status->getTotalProjectUsers());
         $this->assertContains('No FHIR system configured for this project.', $status->getErrors());
         $this->assertNull($status->getFhirSystemId());
         $this->assertNull($status->getFhirSystemName());
     }
 }
-

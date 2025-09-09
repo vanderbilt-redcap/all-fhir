@@ -9,6 +9,7 @@ export interface FhirAccessStatus {
   has_any_valid_token: boolean
   valid_count: number
   total_users_with_token: number
+  total_project_users?: number
   details_by_user: Record<string, string | null>
   errors: string[]
   fhir_system_id: string | null
@@ -27,4 +28,9 @@ export interface FhirAccessResponse {
   state?: FhirAccessState
   standalone_launch_url?: string | null
   setup_route?: string | null
+  counts?: {
+    valid: number
+    with_token: number
+    project_total: number
+  }
 }

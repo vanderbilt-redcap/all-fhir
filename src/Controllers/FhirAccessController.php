@@ -66,6 +66,11 @@ class FhirAccessController extends AbstractController
             'state' => $state->value,
             'standalone_launch_url' => $standaloneLaunchUrl,
             'setup_route' => $setupRoute,
+            'counts' => [
+                'valid' => $status->getValidCount(),
+                'with_token' => $status->getTotalUsersWithToken(),
+                'project_total' => $status->getTotalProjectUsers(),
+            ],
         ];
 
         $response->getBody()->write(json_encode($payload));

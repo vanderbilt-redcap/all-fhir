@@ -9,6 +9,7 @@ export const useFhirAccessStore = defineStore('fhirAccess', () => {
   const errorsStore = useErrorsStore()
 
   const status = ref<FhirAccessStatus | null>(null)
+  const counts = ref<{ valid: number, with_token: number, project_total: number } | null>(null)
   const banner = ref<FhirAccessBanner | null>(null)
   const loading = ref(false)
   const launchUrl = ref<string | null>(null)
@@ -33,6 +34,7 @@ export const useFhirAccessStore = defineStore('fhirAccess', () => {
       state.value = data.state ?? FhirAccessState.HasValidToken
       launchUrl.value = data.standalone_launch_url ?? null
       setupRoute.value = data.setup_route ?? null
+      counts.value = data.counts ?? null
       lastChecked.value = new Date()
     } catch (err) {
       errorsStore.addError(err as Error, 'fhirAccessStore.fetchStatus')
@@ -63,6 +65,7 @@ export const useFhirAccessStore = defineStore('fhirAccess', () => {
   return {
     // state
     status,
+    counts,
     banner,
     loading,
     lastChecked,

@@ -32,6 +32,7 @@ class ProjectFhirAccessService implements ProjectFhirAccessChecker
                     (bool)($decoded['has_any_valid_token'] ?? false),
                     (int)($decoded['valid_count'] ?? 0),
                     (int)($decoded['total_users_with_token'] ?? 0),
+                    (int)($decoded['total_project_users'] ?? 0),
                     (array)($decoded['details_by_user'] ?? []),
                     (array)($decoded['errors'] ?? []),
                     isset($decoded['fhir_system_id']) ? (string)$decoded['fhir_system_id'] : null,
@@ -63,6 +64,7 @@ class ProjectFhirAccessService implements ProjectFhirAccessChecker
         $detailsByUser = [];
         $validCount = 0;
         $totalUsersWithToken = 0;
+        $totalProjectUsers = 0;
         $fhirSystemId = null;
         $fhirSystemName = null;
 
@@ -70,7 +72,7 @@ class ProjectFhirAccessService implements ProjectFhirAccessChecker
             $ehrId = $this->module->getProjectSetting(Constants::SETTING_FHIR_SYSTEM);
             if (!$ehrId) {
                 // No configured FHIR system: no tokens available
-                return new ProjectFhirAccessStatus(false, 0, 0, [], ['No FHIR system configured for this project.'], null, null);
+                return new ProjectFhirAccessStatus(false, 0, 0, 0, [], ['No FHIR system configured for this project.'], null, null);
             }
 
             $fhirSystem = new FhirSystem($ehrId);
@@ -79,6 +81,7 @@ class ProjectFhirAccessService implements ProjectFhirAccessChecker
 
             $privileges = \UserRights::getPrivileges($projectId);
             $usernames = array_keys($privileges[$projectId] ?? []);
+            $totalProjectUsers = count($usernames);
 
             foreach ($usernames as $username) {
                 $status = null;
@@ -104,7 +107,16 @@ class ProjectFhirAccessService implements ProjectFhirAccessChecker
         }
 
         $hasAnyValid = $validCount > 0;
-        return new ProjectFhirAccessStatus($hasAnyValid, $validCount, $totalUsersWithToken, $detailsByUser, $errors, $fhirSystemId, $fhirSystemName);
+        return new ProjectFhirAccessStatus(
+            $hasAnyValid,
+            $validCount,
+            $totalUsersWithToken,
+            $totalProjectUsers,
+            $detailsByUser,
+            $errors,
+            $fhirSystemId,
+            $fhirSystemName
+        );
     }
 
     private function buildCacheKey(int $projectId): string

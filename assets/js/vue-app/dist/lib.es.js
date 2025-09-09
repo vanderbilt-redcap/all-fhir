@@ -23477,47 +23477,48 @@ const qp = () => bi || (bi = jA({
   NoFhirSystem: "no_fhir_system",
   NoValidTokens: "no_valid_tokens"
 }, Au = /* @__PURE__ */ In("fhirAccess", () => {
-  const e = to(), t = j(null), n = j(null), s = j(!1), o = j(null), r = j(null), i = j(Eo.HasValidToken), a = j(null);
-  let c = null;
-  const f = $(() => !!t.value?.has_any_valid_token), u = $(() => i.value !== Eo.HasValidToken), d = $(() => n.value?.level ?? (f.value ? "info" : "warning")), p = $(() => n.value?.message ?? ""), h = $(() => i.value === Eo.NoFhirSystem), m = async () => {
+  const e = to(), t = j(null), n = j(null), s = j(null), o = j(!1), r = j(null), i = j(null), a = j(Eo.HasValidToken), c = j(null);
+  let f = null;
+  const u = $(() => !!t.value?.has_any_valid_token), d = $(() => a.value !== Eo.HasValidToken), p = $(() => s.value?.level ?? (u.value ? "info" : "warning")), h = $(() => s.value?.message ?? ""), m = $(() => a.value === Eo.NoFhirSystem), v = async () => {
     try {
-      s.value = !0;
-      const g = (await $e.getFhirAccessStatus()).data;
-      t.value = g.status, n.value = g.banner, i.value = g.state ?? Eo.HasValidToken, o.value = g.standalone_launch_url ?? null, a.value = g.setup_route ?? null, r.value = /* @__PURE__ */ new Date();
-    } catch (b) {
-      e.addError(b, "fhirAccessStore.fetchStatus");
+      o.value = !0;
+      const O = (await $e.getFhirAccessStatus()).data;
+      t.value = O.status, s.value = O.banner, a.value = O.state ?? Eo.HasValidToken, r.value = O.standalone_launch_url ?? null, c.value = O.setup_route ?? null, n.value = O.counts ?? null, i.value = /* @__PURE__ */ new Date();
+    } catch (g) {
+      e.addError(g, "fhirAccessStore.fetchStatus");
     } finally {
-      s.value = !1;
+      o.value = !1;
     }
-  }, v = async () => {
-    await m();
-  }, _ = (b = 6e4) => {
-    y(), c = window.setInterval(() => {
-      m();
-    }, b);
-  }, y = () => {
-    c !== null && (clearInterval(c), c = null);
+  }, _ = async () => {
+    await v();
+  }, y = (g = 6e4) => {
+    b(), f = window.setInterval(() => {
+      v();
+    }, g);
+  }, b = () => {
+    f !== null && (clearInterval(f), f = null);
   };
   return {
     // state
     status: t,
-    banner: n,
-    loading: s,
-    lastChecked: r,
-    launchUrl: o,
-    state: i,
-    setupRoute: a,
+    counts: n,
+    banner: s,
+    loading: o,
+    lastChecked: i,
+    launchUrl: r,
+    state: a,
+    setupRoute: c,
     // computed
-    hasValidToken: f,
-    shouldWarn: u,
-    level: d,
-    message: p,
-    isNoFhirSystem: h,
+    hasValidToken: u,
+    shouldWarn: d,
+    level: p,
+    message: h,
+    isNoFhirSystem: m,
     // actions
-    fetchStatus: m,
-    refreshNow: v,
-    startPolling: _,
-    stopPolling: y
+    fetchStatus: v,
+    refreshNow: _,
+    startPolling: y,
+    stopPolling: b
   };
 }), z3 = {
   key: 0,
@@ -23559,42 +23560,42 @@ const qp = () => bi || (bi = jA({
 }, G3 = ["disabled"], Q3 = /* @__PURE__ */ Se({
   __name: "TokenStatusBanner",
   setup(e) {
-    const t = Au(), { banner: n, status: s, shouldWarn: o, message: r, loading: i, lastChecked: a, state: c } = Gn(t);
-    return (f, u) => W(n) ? (C(), x("div", {
+    const t = Au(), { banner: n, status: s, counts: o, shouldWarn: r, message: i, loading: a, lastChecked: c, state: f } = Gn(t);
+    return (u, d) => W(n) ? (C(), x("div", {
       key: 0,
-      class: le(["alert", W(o) ? "alert-warning" : "alert-info"]),
+      class: le(["alert", W(r) ? "alert-warning" : "alert-info"]),
       role: "alert",
       style: { "margin-bottom": "10px" }
     }, [
       l("i", {
-        class: le(["fas", W(o) ? "fa-exclamation-triangle" : "fa-info-circle"]),
+        class: le(["fas", W(r) ? "fa-exclamation-triangle" : "fa-info-circle"]),
         style: { "margin-right": "8px" }
       }, null, 2),
-      l("span", null, P(W(r)), 1),
-      W(s) && W(c) !== W(Eo).NoFhirSystem ? (C(), x("span", X3, [
-        H(" (Valid: " + P(W(s).valid_count) + " / " + P(W(s).total_users_with_token) + " ", 1),
+      l("span", null, P(W(i)), 1),
+      W(s) && W(f) !== W(Eo).NoFhirSystem ? (C(), x("span", X3, [
+        H(" (Valid: " + P(W(s).valid_count) + " / " + P(W(o)?.project_total ?? W(s).total_project_users ?? W(s).total_users_with_token) + " ", 1),
         W(s).fhir_system_name ? (C(), x(Ce, { key: 0 }, [
           H(" • System: " + P(W(s).fhir_system_name), 1)
         ], 64)) : me("", !0),
-        W(a) ? (C(), x(Ce, { key: 1 }, [
-          H(" • Updated: " + P(W(a).toLocaleTimeString()), 1)
+        W(c) ? (C(), x(Ce, { key: 1 }, [
+          H(" • Updated: " + P(W(c).toLocaleTimeString()), 1)
         ], 64)) : me("", !0),
-        u[1] || (u[1] = H(") "))
+        d[1] || (d[1] = H(") "))
       ])) : me("", !0),
       l("button", {
         class: "btn btn-xs btn-default",
         style: { "margin-left": "10px" },
-        disabled: W(i),
-        onClick: u[0] || (u[0] = (d) => f.$emit("refresh")),
+        disabled: W(a),
+        onClick: d[0] || (d[0] = (p) => u.$emit("refresh")),
         title: "Refresh token status"
       }, [
         l("i", {
-          class: le(W(i) ? "fas fa-spinner fa-spin" : "fas fa-rotate")
+          class: le(W(a) ? "fas fa-spinner fa-spin" : "fas fa-rotate")
         }, null, 2)
       ], 8, G3)
     ], 2)) : me("", !0);
   }
-}), J3 = /* @__PURE__ */ Jt(Q3, [["__scopeId", "data-v-bcc17720"]]), Z3 = {
+}), J3 = /* @__PURE__ */ Jt(Q3, [["__scopeId", "data-v-ab306f96"]]), Z3 = {
   key: 0,
   class: "alert alert-warning",
   role: "alert",
