@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { useFhirAccessStore } from '@/store/FhirAccessStore'
+import { FhirAccessState } from '@/models/FhirAccess'
 
 const fhirAccessStore = useFhirAccessStore()
-const { banner, status, shouldWarn, message, loading, lastChecked } = storeToRefs(fhirAccessStore)
+const { banner, status, shouldWarn, message, loading, lastChecked, state } = storeToRefs(fhirAccessStore)
 </script>
 
 <template>
   <div v-if="banner" class="alert" :class="shouldWarn ? 'alert-warning' : 'alert-info'" role="alert" style="margin-bottom:10px;">
     <i class="fas" :class="shouldWarn ? 'fa-exclamation-triangle' : 'fa-info-circle'" style="margin-right:8px;"></i>
     <span>{{ message }}</span>
-    <template v-if="status">
+    <template v-if="status && state !== FhirAccessState.NoFhirSystem">
       <span class="text-muted" style="margin-left:8px;">
         (Valid: {{ status.valid_count }} / {{ status.total_users_with_token }}
         <template v-if="status.fhir_system_name"> • System: {{ status.fhir_system_name }}</template>

@@ -2,7 +2,8 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { useErrorsStore } from './ErrorsStore'
 import { api } from '@/API'
-import type { FhirAccessBanner, FhirAccessResponse, FhirAccessStatus } from '@/models/FhirAccess'
+import type { FhirAccessBanner, FhirAccessResponse, FhirAccessStatus, FhirAccessState as FhirAccessStateType } from '@/models/FhirAccess'
+import { FhirAccessState } from '@/models/FhirAccess'
 
 export const useFhirAccessStore = defineStore('fhirAccess', () => {
   const errorsStore = useErrorsStore()
@@ -12,12 +13,15 @@ export const useFhirAccessStore = defineStore('fhirAccess', () => {
   const loading = ref(false)
   const launchUrl = ref<string | null>(null)
   const lastChecked = ref<Date | null>(null)
+  const state = ref<FhirAccessStateType>(FhirAccessState.HasValidToken)
+  const setupRoute = ref<string | null>(null)
   let pollHandle: number | null = null
 
   const hasValidToken = computed(() => !!status.value?.has_any_valid_token)
-  const shouldWarn = computed(() => !!banner.value?.should_warn)
+  const shouldWarn = computed(() => state.value !== FhirAccessState.HasValidToken)
   const level = computed(() => banner.value?.level ?? (hasValidToken.value ? 'info' : 'warning'))
   const message = computed(() => banner.value?.message ?? '')
+  const isNoFhirSystem = computed(() => state.value === FhirAccessState.NoFhirSystem)
 
   const fetchStatus = async () => {
     try {
@@ -26,7 +30,9 @@ export const useFhirAccessStore = defineStore('fhirAccess', () => {
       const data = res.data as FhirAccessResponse
       status.value = data.status
       banner.value = data.banner
+      state.value = data.state ?? FhirAccessState.HasValidToken
       launchUrl.value = data.standalone_launch_url ?? null
+      setupRoute.value = data.setup_route ?? null
       lastChecked.value = new Date()
     } catch (err) {
       errorsStore.addError(err as Error, 'fhirAccessStore.fetchStatus')
@@ -61,11 +67,14 @@ export const useFhirAccessStore = defineStore('fhirAccess', () => {
     loading,
     lastChecked,
     launchUrl,
+    state,
+    setupRoute,
     // computed
     hasValidToken,
     shouldWarn,
     level,
     message,
+    isNoFhirSystem,
     // actions
     fetchStatus,
     refreshNow,

@@ -1,3 +1,10 @@
+export const FhirAccessState = {
+  HasValidToken: 'has_valid_token',
+  NoFhirSystem: 'no_fhir_system',
+  NoValidTokens: 'no_valid_tokens',
+} as const
+export type FhirAccessState = typeof FhirAccessState[keyof typeof FhirAccessState]
+
 export interface FhirAccessStatus {
   has_any_valid_token: boolean
   valid_count: number
@@ -17,5 +24,7 @@ export interface FhirAccessBanner {
 export interface FhirAccessResponse {
   status: FhirAccessStatus
   banner: FhirAccessBanner
+  state?: FhirAccessState
   standalone_launch_url?: string | null
+  setup_route?: string | null
 }
