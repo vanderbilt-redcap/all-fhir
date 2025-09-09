@@ -39,6 +39,23 @@ class MappingResourcesController extends AbstractController
     }
 
     /**
+     * Show a single mapping resource by ID
+     */
+    public function show(Request $request, Response $response, string $id): Response
+    {
+        if (!$id) return $this->jsonResponse($response, ['status' => 'error', 'message' => 'Missing resource id'], 400);
+
+        [$predefinedData, $customData] = $this->mappingResourceService->getStoredResourceArrays();
+        [$resource] = $this->mappingResourceService->findResourceByIdInArrays($id, $predefinedData, $customData);
+        if (!$resource) return $this->jsonResponse($response, ['status' => 'error', 'message' => 'Resource not found'], 404);
+
+        return $this->jsonResponse($response, [
+            'status' => 'success',
+            'resource' => $resource->toArray(),
+        ]);
+    }
+
+    /**
      * Create a new mapping resource and synchronize (treated as added)
      */
     public function create(Request $request, Response $response): Response
@@ -47,6 +64,16 @@ class MappingResourcesController extends AbstractController
         $name = $params['name'] ?? null;
         $spec = $params['resourceSpec'] ?? null;
         $type = $params['type'] ?? null; // 'predefined' | 'custom'
+        $hasIncomingParams = array_key_exists('params', $params) && is_array($params['params']);
+        $incomingParams = $hasIncomingParams ? $params['params'] : null;
+        if ($type === MappingResource::TYPE_PREDEFINED && $hasIncomingParams) {
+            // Normalize and validate against endpoint schema
+            $result = $this->normalizeEndpointParams($spec, $incomingParams);
+            if (!empty($result['errors'])) {
+                return $this->jsonResponse($response, [ 'status' => 'error', 'message' => 'Invalid endpoint parameters', 'errors' => $result['errors'] ], 400);
+            }
+            $incomingParams = $result['params'];
+        }
 
         if (!$name || !$spec || !$type) {
             return $this->jsonResponse($response, ['status' => 'error', 'message' => 'Missing required fields (name, resourceSpec, type)'], 400);
@@ -54,15 +81,18 @@ class MappingResourcesController extends AbstractController
 
         // Avoid inserting duplicates (same type + resourceSpec)
         [$predefinedData, $customData] = $this->mappingResourceService->getStoredResourceArrays();
-        $existing = $this->mappingResourceService->findDuplicateByTypeAndSpec($predefinedData, $customData, $type, $spec);
+        $existing = $this->mappingResourceService->findDuplicateByTypeAndSpec($predefinedData, $customData, $type, $spec, $incomingParams);
         if ($existing !== null) {
             return $this->jsonResponse($response, [
                 'status' => 'error',
-                'message' => 'Duplicate mapping resource exists (same type and resourceSpec)',
+                'message' => 'Duplicate mapping resource exists (same type, resourceSpec, and params)',
                 'existing' => $existing[0]->toArray()
             ], 409);
         }
         $resource = MappingResource::create($name, $spec, $type);
+        if ($hasIncomingParams) {
+            $resource = $resource->withParams($incomingParams);
+        }
 
         // Persist in the proper array (using service)
         [$predefinedData, $customData] = $this->mappingResourceService->appendResourceToArrays($resource, $predefinedData, $customData);
@@ -101,11 +131,36 @@ class MappingResourcesController extends AbstractController
         $params = (array)$request->getParsedBody();
         $name = $params['name'] ?? null;
         $spec = $params['resourceSpec'] ?? null;
+        $hasIncomingParams = array_key_exists('params', $params) && is_array($params['params']);
+        $incomingParams = $hasIncomingParams ? $params['params'] : null;
 
         // Load existing
         [$predefinedData, $customData] = $this->mappingResourceService->getStoredResourceArrays();
         [$resource, $type, $index] = $this->mappingResourceService->findResourceByIdInArrays($id, $predefinedData, $customData);
         if (!$resource) return $this->jsonResponse($response, ['status' => 'error', 'message' => 'Resource not found'], 404);
+
+        // Normalize and validate endpoint params for predefined resources
+        if ($hasIncomingParams && $resource->getType() === MappingResource::TYPE_PREDEFINED) {
+            $normalizer = $this->module->getContainer()->get(\Vanderbilt\AllFhir\Services\EndpointParamNormalizer::class);
+            $result = $normalizer->normalizeForStorage($spec ?? $resource->getResourceSpec(), $incomingParams);
+            if (!empty($result['errors'])) {
+                return $this->jsonResponse($response, [ 'status' => 'error', 'message' => 'Invalid endpoint parameters', 'errors' => $result['errors'] ], 400);
+            }
+            $incomingParams = $result['params'];
+        }
+
+        // Optional: reject duplicate change (same type + resourceSpec), but allow self
+        $newType = $resource->getType();
+        $newSpec = $spec ?? $resource->getResourceSpec();
+        $newParams = $hasIncomingParams ? $incomingParams : $resource->getParams();
+        $duplicate = $this->mappingResourceService->findDuplicateByTypeAndSpec($predefinedData, $customData, $newType, $newSpec, $newParams);
+        if ($duplicate && $duplicate[0]->getId() !== $resource->getId()) {
+            return $this->jsonResponse($response, [
+                'status' => 'error',
+                'message' => 'Another mapping resource with the same type, resourceSpec, and params exists',
+                'existing' => $duplicate[0]->toArray()
+            ], 409);
+        }
 
         // Update fields
         $updated = new MappingResource(
@@ -114,15 +169,15 @@ class MappingResourcesController extends AbstractController
             $spec ?? $resource->getResourceSpec(),
             $resource->getType(),
             $resource->isDeleted(),
-            $resource->getDeletedAt()
+            $resource->getDeletedAt(),
+            $hasIncomingParams ? $incomingParams : $resource->getParams()
         );
 
         [$predefinedData, $customData] = $this->mappingResourceService->replaceResourceInArrays($updated, $type, (int)$index, $predefinedData, $customData);
         $this->mappingResourceService->saveResourceArrays($predefinedData, $customData);
 
-        // Sync as modified
-        $allMrns = $this->resourceManager->getAllMrns();
-        $this->resourceManager->updateMappingResource($updated);
+        // Mark existing instances as PENDING (no new instances)
+        $affected = $this->resourceManager->markMappingResourcePending($updated);
         $syncResults = [
             'resources_added' => 0,
             'resources_modified' => 1,
@@ -130,8 +185,8 @@ class MappingResourcesController extends AbstractController
             'resources_soft_deleted' => 0,
             'resources_restored' => 0,
             'tasks_created' => 0,
-            'instances_updated' => count($allMrns),
-            'total_mrns' => count($allMrns)
+            'instances_updated' => $affected,
+            'total_mrns' => count($this->resourceManager->getAllMrns())
         ];
 
         $response->getBody()->write(json_encode([
@@ -298,4 +353,10 @@ class MappingResourcesController extends AbstractController
     }
 
     // Controller kept lean; storage and duplicate logic live in MappingResourceService.
+
+    private function normalizeEndpointParams(string $resourceSpec, ?array $params): array
+    {
+        $normalizer = $this->module->getContainer()->get(\Vanderbilt\AllFhir\Services\EndpointParamNormalizer::class);
+        return $normalizer->normalizeForStorage($resourceSpec, $params ?? []);
+    }
 }

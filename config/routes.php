@@ -11,6 +11,8 @@ use Vanderbilt\AllFhir\Controllers\TaskController;
 use Vanderbilt\AllFhir\Controllers\MappingResourcesController;
 use Vanderbilt\AllFhir\Controllers\StructureValidationController;
 use Vanderbilt\AllFhir\Controllers\FhirAccessController;
+use Vanderbilt\AllFhir\Controllers\EndpointParamsController;
+use Vanderbilt\AllFhir\Controllers\MaintenanceController;
 
 return function (App $app) {
     // Home route
@@ -31,6 +33,7 @@ return function (App $app) {
 
     // MappingResourcesController routes
     $app->get('/mapping-resources', [MappingResourcesController::class, 'list']);
+    $app->get('/mapping-resources/{id}', [MappingResourcesController::class, 'show']);
     $app->post('/mapping-resources', [MappingResourcesController::class, 'create']);
     $app->put('/mapping-resources/{id}', [MappingResourcesController::class, 'update']);
     $app->post('/mapping-resources/{id}/soft-delete', [MappingResourcesController::class, 'softDelete']);
@@ -80,6 +83,14 @@ return function (App $app) {
 
     // FHIR Access routes
     $app->get('/fhir-access/status', [FhirAccessController::class, 'getStatus']);
+
+    // Endpoint parameter schemas
+    $app->get('/endpoint-params', [EndpointParamsController::class, 'list']);
+    $app->get('/endpoint-params/{resourceSpec}', [EndpointParamsController::class, 'get']);
+
+    // Maintenance routes
+    $app->post('/maintenance/backfill-mapping-ids', [MaintenanceController::class, 'backfillMappingResourceIds']);
+    $app->get('/maintenance/backfill-mapping-ids', [MaintenanceController::class, 'backfillMappingResourceIds']);
 
     // // Dynamic route
     // $app->get('/user/{id}', function (Request $request, Response $response, array $args) {

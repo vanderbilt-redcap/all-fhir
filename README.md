@@ -98,3 +98,36 @@ OperationOutcome messages are parsed for error details and protection flags (e.g
 - Standalone Launch button for EHR sign-in and automatic status refresh
 - FHIR system selection with placeholder option, Disabled mode, and change confirmation
 - Data dictionary notice with packaged template and link to the REDCap Data Dictionary upload page when the project is not compliant
+
+---
+
+## Maintenance
+
+### Backfill Mapping Resource IDs
+
+If you have existing FHIR resource metadata that predates the ID-only policy, you can backfill missing `mapping_resource_id` values so all future fetches consistently resolve the configured mapping (including endpoint params).
+
+- What it does:
+  - Scans all records and resource metadata instances.
+  - For entries missing `mapping_resource_id`, matches by exact triple: `resource_name | mapping_type | resource_spec` against the project’s active configured mappings.
+  - Writes the matched mapping’s ID back into the metadata.
+  - Idempotent; safe to run multiple times.
+
+- Endpoint:
+  - Route: `maintenance/backfill-mapping-ids`
+  - Methods: `GET` or `POST`
+
+- How to run:
+  - While authenticated to REDCap, open the module API URL for the route.
+  - Example (programmatic): `\$url = $module->buildApiUrl('maintenance/backfill-mapping-ids');`
+  - Example (direct): `[APP_PATH_WEBROOT]/api/?pid=PID&page=api&type=module&prefix=all_fhir&route=maintenance/backfill-mapping-ids`
+  - Note: Direct calls require a valid REDCap session cookie (and CSRF token for POST).
+
+- Response:
+  - JSON summary with keys: `records_scanned`, `instances_scanned`, `missing_id`, `backfilled`, `unmatched`.
+
+- Permissions:
+  - Requires project-level access to the module’s API routes.
+
+- Performance:
+  - On large projects, allow time for the scan to complete.

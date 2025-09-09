@@ -3,6 +3,7 @@ import { reactive, ref } from 'vue'
 import { api } from '@/API'
 import { useErrorsStore } from './ErrorsStore'
 import type { MappingResource, ProjectSettings } from '@/models/ProjectSettings'
+import { useEndpointParamsStore } from './EndpointParamsStore'
 import { useNotificationStore } from './NotificationStore'
 import { AxiosError } from 'axios'
 
@@ -40,7 +41,13 @@ export const useSettingsStore = defineStore('settings', () => {
   const fetchProjectSettings = async () => {
     try {
       loading.fetch = true
-      const res = await api.getProjectSettings()
+      // Fetch settings and endpoint schemas in parallel
+      const endpointParamsStore = useEndpointParamsStore()
+      const [settingsRes] = await Promise.all([
+        api.getProjectSettings(),
+        endpointParamsStore.fetchSchemas().catch(() => null),
+      ])
+      const res = settingsRes
       const fetchedSettings = res.data ?? {}
       
       // Update the "saved" state
@@ -61,7 +68,10 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const addPredefinedResource = async (name: string, resourceSpec: string) => {
     try {
-      const res = await api.createMappingResource({ name, resourceSpec, type: 'predefined' })
+      // include endpoint params draft if available
+      const endpointParamsStore = useEndpointParamsStore()
+      const paramsDraft = endpointParamsStore.currentResourceSpec === resourceSpec ? (endpointParamsStore.draft || {}) : {}
+      const res = await api.createMappingResource({ name, resourceSpec, type: 'predefined', params: paramsDraft })
       await fetchProjectSettings()
       notificationStore.showSuccess(`${name} added`, 'Resource added')
       return res
@@ -142,6 +152,21 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   }
 
+  const updateResource = async (id: string, payload: Partial<{ name: string; resourceSpec: string; params: Record<string, any> }>) => {
+    if (!id) return
+    try {
+      const res = await api.updateMappingResource(id, payload)
+      await fetchProjectSettings()
+      const updatedName = res.data?.resource?.name || 'Resource'
+      const affected = res.data?.sync_results?.instances_updated ?? 0
+      notificationStore.showSuccess(`${updatedName} updated`, `Instances marked pending: ${affected}`)
+      return res
+    } catch (err) {
+      errorsStore.addError(err as Error, 'settingsStore.updateResource')
+      throw err
+    }
+  }
+
   const updateSelectedFhirSystem = async (fhirSystemId: number | null) => {
     // This method is now expected to be called once the user confirmed (if needed)
     await api.updateFhirSystem(fhirSystemId)
@@ -210,6 +235,7 @@ export const useSettingsStore = defineStore('settings', () => {
     softDeleteResource,
     restoreResource,
     deleteResource,
+    updateResource,
     updateSelectedFhirSystem,
     exportResources,
     importResources,

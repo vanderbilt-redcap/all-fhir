@@ -178,13 +178,10 @@ class ResourceSynchronizationService
                 continue;
             }
             
-            // Mark existing instances as outdated (prefer mapping id if available, else fallback to name)
+            // Mark existing instances as outdated (by mapping id only)
             $existingMetadata = [];
             if ($resource->getId()) {
                 $existingMetadata = $this->dataAccessor->getResourceMetadataByMappingId($recordId, $resource->getId());
-            }
-            if (empty($existingMetadata)) {
-                $existingMetadata = $this->dataAccessor->getResourceMetadataByType($recordId, $resource->getName());
             }
             foreach ($existingMetadata as $metadata) {
                 if (!$metadata->isDeleted()) {
@@ -233,9 +230,6 @@ class ResourceSynchronizationService
             $existingMetadata = [];
             if ($resource->getId()) {
                 $existingMetadata = $this->dataAccessor->getResourceMetadataByMappingId($recordId, $resource->getId());
-            }
-            if (empty($existingMetadata)) {
-                $existingMetadata = $this->dataAccessor->getResourceMetadataByType($recordId, $resource->getName());
             }
             
             foreach ($existingMetadata as $metadata) {
@@ -300,6 +294,32 @@ class ResourceSynchronizationService
         }
         
         // Resources are now automatically fetched by cron job
+    }
+
+    /**
+     * Mark all existing metadata instances for a mapping as PENDING.
+     * Clears error message and pagination info; does not create new instances.
+     * Returns number of instances updated.
+     */
+    public function markInstancesPending(MappingResource $resource, array $existingMrns): int
+    {
+        $updated = 0;
+        foreach ($existingMrns as $mrn) {
+            $recordId = $this->dataAccessor->getRecordIdByMrn($mrn);
+            if (!$recordId) continue;
+            $metadataList = $this->dataAccessor->getResourceMetadataByMappingId($recordId, $resource->getId());
+            foreach ($metadataList as $metadata) {
+                if ($metadata->isDeleted()) continue;
+                $pending = $metadata
+                    ->withStatus(FhirResourceMetadata::STATUS_PENDING)
+                    ->withErrorMessage(null)
+                    ->withPaginationInfo([])
+                    ->withMappingResourceId($resource->getId());
+                $this->dataAccessor->saveResourceMetadata($recordId, $pending);
+                $updated++;
+            }
+        }
+        return $updated;
     }
 
     /**
@@ -423,9 +443,6 @@ class ResourceSynchronizationService
             if ($resource->getId()) {
                 $existingMetadata = $this->dataAccessor->getResourceMetadataByMappingId($recordId, $resource->getId());
             }
-            if (empty($existingMetadata)) {
-                $existingMetadata = $this->dataAccessor->getResourceMetadataByType($recordId, $resource->getName());
-            }
             $deletedFound = false;
             foreach ($existingMetadata as $metadata) {
                 if ($metadata->isDeleted()) {
@@ -524,9 +541,6 @@ class ResourceSynchronizationService
             $metadataList = [];
             if ($resource->getId()) {
                 $metadataList = $this->dataAccessor->getResourceMetadataByMappingId($recordId, $resource->getId());
-            }
-            if (empty($metadataList)) {
-                $metadataList = $this->dataAccessor->getResourceMetadataByType($recordId, $resource->getName());
             }
 
             foreach ($metadataList as $meta) {

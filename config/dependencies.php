@@ -34,9 +34,14 @@ use Vanderbilt\AllFhir\Settings\Settings;
 use Vanderbilt\AllFhir\Constants;
 use Vanderbilt\AllFhir\Controllers\TaskController;
 use Vanderbilt\AllFhir\Controllers\FhirAccessController;
+use Vanderbilt\AllFhir\Controllers\EndpointParamsController;
+use Vanderbilt\AllFhir\Services\FhirEndpointRegistry;
+use Vanderbilt\AllFhir\Services\FhirStudyResolver;
+use Vanderbilt\AllFhir\Services\EndpointParamNormalizer;
 use Vanderbilt\AllFhir\Services\FhirAccess\ProjectFhirAccessService;
 use Vanderbilt\AllFhir\Services\Contracts\ProjectFhirAccessChecker;
 use Vanderbilt\AllFhir\Controllers\StructureValidationController;
+use Vanderbilt\AllFhir\Controllers\MaintenanceController;
 use Vanderbilt\AllFhir\Services\Contracts\ProjectMetadataProvider as ProjectMetadataProviderContract;
 use Vanderbilt\AllFhir\Services\Redcap\ProjectMetadataProvider as ProjectMetadataProviderImpl;
 use Vanderbilt\AllFhir\Services\ArchiveMetadataService;
@@ -80,7 +85,8 @@ return function (ContainerBuilder $containerBuilder) {
         
         FhirResourceService::class => fn(Container $c) => new FhirResourceService(
             $c->get(RepeatedFormDataAccessor::class),
-            $c->get(FhirClientInterface::class)
+            $c->get(FhirClientInterface::class),
+            $c->get(MappingResourceService::class)
         ),
 
         // Mapping resources service
@@ -199,6 +205,14 @@ return function (ContainerBuilder $containerBuilder) {
             $c->get(MappingResourceService::class),
             $c->get(RepeatedFormResourceManager::class)
         ),
+        // Endpoint params
+        FhirEndpointRegistry::class => fn(Container $c) => new FhirEndpointRegistry(),
+        FhirStudyResolver::class => fn(Container $c) => new FhirStudyResolver(),
+        EndpointParamNormalizer::class => fn(Container $c) => new EndpointParamNormalizer($c->get(FhirEndpointRegistry::class)),
+        EndpointParamsController::class => fn(Container $c) => new EndpointParamsController(
+            $c->get(AllFhir::class),
+            $c->get(FhirEndpointRegistry::class)
+        ),
         // FHIR Access status
         ProjectFhirAccessChecker::class => fn(Container $c) => new ProjectFhirAccessService(
             $c->get(AllFhir::class)
@@ -212,6 +226,10 @@ return function (ContainerBuilder $containerBuilder) {
         StructureValidationController::class => fn(Container $c) => new StructureValidationController(
             $c->get(AllFhir::class),
             $c->get(ProjectMetadataProviderContract::class)
+        ),
+        MaintenanceController::class => fn(Container $c) => new MaintenanceController(
+            $c->get(AllFhir::class),
+            $c->get(RepeatedFormResourceManager::class)
         ),
     ]);
 };

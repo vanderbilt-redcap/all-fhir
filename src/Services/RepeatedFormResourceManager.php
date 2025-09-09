@@ -160,6 +160,15 @@ class RepeatedFormResourceManager
     }
 
     /**
+     * Mark all existing instances for a mapping as PENDING.
+     */
+    public function markMappingResourcePending(MappingResource $resource): int
+    {
+        $existingMrns = $this->dataAccessor->getAllMrns();
+        return $this->syncService->markInstancesPending($resource, $existingMrns);
+    }
+
+    /**
      * Permanently delete instances marked as DELETED for a mapping resource
      *
      * @param MappingResource $resource
@@ -399,6 +408,52 @@ class RepeatedFormResourceManager
         $syncStatus = $this->syncService->getProjectSyncStatus();
         $summary['sync_status'] = $syncStatus;
         
+        return $summary;
+    }
+
+    /**
+     * Backfill missing mapping_resource_id values on existing metadata instances.
+     * Tries to match by exact triple: name + type + resourceSpec against active configured mappings.
+     * Returns a summary array with counts.
+     */
+    public function backfillMissingMappingIds(): array
+    {
+        $configured = $this->module->getAllConfiguredMappingResources();
+        // Build exact-match index by triple
+        $index = [];
+        foreach ($configured as $res) {
+            if (method_exists($res, 'isDeleted') && $res->isDeleted()) continue;
+            $key = $res->getName() . '|' . $res->getType() . '|' . $res->getResourceSpec();
+            $index[$key] = $res;
+        }
+
+        $recordIds = $this->dataAccessor->getAllRecordIds();
+        $summary = [
+            'records_scanned' => count($recordIds),
+            'instances_scanned' => 0,
+            'missing_id' => 0,
+            'backfilled' => 0,
+            'unmatched' => 0
+        ];
+
+        foreach ($recordIds as $recordId) {
+            $metas = $this->dataAccessor->getAllResourceMetadata($recordId);
+            foreach ($metas as $meta) {
+                $summary['instances_scanned']++;
+                if ($meta->getMappingResourceId()) continue;
+                $summary['missing_id']++;
+                $key = $meta->getResourceName() . '|' . $meta->getMappingType() . '|' . $meta->getResourceSpec();
+                if (!isset($index[$key])) {
+                    $summary['unmatched']++;
+                    continue;
+                }
+                $res = $index[$key];
+                $updated = $meta->withMappingResourceId($res->getId());
+                $this->dataAccessor->saveResourceMetadata($recordId, $updated);
+                $summary['backfilled']++;
+            }
+        }
+
         return $summary;
     }
 
@@ -702,8 +757,9 @@ class RepeatedFormResourceManager
         $metadata = $resource['metadata'];
         
         try {
-            // Create MappingResource directly from metadata properties
-            
+            // Resolve configured MappingResource (to include params if available)
+            $mappingResource = $this->resolveConfiguredMappingResource($metadata);
+
             // Use FhirResourceService to fetch and store the resource
             // Pass the existing metadata object instead of letting the service recreate it
             $result = $this->fhirResourceService->fetchAndStoreResource(
@@ -711,7 +767,8 @@ class RepeatedFormResourceManager
                 $mrn,
                 $metadata,
                 [
-                    'is_refetch' => true // Force fetch is always a refetch
+                    'is_refetch' => true, // Force fetch is always a refetch
+                    'mapping_resource' => $mappingResource
                 ]
             );
             
@@ -761,6 +818,20 @@ class RepeatedFormResourceManager
                 'repeat_instance' => $metadata->getRepeatInstance()
             ];
         }
+    }
+
+    private function resolveConfiguredMappingResource(FhirResourceMetadata $metadata): ?MappingResource
+    {
+        try {
+            $configured = $this->module->getAllConfiguredMappingResources();
+            $id = $metadata->getMappingResourceId();
+            if (!empty($id)) {
+                foreach ($configured as $res) {
+                    if ($res->getId() === $id) return $res;
+                }
+            }
+        } catch (\Throwable $e) {}
+        return null;
     }
 
     /**
