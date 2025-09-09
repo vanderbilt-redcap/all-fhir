@@ -142,12 +142,15 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   }
 
-  const updateSelectedFhirSystem = async (fhirSystemId: number) => {
+  const updateSelectedFhirSystem = async (fhirSystemId: number | null) => {
     // This method is now expected to be called once the user confirmed (if needed)
     await api.updateFhirSystem(fhirSystemId)
     selectedFhirSystem.value = fhirSystemId
     settings.fhir_system = fhirSystemId
-    notificationStore.showSuccess('FHIR system changed', 'FHIR System Updated')
+    notificationStore.showSuccess(
+      fhirSystemId === null ? 'FHIR system disabled' : 'FHIR system changed',
+      'FHIR System Updated'
+    )
   }
 
   // Removed saveProjectSettings: updates are now route-based and immediate

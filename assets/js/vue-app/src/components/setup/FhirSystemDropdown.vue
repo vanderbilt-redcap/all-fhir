@@ -4,10 +4,11 @@
     <select 
       class="form-select form-select-sm" 
       id="ehr-dropdown"
-      :value="selectedFhirSystem || ''"
+      :value="selectedFhirSystem === null ? '__disabled__' : String(selectedFhirSystem)"
       @change="handleSystemChange"
     >
-      <option value="">Select a FHIR System</option>
+      <option value="" disabled>Select a FHIR System</option>
+      <option value="__disabled__">Disabled</option>
       <option 
         v-for="system in settings.fhir_systems" 
         :key="system.ehr_id"
@@ -31,13 +32,13 @@ const { settings, selectedFhirSystem } = storeToRefs(settingsStore)
 const handleSystemChange = async (event: Event) => {
   const target = event.target as HTMLSelectElement
   const value = target.value
-  const fhirSystemId = value === '' ? null : parseInt(value)
+  const fhirSystemId = (value === '' || value === '__disabled__') ? null : parseInt(value)
 
   const current = settings.value.fhir_system
 
   // If first time selection (current is null), proceed without confirmation
   if (current === null) {
-    if (fhirSystemId !== null) await settingsStore.updateSelectedFhirSystem(fhirSystemId)
+    await settingsStore.updateSelectedFhirSystem(fhirSystemId)
     return
   }
 
@@ -49,10 +50,10 @@ const handleSystemChange = async (event: Event) => {
     )
     if (!confirmed) {
       // revert selection
-      target.value = String(current)
+      target.value = current === null ? '' : String(current)
       return
     }
-    if (fhirSystemId !== null) await settingsStore.updateSelectedFhirSystem(fhirSystemId)
+    await settingsStore.updateSelectedFhirSystem(fhirSystemId)
   }
 }
 </script>

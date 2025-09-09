@@ -14,8 +14,8 @@ const { shouldWarn, launchUrl, status, state, setupRoute } = storeToRefs(fhirAcc
     <span>
       A FHIR system must be configured before users can authorize access or data can be fetched. Open Setup to select a system.
     </span>
-    <div class="d-flex align-items-end justify-content-center mt-2">
-      <a v-if="setupRoute" :href="setupRoute" class="btn btn-sm btn-default" style="margin-left:10px;">
+    <div class="d-flex align-items-end justify-content-start mt-2">
+      <a v-if="setupRoute" :href="setupRoute" class="btn btn-sm btn-primary" style="margin-left:10px;">
         <i class="fas fa-gear fa-fw" /> Open Setup
       </a>
     </div>

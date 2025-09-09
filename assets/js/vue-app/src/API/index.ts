@@ -10,7 +10,7 @@ export const api = {
     const params = { route: `project-settings` }
     return apiClient.get('', { params })
   },
-  updateFhirSystem(fhirSystemId: number) {
+  updateFhirSystem(fhirSystemId: number | null) {
     const params = { route: `project-settings/fhir-system` }
     return apiClient.put('', { fhir_system: fhirSystemId }, { params })
   },
