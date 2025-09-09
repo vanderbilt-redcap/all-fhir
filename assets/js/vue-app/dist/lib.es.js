@@ -13838,7 +13838,7 @@ const {
   formToJSON: EB,
   getAdapter: wB,
   mergeConfig: AB
-} = lt, DC = "fhir_snapshot", kC = "api", xC = () => {
+} = lt, DC = "all_fhir", kC = "api", xC = () => {
   let n = {
     pid: new URLSearchParams(location.search).get("pid"),
     page: kC,
@@ -19311,7 +19311,7 @@ const gR = {
         a.value ? (C(), x("div", ZR, [
           g[40] || (g[40] = l("div", { class: "text-center mb-4" }, [
             l("h2", null, "Project Status"),
-            l("p", { class: "text-muted" }, "Current overview of your FHIR snapshot project")
+            l("p", { class: "text-muted" }, "Current overview of your project")
           ], -1)),
           l("div", e2, [
             l("div", t2, [
@@ -19444,7 +19444,7 @@ const gR = {
       ]);
     };
   }
-}), $2 = /* @__PURE__ */ Jt(B2, [["__scopeId", "data-v-cb32987b"]]), j2 = ["value"], U2 = ["value"], H2 = /* @__PURE__ */ Se({
+}), $2 = /* @__PURE__ */ Jt(B2, [["__scopeId", "data-v-cfdeccfe"]]), j2 = ["value"], U2 = ["value"], H2 = /* @__PURE__ */ Se({
   __name: "FhirSystemDropdown",
   setup(e) {
     const t = Go(), n = en(), { settings: s, selectedFhirSystem: o } = Gn(t), r = async (i) => {
