@@ -5,6 +5,7 @@
                 <th>Name</th>
                 <th>Type</th>
                 <th>Resource Specification</th>
+                <th>Params</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -18,7 +19,23 @@
                   <span :class="{ 'text-decoration-line-through text-muted': resource.deleted }">{{ resource.resourceSpec || '-' }}</span>
                 </td>
                 <td>
+                  <span v-if="hasParams(resource)" class="badge bg-info-subtle text-info-emphasis" title="Parameters configured">
+                    <i class="fas fa-sliders-h me-1"></i>Yes
+                  </span>
+                  <span v-else class="text-muted">No</span>
+                </td>
+                <td>
                     <div class="d-flex gap-2">
+                        <button 
+                            v-if="!resource.deleted"
+                            type="button" 
+                            class="btn btn-outline-primary btn-sm btn-icon"
+                            @click="handleEdit(resource)"
+                            :disabled="!resource.id"
+                            title="Edit"
+                        >
+                            <i class="fas fa-pen fa-fw"></i>
+                        </button>
                         <button 
                             v-if="!resource.deleted"
                             type="button" 
@@ -53,7 +70,7 @@
                 </td>
             </tr>
             <tr v-if="allResources.length === 0">
-                <td colspan="4" class="text-muted text-center">No resources configured</td>
+                <td colspan="5" class="text-muted text-center">No resources configured</td>
             </tr>
         </tbody>
     </table>
@@ -65,6 +82,7 @@ import { useSettingsStore } from '@/store/SettingsStore'
 import { useNotificationStore } from '@/store/NotificationStore'
 import { storeToRefs } from 'pinia'
 import type { MappingResource } from '@/models/ProjectSettings'
+import { useRouter } from 'vue-router'
 
 const settingsStore = useSettingsStore()
 const notificationStore = useNotificationStore()
@@ -81,6 +99,15 @@ const rowLoading: Record<string, boolean> = reactive({})
 
 const getKey = (r: MappingResource) => r.id || `${r.type}::${r.name}::${r.resourceSpec}`
 const isRowLoading = (r: MappingResource) => !!rowLoading[getKey(r)]
+
+const hasParams = (r: MappingResource): boolean => !!(r.params && Object.keys(r.params).length)
+
+const router = useRouter()
+
+function handleEdit(resource: MappingResource) {
+  if (!resource.id) return
+  router.push({ name: 'resourceEdit', params: { id: resource.id } })
+}
 
 async function handleSoftDelete(resource: MappingResource) {
     const k = getKey(resource)

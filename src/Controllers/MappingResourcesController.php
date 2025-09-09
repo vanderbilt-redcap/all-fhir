@@ -39,6 +39,23 @@ class MappingResourcesController extends AbstractController
     }
 
     /**
+     * Show a single mapping resource by ID
+     */
+    public function show(Request $request, Response $response, string $id): Response
+    {
+        if (!$id) return $this->jsonResponse($response, ['status' => 'error', 'message' => 'Missing resource id'], 400);
+
+        [$predefinedData, $customData] = $this->mappingResourceService->getStoredResourceArrays();
+        [$resource] = $this->mappingResourceService->findResourceByIdInArrays($id, $predefinedData, $customData);
+        if (!$resource) return $this->jsonResponse($response, ['status' => 'error', 'message' => 'Resource not found'], 404);
+
+        return $this->jsonResponse($response, [
+            'status' => 'success',
+            'resource' => $resource->toArray(),
+        ]);
+    }
+
+    /**
      * Create a new mapping resource and synchronize (treated as added)
      */
     public function create(Request $request, Response $response): Response
@@ -131,6 +148,18 @@ class MappingResourcesController extends AbstractController
             $incomingParams = $result['params'];
         }
 
+        // Optional: reject duplicate change (same type + resourceSpec), but allow self
+        $newType = $resource->getType();
+        $newSpec = $spec ?? $resource->getResourceSpec();
+        $duplicate = $this->mappingResourceService->findDuplicateByTypeAndSpec($predefinedData, $customData, $newType, $newSpec);
+        if ($duplicate && $duplicate[0]->getId() !== $resource->getId()) {
+            return $this->jsonResponse($response, [
+                'status' => 'error',
+                'message' => 'Another mapping resource with the same type and resourceSpec exists',
+                'existing' => $duplicate[0]->toArray()
+            ], 409);
+        }
+
         // Update fields
         $updated = new MappingResource(
             $resource->getId(),
@@ -145,9 +174,8 @@ class MappingResourcesController extends AbstractController
         [$predefinedData, $customData] = $this->mappingResourceService->replaceResourceInArrays($updated, $type, (int)$index, $predefinedData, $customData);
         $this->mappingResourceService->saveResourceArrays($predefinedData, $customData);
 
-        // Sync as modified
-        $allMrns = $this->resourceManager->getAllMrns();
-        $this->resourceManager->updateMappingResource($updated);
+        // Mark existing instances as PENDING (no new instances)
+        $affected = $this->resourceManager->markMappingResourcePending($updated);
         $syncResults = [
             'resources_added' => 0,
             'resources_modified' => 1,
@@ -155,8 +183,8 @@ class MappingResourcesController extends AbstractController
             'resources_soft_deleted' => 0,
             'resources_restored' => 0,
             'tasks_created' => 0,
-            'instances_updated' => count($allMrns),
-            'total_mrns' => count($allMrns)
+            'instances_updated' => $affected,
+            'total_mrns' => count($this->resourceManager->getAllMrns())
         ];
 
         $response->getBody()->write(json_encode([

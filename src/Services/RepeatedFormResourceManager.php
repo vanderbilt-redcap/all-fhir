@@ -160,6 +160,15 @@ class RepeatedFormResourceManager
     }
 
     /**
+     * Mark all existing instances for a mapping as PENDING.
+     */
+    public function markMappingResourcePending(MappingResource $resource): int
+    {
+        $existingMrns = $this->dataAccessor->getAllMrns();
+        return $this->syncService->markInstancesPending($resource, $existingMrns);
+    }
+
+    /**
      * Permanently delete instances marked as DELETED for a mapping resource
      *
      * @param MappingResource $resource

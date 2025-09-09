@@ -33,6 +33,7 @@ return function (App $app) {
 
     // MappingResourcesController routes
     $app->get('/mapping-resources', [MappingResourcesController::class, 'list']);
+    $app->get('/mapping-resources/{id}', [MappingResourcesController::class, 'show']);
     $app->post('/mapping-resources', [MappingResourcesController::class, 'create']);
     $app->put('/mapping-resources/{id}', [MappingResourcesController::class, 'update']);
     $app->post('/mapping-resources/{id}/soft-delete', [MappingResourcesController::class, 'softDelete']);

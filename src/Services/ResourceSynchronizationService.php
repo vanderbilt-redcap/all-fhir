@@ -297,6 +297,32 @@ class ResourceSynchronizationService
     }
 
     /**
+     * Mark all existing metadata instances for a mapping as PENDING.
+     * Clears error message and pagination info; does not create new instances.
+     * Returns number of instances updated.
+     */
+    public function markInstancesPending(MappingResource $resource, array $existingMrns): int
+    {
+        $updated = 0;
+        foreach ($existingMrns as $mrn) {
+            $recordId = $this->dataAccessor->getRecordIdByMrn($mrn);
+            if (!$recordId) continue;
+            $metadataList = $this->dataAccessor->getResourceMetadataByMappingId($recordId, $resource->getId());
+            foreach ($metadataList as $metadata) {
+                if ($metadata->isDeleted()) continue;
+                $pending = $metadata
+                    ->withStatus(FhirResourceMetadata::STATUS_PENDING)
+                    ->withErrorMessage(null)
+                    ->withPaginationInfo([])
+                    ->withMappingResourceId($resource->getId());
+                $this->dataAccessor->saveResourceMetadata($recordId, $pending);
+                $updated++;
+            }
+        }
+        return $updated;
+    }
+
+    /**
      * Compare configured resource mappings against existing data instances
      * 
      * Performs comprehensive analysis to identify discrepancies between what should

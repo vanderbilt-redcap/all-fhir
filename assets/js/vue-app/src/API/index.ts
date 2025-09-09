@@ -242,6 +242,10 @@ export const api = {
     const params = { route: `mapping-resources` }
     return apiClient.get('', { params })
   },
+  getMappingResource(id: string) {
+    const params = { route: `mapping-resources/${id}` }
+    return apiClient.get('', { params })
+  },
   createMappingResource(resource: { name: string; resourceSpec: string; type: 'predefined' | 'custom'; params?: Record<string, any> }) {
     const params = { route: `mapping-resources` }
     return apiClient.post('', resource, { params })
