@@ -402,6 +402,52 @@ class RepeatedFormResourceManager
         return $summary;
     }
 
+    /**
+     * Backfill missing mapping_resource_id values on existing metadata instances.
+     * Tries to match by exact triple: name + type + resourceSpec against active configured mappings.
+     * Returns a summary array with counts.
+     */
+    public function backfillMissingMappingIds(): array
+    {
+        $configured = $this->module->getAllConfiguredMappingResources();
+        // Build exact-match index by triple
+        $index = [];
+        foreach ($configured as $res) {
+            if (method_exists($res, 'isDeleted') && $res->isDeleted()) continue;
+            $key = $res->getName() . '|' . $res->getType() . '|' . $res->getResourceSpec();
+            $index[$key] = $res;
+        }
+
+        $recordIds = $this->dataAccessor->getAllRecordIds();
+        $summary = [
+            'records_scanned' => count($recordIds),
+            'instances_scanned' => 0,
+            'missing_id' => 0,
+            'backfilled' => 0,
+            'unmatched' => 0
+        ];
+
+        foreach ($recordIds as $recordId) {
+            $metas = $this->dataAccessor->getAllResourceMetadata($recordId);
+            foreach ($metas as $meta) {
+                $summary['instances_scanned']++;
+                if ($meta->getMappingResourceId()) continue;
+                $summary['missing_id']++;
+                $key = $meta->getResourceName() . '|' . $meta->getMappingType() . '|' . $meta->getResourceSpec();
+                if (!isset($index[$key])) {
+                    $summary['unmatched']++;
+                    continue;
+                }
+                $res = $index[$key];
+                $updated = $meta->withMappingResourceId($res->getId());
+                $this->dataAccessor->saveResourceMetadata($recordId, $updated);
+                $summary['backfilled']++;
+            }
+        }
+
+        return $summary;
+    }
+
     public function exportResourceData(string $mrn, array $resourceTypes = []): array
     {
         $recordId = $this->dataAccessor->getRecordIdByMrn($mrn);

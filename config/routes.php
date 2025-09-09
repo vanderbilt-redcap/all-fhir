@@ -12,6 +12,7 @@ use Vanderbilt\AllFhir\Controllers\MappingResourcesController;
 use Vanderbilt\AllFhir\Controllers\StructureValidationController;
 use Vanderbilt\AllFhir\Controllers\FhirAccessController;
 use Vanderbilt\AllFhir\Controllers\EndpointParamsController;
+use Vanderbilt\AllFhir\Controllers\MaintenanceController;
 
 return function (App $app) {
     // Home route
@@ -85,6 +86,10 @@ return function (App $app) {
     // Endpoint parameter schemas
     $app->get('/endpoint-params', [EndpointParamsController::class, 'list']);
     $app->get('/endpoint-params/{resourceSpec}', [EndpointParamsController::class, 'get']);
+
+    // Maintenance routes
+    $app->post('/maintenance/backfill-mapping-ids', [MaintenanceController::class, 'backfillMappingResourceIds']);
+    $app->get('/maintenance/backfill-mapping-ids', [MaintenanceController::class, 'backfillMappingResourceIds']);
 
     // // Dynamic route
     // $app->get('/user/{id}', function (Request $request, Response $response, array $args) {

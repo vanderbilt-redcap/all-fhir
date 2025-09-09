@@ -41,6 +41,7 @@ use Vanderbilt\AllFhir\Services\EndpointParamNormalizer;
 use Vanderbilt\AllFhir\Services\FhirAccess\ProjectFhirAccessService;
 use Vanderbilt\AllFhir\Services\Contracts\ProjectFhirAccessChecker;
 use Vanderbilt\AllFhir\Controllers\StructureValidationController;
+use Vanderbilt\AllFhir\Controllers\MaintenanceController;
 use Vanderbilt\AllFhir\Services\Contracts\ProjectMetadataProvider as ProjectMetadataProviderContract;
 use Vanderbilt\AllFhir\Services\Redcap\ProjectMetadataProvider as ProjectMetadataProviderImpl;
 use Vanderbilt\AllFhir\Services\ArchiveMetadataService;
@@ -225,6 +226,10 @@ return function (ContainerBuilder $containerBuilder) {
         StructureValidationController::class => fn(Container $c) => new StructureValidationController(
             $c->get(AllFhir::class),
             $c->get(ProjectMetadataProviderContract::class)
+        ),
+        MaintenanceController::class => fn(Container $c) => new MaintenanceController(
+            $c->get(AllFhir::class),
+            $c->get(RepeatedFormResourceManager::class)
         ),
     ]);
 };
