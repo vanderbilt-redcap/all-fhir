@@ -85,7 +85,6 @@ import { useNotificationStore } from '@/store/NotificationStore'
 import { storeToRefs } from 'pinia'
 import type { MappingResource } from '@/models/ProjectSettings'
 import ResourceFormModal from '@/components/setup/ResourceFormModal.vue'
-import { useEndpointParamsStore } from '@/store/EndpointParamsStore'
 
 const settingsStore = useSettingsStore()
 const notificationStore = useNotificationStore()
@@ -106,7 +105,6 @@ const isRowLoading = (r: MappingResource) => !!rowLoading[getKey(r)]
 const hasParams = (r: MappingResource): boolean => !!(r.params && Object.keys(r.params).length)
 
 const resourceFormModal = ref<InstanceType<typeof ResourceFormModal> | null>(null)
-const endpointParamsStore = useEndpointParamsStore()
 
 async function handleEdit(resource: MappingResource) {
   if (!resource.id || !resourceFormModal.value) return

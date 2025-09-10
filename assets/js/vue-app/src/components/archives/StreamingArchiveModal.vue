@@ -51,12 +51,13 @@
         </div>
       </div>
 
-      <div class="alert" :class="estimatedResources > 0 ? 'alert-info' : 'alert-warning'">
+      <!-- Streaming summary: show page-scoped summary for 'selected' and a global project summary for 'all' -->
+      <div v-if="archiveType === 'selected'" class="alert" :class="estimatedResources > 0 ? 'alert-info' : 'alert-warning'">
         <div class="d-flex align-items-center mb-2">
           <i :class="estimatedResources > 0 ? 'fas fa-info-circle' : 'fas fa-exclamation-triangle'" class="me-2"></i>
           <strong>Streaming Summary</strong>
         </div>
-        
+
         <div v-if="estimatedResources > 0">
           <div class="mb-2">
             <strong>{{ estimatedResources }}</strong> completed resources will be streamed
@@ -65,7 +66,7 @@
             {{ availabilitySummary.availableTypes }} of {{ availabilitySummary.totalTypes }} resource types have completed data
           </div>
         </div>
-        
+
         <div v-else>
           <div class="mb-1">
             <strong>No resources available for streaming</strong>
@@ -76,6 +77,34 @@
             </span>
             <span v-else>
               {{ availabilitySummary.totalTypes }} resource types found, but none have completed data
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div v-else class="alert" :class="projectCompletedResources > 0 ? 'alert-info' : 'alert-warning'">
+        <div class="d-flex align-items-center mb-2">
+          <i :class="projectCompletedResources > 0 ? 'fas fa-info-circle' : 'fas fa-exclamation-triangle'" class="me-2"></i>
+          <strong>Streaming Summary (All Records)</strong>
+        </div>
+
+        <div v-if="projectSummaryAvailable && projectCompletedResources > 0">
+          <div class="mb-2">
+            <strong>{{ projectCompletedResources }}</strong> completed resources across the project will be streamed
+          </div>
+          <div class="small text-muted">
+            Estimate derived from project summary. Resource-type filters are not reflected in this estimate.
+          </div>
+        </div>
+
+        <div v-else>
+          <div class="mb-1">
+            <strong v-if="projectSummaryAvailable">No completed resources available for streaming</strong>
+            <strong v-else>Project summary unavailable</strong>
+          </div>
+          <div class="small text-muted">
+            <span v-if="!projectSummaryAvailable">
+              Global counts could not be loaded. The download will still include all project data.
             </span>
           </div>
         </div>
@@ -133,6 +162,13 @@ const options = ref<StreamingArchiveOptions>({
   resource_types: []
 })
 
+// Project-wide completed count (for 'all' mode summary)
+const projectSummaryAvailable = computed(() => !!monitorStore.projectSummary)
+const projectCompletedResources = computed(() => {
+  const summary = monitorStore.projectSummary
+  return summary?.overall_status_counts?.completed ?? 0
+})
+
 // Simplified resource types - just name and availability  
 const availableResourceTypes = computed(() => {
   const resourceTypes = new Set<string>()
@@ -180,6 +216,10 @@ const defaultArchiveName = computed(() => {
 
 // Simplified estimated resources calculation
 const estimatedResources = computed(() => {
+  // For 'all' mode, use project-wide completed resources from summary to avoid page-scoped counts
+  if (props.archiveType === 'all') {
+    return projectCompletedResources.value
+  }
   const selectedResourceTypes = options.value.resource_types || []
   const targetMrns = props.archiveType === 'selected' 
     ? monitorStore.mrns.filter(mrn => props.selectedMrns.includes(mrn.mrn))
