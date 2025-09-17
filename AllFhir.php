@@ -3,6 +3,7 @@ namespace Vanderbilt\AllFhir;
 
 use DI\Container;
 use ExternalModules\AbstractExternalModule;
+use ExternalModules\ExternalModules;
 use Project;
 use Vanderbilt\AllFhir\Queue\QueueProcessor;
 use Vanderbilt\AllFhir\Services\MappingResourceService;
@@ -109,12 +110,17 @@ class AllFhir extends AbstractExternalModule {
     private static AllFhir $instance;
     private static ?Container $globalContainer = null;
 
-    public static function getInstance() {
-        if(!isset(self::$instance)) {
-            global $module;
-            if($module) self::$instance = $module;
-            else self::$instance = new self();
+    public static function getInstance(): self
+    {
+        if (!isset(self::$instance)) {
+            $module = ExternalModules::getModuleInstance(self::PREFIX);
+            if ($module instanceof self) {
+                self::$instance = $module;
+            } else {
+                self::$instance = new self();
+            }
         }
+
         return self::$instance;
     }
 
