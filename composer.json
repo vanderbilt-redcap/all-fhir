@@ -1,10 +1,8 @@
 {
     "name": "vanderbilt/all-fhir",
+    "version": "1.0.0",
     "description": "Fetch and store FHIR payloads",
     "type": "redcap-module",
-    "require-dev": {
-        "phpunit/phpunit": "^11.5"
-    },
     "license": "MIT",
     "autoload": {
         "psr-4": {
@@ -20,7 +18,15 @@
     "require": {
         "slim/slim": "^4.0",
         "slim/psr7": "^1.7",
-        "php-di/php-di": "^7.0",
-        "maennchen/zipstream-php": "^3.1"
+        "maennchen/zipstream-php": "^3.1",
+        "php-di/php-di": "^7.1"
+    },
+    "config": {
+        "platform": {
+            "php": "8.2.0"
+        }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5"
     }
 }

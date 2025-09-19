@@ -55,8 +55,8 @@
     "no-csrf-pages": [
          "api"
     ],
-    "enable-every-page-hooks-on-system-pages": true,
-    "enable-every-page-hooks-on-login-form": true,
+    "enable-every-page-hooks-on-system-pages": false,
+    "enable-every-page-hooks-on-login-form": false,
     "crons": [
         {
            "cron_name": "process_queue",

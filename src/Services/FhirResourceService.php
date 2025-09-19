@@ -2,6 +2,7 @@
 
 namespace Vanderbilt\AllFhir\Services;
 
+use Vanderbilt\AllFhir\AllFhir;
 use Vanderbilt\AllFhir\Contracts\FhirClientInterface;
 use Vanderbilt\AllFhir\ValueObjects\FhirResourceMetadata;
 use Vanderbilt\AllFhir\ValueObjects\MappingResource;
@@ -54,6 +55,7 @@ use Vanderbilt\AllFhir\Services\MappingResourceService;
  */
 class FhirResourceService
 {
+    private AllFhir $module;
     private RepeatedFormDataAccessor $dataAccessor;
     private FhirClientInterface $fhirClient;
     private MappingResourceService $mappingResourceService;
@@ -61,14 +63,17 @@ class FhirResourceService
     /**
      * Initialize the FHIR resource service with data access and client dependencies
      * 
+     * @param AllFhir $module External module instance for framework utilities and configuration access
      * @param RepeatedFormDataAccessor $dataAccessor Service for managing REDCap repeated form data and metadata
      * @param FhirClientInterface $fhirClient Interface for fetching FHIR resources from external systems
      */
     public function __construct(
+        AllFhir $module,
         RepeatedFormDataAccessor $dataAccessor,
         FhirClientInterface $fhirClient,
         MappingResourceService $mappingResourceService
     ) {
+        $this->module = $module;
         $this->dataAccessor = $dataAccessor;
         $this->fhirClient = $fhirClient;
         $this->mappingResourceService = $mappingResourceService;
@@ -195,12 +200,13 @@ class FhirResourceService
         $jsonContent = json_encode($fhirData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
         $projectId = $this->dataAccessor->getProjectId();
         $filename = sprintf('%s_%s_%s_%s.json', $projectId, $mrn, $resourceType, date('Y-m-d_H-i-s'));
-        
-        $tempPath = sys_get_temp_dir() . DIRECTORY_SEPARATOR . $filename;
+
+        $tempPath = $this->module->getSafePath($filename, APP_PATH_TEMP);
+
         file_put_contents($tempPath, $jsonContent);
-        
+
         $edocId = \REDCap::storeFile($tempPath, $projectId, $filename);
-        
+
         unlink($tempPath);
         
         if (!$edocId) {

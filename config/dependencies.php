@@ -79,6 +79,7 @@ return function (ContainerBuilder $containerBuilder) {
         FhirClientInterface::class => fn(Container $c) => new LazyFhirClientWrapper($c->get(AllFhir::class)),
         
         FhirResourceService::class => fn(Container $c) => new FhirResourceService(
+            $c->get(AllFhir::class),
             $c->get(RepeatedFormDataAccessor::class),
             $c->get(FhirClientInterface::class),
             $c->get(MappingResourceService::class)
