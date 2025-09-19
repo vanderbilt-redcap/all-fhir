@@ -52,7 +52,6 @@ use Throwable;
  * - Provides fallback handling for unknown task types
  * 
  * TASK ROUTING BY KEY:
- * - 'archive' → ArchiveProcessor  
  * - 'email_notification' → EmailNotificationProcessor
  * - Custom task keys → Custom processor implementations
  * 

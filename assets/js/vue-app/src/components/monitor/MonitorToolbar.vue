@@ -21,27 +21,6 @@
                 </button>
             </div>
 
-            <!-- Archive Actions -->
-            <!--
-                <div class="btn-group" role="group">
-                    <button 
-                        class="btn btn-success"
-                        @click="createArchiveSelected"
-                        :disabled="selectionDisabled"
-                        title="Create archive for selected completed MRNs"
-                    >
-                        <i class="fas fa-archive fa-fw"></i> Create Archive
-                    </button>
-                    <button 
-                        class="btn btn-outline-success"
-                        @click="createArchiveAll"
-                        title="Create archive for all completed resources"
-                    >
-                        <i class="fas fa-archive fa-fw"></i> Archive All
-                    </button>
-                </div>
-            -->
-
             <!-- Streaming Archive Actions -->
             <b-dropdown 
                 variant="success"
@@ -78,17 +57,6 @@
                 <i class="fas fa-rotate-right fa-fw" :class="{ 'fa-spin': loading }"></i>
             </button>
 
-            <!-- Project Summary Toggle -->
-            
-            <!--
-                <button 
-                    class="btn btn-outline-info"
-                    @click="operationsStore.toggleSummary()"
-                    title="Toggle project summary"
-                >
-                    <i class="fas fa-chart-bar fa-fw"></i> Summary
-                </button>
-            -->
         </div>
 
     </div>
@@ -139,24 +107,6 @@ const refreshData = async () => {
         notificationStore.showError('Failed to refresh data')
     }
 }
-
-// Archive methods that use store directly
-// const createArchiveSelected = () => {
-//     if (selectionDisabled.value) {
-//         notificationStore.showWarning('No MRNs selected for archive')
-//         return
-//     }
-    
-//     const selectedMrnsStrings = monitorStore.mrns
-//         .filter(mrn => monitorStore.selectedMrns.includes(mrn.id))
-//         .map(mrn => mrn.mrn)
-    
-//     operationsStore.showArchiveModalSelected(selectedMrnsStrings)
-// }
-
-// const createArchiveAll = () => {
-//     operationsStore.showArchiveModalAll()
-// }
 
 // Streaming archive methods
 const createStreamingArchiveSelected = () => {

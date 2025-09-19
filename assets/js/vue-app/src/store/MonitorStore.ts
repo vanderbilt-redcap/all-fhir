@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useErrorsStore } from './ErrorsStore'
-import type { Mrn, ProjectSummary, ArchiveButtonConfig, ProgressBarConfig, ResourceTypeStatus, BulkAddResult } from '@/models/Mrn'
+import type { Mrn, ProjectSummary, ProgressBarConfig, ResourceTypeStatus, BulkAddResult } from '@/models/Mrn'
 import { FetchStatus } from '@/models/Mrn'
 import { api } from '@/API'
 
@@ -333,51 +333,6 @@ export const useMonitorStore = defineStore('monitor', () => {
     return Object.keys(statusCounts).reduce((a, b) => statusCounts[a] > statusCounts[b] ? a : b, FetchStatus.Pending) as FetchStatus
   }
 
-  const getArchiveButtonConfig = (mrn: Mrn): ArchiveButtonConfig => {
-    if (mrn.status_summary) {
-      return mrn.status_summary.archive_button_config
-    }
-    
-    // Fallback calculation
-    const nonDeletedResources = mrn.resources.filter(r => r.status !== FetchStatus.Deleted)
-    const completedCount = nonDeletedResources.filter(r => r.status === FetchStatus.Completed).length
-    const totalCount = nonDeletedResources.length
-    
-    if (completedCount === 0) {
-      return {
-        variant: 'secondary',
-        disabled: true,
-        tooltip: 'No completed resources to archive',
-        text: 'Archive'
-      }
-    }
-    
-    if (completedCount === totalCount) {
-      return {
-        variant: 'success',
-        disabled: false,
-        tooltip: `Archive all ${completedCount} completed resources`,
-        text: 'Archive All'
-      }
-    }
-    
-    return {
-      variant: 'outline-success',
-      disabled: false,
-      tooltip: `Archive ${completedCount} of ${totalCount} completed resources`,
-      text: 'Archive Available'
-    }
-  }
-
-  const hasArchivableResources = (mrn: Mrn): boolean => {
-    if (mrn.status_summary) {
-      return mrn.status_summary.has_archivable_resources
-    }
-    
-    // Fallback calculation
-    return mrn.resources.some(r => r.status === FetchStatus.Completed)
-  }
-
   const getProgressBarConfig = (mrn: Mrn): ProgressBarConfig => {
     if (mrn.status_summary) {
       return mrn.status_summary.progress_bar_config
@@ -410,20 +365,6 @@ export const useMonitorStore = defineStore('monitor', () => {
       completion_percentage: Math.round((completedCount / total) * 100 * 10) / 10,
       total_resources: total
     }
-  }
-
-  const getAvailableResourceTypesForArchive = (mrn: Mrn): string[] => {
-    if (mrn.status_summary) {
-      return mrn.status_summary.available_resource_types
-    }
-    
-    // Fallback calculation
-    const availableTypes = new Set<string>()
-    mrn.resources
-      .filter(r => r.status === FetchStatus.Completed)
-      .forEach(r => availableTypes.add(r.name))
-    
-    return Array.from(availableTypes).sort()
   }
 
   const getResourceTypeStatus = (mrn: Mrn, resourceType: string): ResourceTypeStatus | null => {
@@ -511,10 +452,7 @@ export const useMonitorStore = defineStore('monitor', () => {
     // Enhanced status methods
     getSmartStatusDisplay,
     getStatusForStyling,
-    getArchiveButtonConfig,
-    hasArchivableResources,
     getProgressBarConfig,
-    getAvailableResourceTypesForArchive,
     getResourceTypeStatus,
     getStatusColor,
     

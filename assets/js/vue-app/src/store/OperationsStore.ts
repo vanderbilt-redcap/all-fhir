@@ -9,12 +9,6 @@ export interface OperationResult {
   timestamp: string
 }
 
-export interface ArchiveModalState {
-  visible: boolean
-  archiveType: 'selected' | 'all'
-  selectedMrns: string[]
-}
-
 export interface StreamingModalState {
   visible: boolean
   archiveType: 'selected' | 'all'
@@ -27,13 +21,6 @@ export const useOperationsStore = defineStore('operations', () => {
   const lastOperation = ref<OperationResult | null>(null)
   const showSummary = ref(true)
   
-  // Archive Modal State
-  const archiveModal = ref<ArchiveModalState>({
-    visible: false,
-    archiveType: 'selected',
-    selectedMrns: []
-  })
-
   // Streaming Modal State
   const streamingModal = ref<StreamingModalState>({
     visible: false,
@@ -61,27 +48,6 @@ export const useOperationsStore = defineStore('operations', () => {
     showSummary.value = !showSummary.value
   }
 
-  // Archive Modal Actions
-  const showArchiveModalSelected = (selectedMrns: string[]) => {
-    archiveModal.value = {
-      visible: true,
-      archiveType: 'selected',
-      selectedMrns
-    }
-  }
-
-  const showArchiveModalAll = () => {
-    archiveModal.value = {
-      visible: true,
-      archiveType: 'all',
-      selectedMrns: []
-    }
-  }
-
-  const hideArchiveModal = () => {
-    archiveModal.value.visible = false
-  }
-
   // Streaming Modal Actions
   const showStreamingModalSelected = (selectedMrns: string[]) => {
     streamingModal.value = {
@@ -105,10 +71,6 @@ export const useOperationsStore = defineStore('operations', () => {
 
 
   // Computed properties for modals
-  const archiveModalVisible = computed(() => archiveModal.value.visible)
-  const archiveModalType = computed(() => archiveModal.value.archiveType)
-  const archiveModalSelectedMrns = computed(() => archiveModal.value.selectedMrns)
-
   const streamingModalVisible = computed(() => streamingModal.value.visible)
   const streamingModalType = computed(() => streamingModal.value.archiveType)
   const streamingModalSelectedMrns = computed(() => streamingModal.value.selectedMrns)
@@ -123,14 +85,6 @@ export const useOperationsStore = defineStore('operations', () => {
     setLoading,
     recordOperation,
     toggleSummary,
-    
-    // Archive Modal
-    archiveModalVisible,
-    archiveModalType,
-    archiveModalSelectedMrns,
-    showArchiveModalSelected,
-    showArchiveModalAll,
-    hideArchiveModal,
 
     // Streaming Modal
     streamingModalVisible,

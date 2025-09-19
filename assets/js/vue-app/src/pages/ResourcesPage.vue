@@ -47,13 +47,6 @@
 
         <!-- Archive Modals -->
         <Teleport to="body">
-            <ArchiveOptionsModal 
-                ref="archiveOptionsModal" 
-                :selected-mrns="operationsStore.archiveModalSelectedMrns"
-                :archive-type="operationsStore.archiveModalType"
-                @create="handleArchiveCreate"
-            />
-            <ArchiveCreationModal ref="archiveCreationModal" />
             <StreamingArchiveModal 
                 ref="streamingArchiveModal" 
                 :selected-mrns="operationsStore.streamingModalSelectedMrns"
@@ -71,37 +64,23 @@ import MonitorToolbar from '@/components/monitor/MonitorToolbar.vue'
 import MonitorTable from '@/components/monitor/MonitorTable.vue'
 import AddMrnModal from '@/components/monitor/AddMrnModal.vue'
 import ResourceContentModal from '@/components/shared/ResourceContentModal.vue'
-import ArchiveOptionsModal from '@/components/monitor/ArchiveOptionsModal.vue'
-import ArchiveCreationModal from '@/components/monitor/ArchiveCreationModal.vue'
 import StreamingArchiveModal from '@/components/archives/StreamingArchiveModal.vue'
 import BulkMrnErrorsModal from '@/components/monitor/BulkMrnErrorsModal.vue'
 import ProjectSummaryWidget from '@/components/monitor/ProjectSummaryWidget.vue'
 import { useMonitorStore } from '@/store/MonitorStore'
 import { useOperationsStore } from '@/store/OperationsStore'
-import { useArchiveStore } from '@/store/ArchiveStore'
 import { useNotificationStore } from '@/store/NotificationStore'
-import type { ArchiveCreateOptions } from '@/models/Archive'
 
 const monitorStore = useMonitorStore()
 const operationsStore = useOperationsStore()
-const archiveStore = useArchiveStore()
 const notificationStore = useNotificationStore()
 
 // Modal refs
 const addMrnModal = ref<InstanceType<typeof AddMrnModal> | null>(null)
-const archiveOptionsModal = ref<InstanceType<typeof ArchiveOptionsModal> | null>(null)
-const archiveCreationModal = ref<InstanceType<typeof ArchiveCreationModal> | null>(null)
 const streamingArchiveModal = ref<InstanceType<typeof StreamingArchiveModal> | null>(null)
 const bulkMrnErrorsModal = ref<InstanceType<typeof BulkMrnErrorsModal> | null>(null)
 
 // Watch for store-controlled modal visibility
-watch(() => operationsStore.archiveModalVisible, async (visible) => {
-  if (visible) {
-    await archiveOptionsModal.value?.show()
-    operationsStore.hideArchiveModal()
-  }
-})
-
 watch(() => operationsStore.streamingModalVisible, async (visible) => {
   if (visible) {
     await streamingArchiveModal.value?.show()
@@ -155,32 +134,6 @@ const showAddMrnModal = async () => {
   }
 }
 
-
-const handleArchiveCreate = async (options: ArchiveCreateOptions, type: 'selected' | 'all', selectedMrns?: string[]) => {
-    try {
-        let result
-        
-        if (type === 'selected' && selectedMrns) {
-            result = await archiveStore.createArchiveSelected(selectedMrns, options)
-        } else {
-            result = await archiveStore.createArchiveAll(options)
-        }
-        
-        if (result) {
-            // Show creation modal with result
-            archiveCreationModal.value?.show(result)
-            
-            if (result.success) {
-                notificationStore.showSuccess(result.message)
-            } else {
-                notificationStore.showError(result.message)
-            }
-        }
-    } catch (error) {
-        console.error('Failed to create archive:', error)
-        notificationStore.showError('Failed to create archive')
-    }
-}
 
 // Lifecycle
 onMounted(async () => {

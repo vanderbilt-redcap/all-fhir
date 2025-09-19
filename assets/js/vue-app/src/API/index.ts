@@ -14,13 +14,6 @@ export const api = {
     const params = { route: `project-settings/fhir-system` }
     return apiClient.put('', { fhir_system: fhirSystemId }, { params })
   },
-  updateProjectSettings(payload: any)
- {
-    const params = { route: `project-settings` }
-    return apiClient.put('', payload, { params })
-  },
-
-
   listMrns(page?: number, perPage?: number) {
     const params: any = { route: `mrns` }
     if (page) params._page = page
@@ -31,68 +24,6 @@ export const api = {
   addMrns(mrns: string[]) {
     const params = { route: `mrns` }
     return apiClient.post('', { mrns }, { params })
-  },
-
-  addMrn(mrn: string) {
-    const params = { route: `mrns` }
-    // Route is bulk-capable; standardize to array payload
-    return apiClient.post('', { mrns: [mrn] }, { params })
-  },
-
-  removeMrn(mrn: string) {
-    const params = { route: `mrns/${mrn}` }
-    return apiClient.delete('', { params, data: mrn })
-  },
-
-  triggerFetch(mrns: string[], resources: string[]) {
-    const params = { route: `trigger-fetch` }
-    return apiClient.post('', { mrns, resources }, { params })
-  },
-
-  getFetchStatus() {
-    const params = { route: `fetch-status` }
-    return apiClient.get('', { params })
-  },
-
-  createZipArchive(mrns: string[]) {
-    const params = { route: `create-zip-archive` }
-    return apiClient.post('', { mrns }, { params })
-  },
-
-  downloadZip(zipId: string) {
-    const params = { route: `download-zip`, zip_id: zipId }
-    return apiClient.get('', { params, responseType: 'blob' })
-  },
-
-  // Archive management API methods
-  listArchives() {
-    const params = { route: `archives` }
-    return apiClient.get('', { params })
-  },
-
-  createArchiveSelected(mrns: string[], options?: any) {
-    const params = { route: `archives/selected` }
-    const payload: any = { mrns }
-    if (options) {
-      Object.assign(payload, options)
-    }
-    return apiClient.post('', payload, { params })
-  },
-
-  createArchiveAll(options?: any) {
-    const params = { route: `archives/all` }
-    const payload = options || {}
-    return apiClient.post('', payload, { params })
-  },
-
-  downloadArchive(archiveId: string) {
-    const params = { route: `archives/${archiveId}/download` }
-    return apiClient.get('', { params, responseType: 'blob' })
-  },
-
-  deleteArchive(archiveId: string) {
-    const params = { route: `archives/${archiveId}` }
-    return apiClient.delete('', { params })
   },
 
   // Enhanced MRN and resource management
@@ -180,16 +111,6 @@ export const api = {
   deleteTask(taskId: string) {
     const params = { route: `tasks/${taskId}` }
     return apiClient.delete('', { params })
-  },
-
-  getQueueStatistics() {
-    const params = { route: `tasks/stats` }
-    return apiClient.get('', { params })
-  },
-
-  cleanupCompletedTasks() {
-    const params = { route: `tasks/cleanup` }
-    return apiClient.post('', {}, { params })
   },
 
   // Streaming archive API methods

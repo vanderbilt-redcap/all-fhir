@@ -132,16 +132,6 @@
                         <i class="fas fa-spinner fa-spin fa-fw"></i>
                     </template>
                 </button>
-                <!--
-                    <button 
-                        :class="`btn btn-sm btn-info`"
-                        :disabled="archiveButtonConfig.disabled"
-                        @click="showArchiveModal"
-                        :title="archiveButtonConfig.tooltip"
-                    >
-                        <i class="fas fa-download fa-fw"></i>
-                    </button>
-                -->
                 <button 
                     class="btn btn-sm btn-outline-success btn-icon"
                     :disabled="streamButtonDisabled || operationLoading || streamingStore.isStreamingActive"
@@ -240,10 +230,6 @@ const progressConfig = computed(() => {
     return monitorStore.getProgressBarConfig(props.item)
 })
 
-// const archiveButtonConfig = computed(() => {
-//     return monitorStore.getArchiveButtonConfig(props.item)
-// })
-
 // Retry button computed properties
 const hasFailedResources = computed(() => {
     return props.item.resources.some(r => r.status === FetchStatus.Failed)
@@ -309,14 +295,6 @@ const triggerFetchMrn = async () => {
         operationLoading.value = false
     }
 }
-
-// const showArchiveModal = async () => {
-//     try {
-//         operationsStore.showArchiveModalSelected([props.item.mrn])
-//     } catch (error) {
-//         console.error('Failed to show archive modal:', error)
-//     }
-// }
 
 const retryFailedResources = async () => {
     if (!hasFailedResources.value) {

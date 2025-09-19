@@ -5,7 +5,6 @@ import HomePage from '@/pages/HomePage.vue'
 import SetupPage from '@/pages/SetupPage.vue'
 import ResourcesPage from '@/pages/ResourcesPage.vue'
 import TasksPage from '@/pages/TasksPage.vue'
-import ArchivesPage from '@/pages/ArchivesPage.vue'
 
 // other
 import NotFoundPage from '@/pages/NotFoundPage.vue'
@@ -23,7 +22,6 @@ const routes = [
             { path: 'setup', name: 'setup', component: SetupPage, },
             { path: 'resources', name: 'resources', component: ResourcesPage, },
             { path: 'tasks', name: 'tasks', component: TasksPage, },
-            { path: 'archives', name: 'archives', component: ArchivesPage, },
             { path: 'error', name: 'error', component: ErrorPage, },
             { path: '/:pathMatch(.*)*', component: NotFoundPage },
         ],

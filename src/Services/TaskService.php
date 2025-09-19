@@ -234,34 +234,6 @@ class TaskService
     }
 
     /**
-     * Get queue statistics
-     */
-    public function getQueueStatistics(): array
-    {
-        return $this->queueManager->getQueueStatistics();
-    }
-
-    /**
-     * Clean up completed tasks
-     */
-    public function cleanupCompletedTasks(): TaskOperationResponse
-    {
-        try {
-            $removedCount = $this->queueManager->removeCompletedTasks();
-            
-            return TaskOperationResponse::success(
-                null,
-                ['removed_count' => $removedCount],
-                "Cleanup completed. Removed {$removedCount} completed tasks."
-            );
-            
-        } catch (\Exception $e) {
-            $this->module->log("Failed to cleanup completed tasks: " . $e->getMessage(), []);
-            return TaskOperationResponse::failure('Failed to cleanup completed tasks: ' . $e->getMessage());
-        }
-    }
-
-    /**
      * Enrich task metadata with additional information
      */
     private function enrichTaskMetadata(Task $task): array

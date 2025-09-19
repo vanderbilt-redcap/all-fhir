@@ -62,18 +62,9 @@ return function (App $app) {
     $app->get('/tasks', [TaskController::class, 'listTasks']);
     $app->post('/tasks/full-sync', [TaskController::class, 'performFullSync']);
     $app->post('/tasks/retry-failed', [TaskController::class, 'retryFailedResources']);
-    $app->get('/tasks/stats', [TaskController::class, 'getQueueStatistics']);
-    $app->post('/tasks/cleanup', [TaskController::class, 'cleanupCompletedTasks']);
     $app->get('/tasks/{id}', [TaskController::class, 'getTaskDetails']);
     $app->delete('/tasks/{id}', [TaskController::class, 'deleteTask']);
 
-    // ArchiveController routes
-    $app->get('/archives', [ArchiveController::class, 'listArchives']);
-    $app->post('/archives/selected', [ArchiveController::class, 'archiveSelected']);
-    $app->post('/archives/all', [ArchiveController::class, 'archiveAll']);
-    $app->get('/archives/{archive_id}/download', [ArchiveController::class, 'downloadArchive']);
-    $app->delete('/archives/{archive_id}', [ArchiveController::class, 'deleteArchive']);
-    
     // On-demand streaming archive routes
     $app->post('/archives/stream/selected', [ArchiveController::class, 'streamSelected']);
     $app->post('/archives/stream/all', [ArchiveController::class, 'streamAll']);

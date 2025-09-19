@@ -17,16 +17,12 @@ use Vanderbilt\AllFhir\Services\RepeatedFormDataAccessor;
 use Vanderbilt\AllFhir\Contracts\FhirClientInterface;
 use Vanderbilt\AllFhir\Services\RepeatedFormResourceManager;
 use Vanderbilt\AllFhir\Services\ResourceSynchronizationService;
-use Vanderbilt\AllFhir\Services\ResourceArchiveService;
-use Vanderbilt\AllFhir\Services\ArchivePackager;
 use Vanderbilt\AllFhir\Services\OnDemandStreamingPackager;
-use Vanderbilt\AllFhir\Services\ArchiveUrlService;
 use Vanderbilt\AllFhir\Services\ResourceFetcher;
 use Vanderbilt\AllFhir\Services\ResourceContentService;
 use Vanderbilt\AllFhir\Services\MrnService;
 use Vanderbilt\AllFhir\Queue\QueueManager;
 use Vanderbilt\AllFhir\Queue\QueueProcessor;
-use Vanderbilt\AllFhir\Queue\Processors\ArchiveProcessor;
 use Vanderbilt\AllFhir\Queue\Processors\EmailNotificationProcessor;
 use Vanderbilt\AllFhir\Queue\Processors\FullSyncProcessor;
 use Vanderbilt\AllFhir\Queue\Processors\RetryFailedProcessor;
@@ -44,7 +40,6 @@ use Vanderbilt\AllFhir\Controllers\StructureValidationController;
 use Vanderbilt\AllFhir\Controllers\MaintenanceController;
 use Vanderbilt\AllFhir\Services\Contracts\ProjectMetadataProvider as ProjectMetadataProviderContract;
 use Vanderbilt\AllFhir\Services\Redcap\ProjectMetadataProvider as ProjectMetadataProviderImpl;
-use Vanderbilt\AllFhir\Services\ArchiveMetadataService;
 use Vanderbilt\AllFhir\Services\TaskService;
 use Vanderbilt\REDCap\Classes\Fhir\FhirSystem\FhirSystemManager;
 use Vanderbilt\REDCap\Classes\SystemMonitors\MemoryMonitor;
@@ -113,28 +108,10 @@ return function (ContainerBuilder $containerBuilder) {
             $c->get(RepeatedFormDataAccessor::class)
         ),
         
-        // Archive services
-        ArchiveUrlService::class => fn(Container $c) => new ArchiveUrlService($c->get(AllFhir::class)),
-        ArchivePackager::class => fn(Container $c) => new ArchivePackager(
-            $c->get(AllFhir::class),
-            $c->get(ArchiveUrlService::class)
-        ),
+        // Streaming archive service
         OnDemandStreamingPackager::class => fn(Container $c) => new OnDemandStreamingPackager(
             $c->get(AllFhir::class),
             $c->get(RepeatedFormDataAccessor::class)
-        ),
-        ArchiveProcessor::class => fn(Container $c) => new ArchiveProcessor(
-            $c->get(AllFhir::class),
-            $c->get(ArchivePackager::class),
-            $c->get(ArchiveMetadataService::class)
-        ),
-        ResourceArchiveService::class => fn(Container $c) => new ResourceArchiveService(
-            $c->get(AllFhir::class),
-            $c->get(RepeatedFormDataAccessor::class),
-            $c->get(ArchivePackager::class),
-            $c->get(QueueManager::class),
-            $c->get(ArchiveUrlService::class),
-            $c->get(ArchiveMetadataService::class)
         ),
         // Tasks
         TaskService::class => fn(Container $c) => new TaskService(
@@ -150,7 +127,6 @@ return function (ContainerBuilder $containerBuilder) {
         ResourceMonitor::class => fn(Container $c) => new ResourceMonitor($c->get(MemoryMonitor::class), $c->get(TimeMonitor::class)),
         QueueProcessor::class => factory(function(Container $c) {
             $processorFactories = [
-                Constants::TASK_ARCHIVE => fn() => $c->get(ArchiveProcessor::class),
                 Constants::TASK_EMAIL_NOTIFICATION => fn() => $c->get(EmailNotificationProcessor::class),
                 Constants::TASK_FULL_SYNC => fn() => $c->get(FullSyncProcessor::class),
                 Constants::TASK_RETRY_FAILED => fn() => $c->get(RetryFailedProcessor::class),
@@ -176,7 +152,6 @@ return function (ContainerBuilder $containerBuilder) {
         // Define how to instantiate the controllers.
         ArchiveController::class => fn(Container $c) => new ArchiveController(
             $c->get(AllFhir::class),
-            $c->get(ResourceArchiveService::class),
             $c->get(OnDemandStreamingPackager::class)
         ),
         TaskController::class => fn(Container $c) => new TaskController(

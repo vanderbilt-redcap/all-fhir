@@ -48,13 +48,6 @@ export interface ResourceTypeStatus {
     is_archivable: boolean
 }
 
-export interface ArchiveButtonConfig {
-    variant: string
-    disabled: boolean
-    tooltip: string
-    text: string
-}
-
 export interface ProgressBarSegment {
     status: FetchStatus
     count: number
@@ -74,7 +67,6 @@ export interface MrnStatusSummary {
     has_archivable_resources: boolean
     resource_type_statuses: Record<string, ResourceTypeStatus>
     smart_status_display: string
-    archive_button_config: ArchiveButtonConfig
     progress_bar_config: ProgressBarConfig
     available_resource_types: string[]
 }

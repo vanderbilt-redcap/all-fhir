@@ -30,7 +30,6 @@ use InvalidArgumentException;
  * - addTask($key, $params, $metadata): Create and store new task
  * - updateTaskStatus($taskId, $status): Update task lifecycle status
  * - removeTask($taskId): Remove specific task from queue
- * - removeCompletedTasks(): Bulk cleanup of completed tasks
  * 
  * TASK RETRIEVAL:
  * - getNextPendingTask(): Get oldest pending task for processing
@@ -47,7 +46,7 @@ use InvalidArgumentException;
  * - QueueProcessor calls getNextPendingTask() to retrieve work
  * - Task processors update status via updateTaskStatus()
  * - Failed tasks remain in queue for retry or manual intervention
- * - Completed tasks can be cleaned up periodically
+ * - Completed tasks can be cleaned up by administrative routines
  * 
  * ERROR HANDLING:
  * - Invalid task data is logged and skipped during retrieval
@@ -229,22 +228,6 @@ class QueueManager
         }
 
         return false;
-    }
-
-    public function removeCompletedTasks(): int
-    {
-        $tasks = $this->getTasks();
-        $originalCount = count($tasks);
-
-        $tasks = array_filter($tasks, fn(Task $task) => !$task->isCompleted());
-
-        $removedCount = $originalCount - count($tasks);
-        
-        if ($removedCount > 0) {
-            $this->saveTasks(array_values($tasks)); // Re-index array
-        }
-
-        return $removedCount;
     }
 
     public function getQueueStatistics(): array
