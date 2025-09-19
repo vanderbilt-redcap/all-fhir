@@ -1,5 +1,6 @@
 {
     "name": "ALL FHIR",
+    "php-version-min": "8.1.0",
     "description": "Fetch and store FHIR payloads",
     "namespace": "Vanderbilt\\AllFhir",
     "framework-version": 16,
