@@ -17,7 +17,7 @@ export const useEndpointParamsStore = defineStore('endpointParams', () => {
   const fetchSchemas = async () => {
     try {
       const res = await api.getEndpointParamsSchemas()
-      const data = res.data?.schemas || {}
+      const data = (res.data?.schemas || {}) as EndpointParamsSchemas
       schemas.value = data
       loaded.value = true
     } catch (err) {
