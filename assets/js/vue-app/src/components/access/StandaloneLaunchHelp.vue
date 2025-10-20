@@ -25,7 +25,7 @@ const { shouldWarn, launchUrl, status, state, setupRoute } = storeToRefs(fhirAcc
   <div v-else-if="shouldWarn && launchUrl" class="alert alert-info" role="alert" style="margin-bottom:12px;">
     <i class="fas fa-info-circle" style="margin-right:8px;"></i>
     <span>
-      To enable data fetching, sign in to the EHR and authorize access for this project using <strong>Standalone Launch</strong> or <strong>Launch from EHR</strong>.
+      To enable data fetching, obtain an access token for any user in this project by performing a <strong>Standalone Launch</strong> or a <strong>Launch from EHR</strong>.
       <template v-if="status?.fhir_system_name"> (System: {{ status.fhir_system_name }})</template>
     </span>
     <div class="d-flex align-items-center justify-content-start mt-2">

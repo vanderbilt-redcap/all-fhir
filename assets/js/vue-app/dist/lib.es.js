@@ -22666,9 +22666,9 @@ const zp = () => vi || (vi = BA({
         style: { "margin-right": "8px" }
       }, null, -1)),
       c("span", null, [
-        l[3] || (l[3] = ee(" To enable data fetching, sign in to the EHR and authorize access for this project using ")),
+        l[3] || (l[3] = ee(" To enable data fetching, obtain an access token for any user in this project by performing a ")),
         l[4] || (l[4] = c("strong", null, "Standalone Launch", -1)),
-        l[5] || (l[5] = ee(" or ")),
+        l[5] || (l[5] = ee(" or a ")),
         l[6] || (l[6] = c("strong", null, "Launch from EHR", -1)),
         l[7] || (l[7] = ee(". ")),
         H(o)?.fhir_system_name ? (C(), D(Oe, { key: 0 }, [
